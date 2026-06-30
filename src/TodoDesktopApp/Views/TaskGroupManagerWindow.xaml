@@ -1,0 +1,371 @@
+<Window x:Class="TodoDesktopApp.Views.TaskGroupManagerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:TodoDesktopApp.Controls"
+        Width="820"
+        Height="600"
+        MinWidth="820"
+        MinHeight="600"
+        Icon="../Assets/JM_glass_alpha0_windows.ico"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="Transparent"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        FontFamily="Microsoft YaHei UI, Segoe UI"
+        FontSize="14"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
+    <Window.Resources>
+        <Style x:Key="GroupListBoxItemStyle" TargetType="{x:Type ListBoxItem}">
+            <Setter Property="Height" Value="48" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="Padding" Value="12,0,10,0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                        <Border x:Name="Root"
+                                Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="12">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#F8FAFE" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#ECF1F8" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#EEF5FF" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#BFD3FF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border Background="#F7F9FD"
+            BorderBrush="{StaticResource Brush.Border}"
+            BorderThickness="1"
+            CornerRadius="22"
+            Margin="18"
+            controls:RoundedClip.Enabled="True"
+            Effect="{StaticResource Shadow.Window}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="78" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="70" />
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Padding="28,0,22,0" MouseLeftButtonDown="Header_MouseLeftButtonDown">
+                <Grid>
+                    <TextBlock Text="任务组管理"
+                               FontSize="28"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource Brush.TextPrimary}"
+                               VerticalAlignment="Center" />
+                    <Button Width="36"
+                            Height="36"
+                            Padding="0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource Button.Ghost}"
+                            Click="CloseButton_Click">
+                        <Path Width="18"
+                              Height="18"
+                              Data="M2,2 L16,16 M16,2 L2,16"
+                              Stroke="{StaticResource Brush.TextSecondary}"
+                              StrokeThickness="1.9"
+                              StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round"
+                              Stretch="Uniform" />
+                    </Button>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="1" Margin="28,0,28,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="280" />
+                    <ColumnDefinition Width="24" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Background="{StaticResource Brush.Surface}"
+                        BorderBrush="{StaticResource Brush.BorderLight}"
+                        BorderThickness="1"
+                        CornerRadius="16"
+                        Padding="12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="44" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="58" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="分组列表"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource Brush.TextPrimary}"
+                                   VerticalAlignment="Center"
+                                   Margin="12,0,0,0" />
+
+                        <ListBox Grid.Row="1"
+                                 ItemsSource="{Binding Groups}"
+                                 SelectedItem="{Binding SelectedGroup}"
+                                 ItemContainerStyle="{StaticResource GroupListBoxItemStyle}"
+                                 BorderThickness="0"
+                                 Background="Transparent"
+                                 FocusVisualStyle="{x:Null}"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="28" />
+                                            <ColumnDefinition Width="10" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="34" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Width="24"
+                                                Height="24"
+                                                CornerRadius="7"
+                                                Background="{Binding IconBackground}">
+                                            <Path Width="15"
+                                                  Height="15"
+                                                  Data="{Binding IconGeometry}"
+                                                  Stroke="{Binding IconForeground}"
+                                                  StrokeThickness="1.8"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  StrokeLineJoin="Round"
+                                                  Stretch="Uniform"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding Name}"
+                                                   FontSize="15"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="{x:Type TextBlock}">
+                                                    <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+                                                    <Setter Property="FontWeight" Value="Normal" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource Brush.Primary}" />
+                                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <Border Grid.Column="3"
+                                                Width="28"
+                                                Height="24"
+                                                CornerRadius="12"
+                                                VerticalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="{x:Type Border}">
+                                                    <Setter Property="Background" Value="#EEF5FF" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                                            <Setter Property="Background" Value="{StaticResource Brush.Primary}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock Text="{Binding CountText}"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="{x:Type TextBlock}">
+                                                        <Setter Property="Foreground" Value="{StaticResource Brush.TextSecondary}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <Button Grid.Row="2"
+                                Height="42"
+                                Style="{StaticResource Button.Secondary}"
+                                Command="{Binding NewCommand}"
+                                Click="NewGroupButton_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Width="15"
+                                      Height="15"
+                                      Data="M8,2 L8,14 M2,8 L14,8"
+                                      Stroke="{StaticResource Brush.Primary}"
+                                      StrokeThickness="1.8"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      Stretch="Uniform" />
+                                <TextBlock Text="新建任务组"
+                                           Margin="10,0,0,0"
+                                           Foreground="{StaticResource Brush.Primary}"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="2"
+                        Padding="22,18,22,18"
+                        Background="{StaticResource Brush.Surface}"
+                        BorderBrush="{StaticResource Brush.BorderLight}"
+                        BorderThickness="1"
+                        CornerRadius="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="32" />
+                            <RowDefinition Height="72" />
+                            <RowDefinition Height="108" />
+                            <RowDefinition Height="100" />
+                            <RowDefinition Height="56" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="{Binding EditorTitle}"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource Brush.TextPrimary}" />
+
+                        <StackPanel Grid.Row="1">
+                            <Grid>
+                                <TextBlock Text="分组名称" Style="{StaticResource Text.Label}" />
+                                <TextBlock Text="{Binding NameCountText}"
+                                           FontSize="12"
+                                           Foreground="{StaticResource Brush.TextTertiary}"
+                                           HorizontalAlignment="Right" />
+                            </Grid>
+                            <TextBox x:Name="GroupNameTextBox"
+                                     Height="42"
+                                     MaxLength="20"
+                                     Tag="请输入分组名称..."
+                                     Text="{Binding GroupName, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource TextBox.Modern}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2">
+                            <TextBlock Text="分组图标" Style="{StaticResource Text.Label}" />
+                            <controls:TaskGroupIconPicker SelectedIconKey="{Binding EditingIconKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                          IconOptions="{Binding IconOptions}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="3">
+                            <Grid>
+                                <TextBlock Text="分组描述（可选）" Style="{StaticResource Text.Label}" />
+                                <TextBlock Text="{Binding DescriptionCountText}"
+                                           FontSize="12"
+                                           Foreground="{StaticResource Brush.TextTertiary}"
+                                           HorizontalAlignment="Right" />
+                            </Grid>
+                            <TextBox Height="76"
+                                     MaxLength="100"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     VerticalScrollBarVisibility="Disabled"
+                                     VerticalContentAlignment="Top"
+                                     Padding="12,10,12,10"
+                                     Tag="请输入分组描述..."
+                                     Text="{Binding GroupDescription, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource TextBox.Modern}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="4"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Bottom">
+                            <Button Width="118"
+                                    Height="42"
+                                    Style="{StaticResource Button.Primary}"
+                                    Command="{Binding SaveCommand}"
+                                    Content="{Binding SaveButtonText}" />
+                            <Button Width="102"
+                                    Height="42"
+                                    Margin="14,0,0,0"
+                                    Style="{StaticResource Button.Secondary}"
+                                    Command="{Binding ClearCommand}"
+                                    Content="清空" />
+                            <Button Width="92"
+                                    Height="42"
+                                    Margin="14,0,0,0"
+                                    Style="{StaticResource Button.Danger}"
+                                    IsEnabled="{Binding CanDeleteSelected}"
+                                    Click="DeleteButton_Click"
+                                    Content="删除" />
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="5"
+                                   Text="{Binding ErrorMessage}"
+                                   Margin="0,10,0,0"
+                                   FontSize="12"
+                                   Foreground="{StaticResource Brush.Danger}" />
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <Grid Grid.Row="2" Margin="28,0,28,22">
+                <Border Height="34"
+                        Padding="12,0,12,0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Bottom"
+                        Background="#F3F7FF"
+                        BorderBrush="#CFE0FF"
+                        BorderThickness="1"
+                        CornerRadius="9">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="18"
+                                Height="18"
+                                Background="{StaticResource Brush.Primary}"
+                                CornerRadius="9">
+                            <TextBlock Text="i"
+                                       FontSize="12"
+                                       FontWeight="Bold"
+                                       Foreground="#FFFFFF"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
+                        </Border>
+                        <TextBlock Text="删除任务组不会删除任务，组内任务会自动移动到「未分组」。"
+                                   Margin="10,0,0,0"
+                                   Foreground="{StaticResource Brush.TextSecondary}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+                <Button Width="104"
+                        Height="46"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom"
+                        Style="{StaticResource Button.Secondary}"
+                        Click="CloseButton_Click"
+                        Content="关闭" />
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

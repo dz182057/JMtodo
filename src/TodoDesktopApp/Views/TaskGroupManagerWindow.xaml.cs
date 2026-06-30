@@ -1,0 +1,60 @@
+using System.Windows;
+using System.Windows.Input;
+using TodoDesktopApp.Dialogs;
+using TodoDesktopApp.Services;
+using TodoDesktopApp.ViewModels;
+
+namespace TodoDesktopApp.Views;
+
+public partial class TaskGroupManagerWindow : Window
+{
+    private readonly TaskGroupManagerViewModel _viewModel;
+
+    public TaskGroupManagerWindow(TodoService todoService)
+    {
+        InitializeComponent();
+        _viewModel = new TaskGroupManagerViewModel(todoService);
+        DataContext = _viewModel;
+    }
+
+    private void Header_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ButtonState == MouseButtonState.Pressed)
+        {
+            DragMove();
+        }
+    }
+
+    private void DeleteButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.SelectedGroup is null)
+        {
+            _viewModel.DeleteSelectedGroup();
+            return;
+        }
+
+        var dialog = new ConfirmDialogWindow
+        {
+            Owner = this,
+            TitleText = "删除任务组",
+            MessageText = $"删除任务组「{_viewModel.SelectedGroup.Name}」？\n组内任务不会被删除，将自动移动到「未分组」。",
+            ConfirmText = "删除",
+            CancelText = "取消"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            _viewModel.DeleteSelectedGroup();
+        }
+    }
+
+    private void NewGroupButton_Click(object sender, RoutedEventArgs e)
+    {
+        GroupNameTextBox.Focus();
+    }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+}
