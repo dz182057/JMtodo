@@ -8,8 +8,6 @@ namespace TodoDesktopApp.ViewModels;
 
 public sealed class TaskGroupManagerViewModel : ViewModelBase
 {
-    private const string AllTasksId = "__all";
-    private const string NoGroupId = "__nogroup";
     private readonly TodoService _todoService;
     private TaskGroupListItem? _selectedGroup;
     private string _groupName = string.Empty;
@@ -134,7 +132,7 @@ public sealed class TaskGroupManagerViewModel : ViewModelBase
         {
             _todoService.DeleteGroup(SelectedGroup.Group.Id);
             ClearEditor();
-            Reload(NoGroupId);
+            Reload();
         }
         catch (InvalidOperationException ex)
         {
@@ -213,13 +211,9 @@ public sealed class TaskGroupManagerViewModel : ViewModelBase
         var activeItems = _todoService.Search(new TodoSearchCriteria { IncludeNoDue = true })
             .Where(todo => todo.Status != TodoStatus.Deleted)
             .ToList();
-
-        Groups.Add(TaskGroupListItem.CreateSystem(
-            AllTasksId,
-            "全部任务",
-            "all",
-            activeItems.Count,
-            activeItems.Count(todo => todo.Status == TodoStatus.Active)));
+        var activeTaskIds = _todoService.Search(new TodoSearchCriteria { Status = TodoStatus.Active, IncludeNoDue = true })
+            .Select(todo => todo.Id)
+            .ToHashSet();
 
         foreach (var group in groups)
         {
@@ -227,16 +221,8 @@ public sealed class TaskGroupManagerViewModel : ViewModelBase
             Groups.Add(TaskGroupListItem.CreateGroup(
                 group,
                 groupItems.Count,
-                groupItems.Count(todo => todo.Status == TodoStatus.Active)));
+                groupItems.Count(todo => activeTaskIds.Contains(todo.Id))));
         }
-
-        var noGroupItems = activeItems.Where(todo => string.IsNullOrWhiteSpace(todo.GroupId)).ToList();
-        Groups.Add(TaskGroupListItem.CreateSystem(
-            NoGroupId,
-            "未分组",
-            "inbox",
-            noGroupItems.Count,
-            noGroupItems.Count(todo => todo.Status == TodoStatus.Active)));
 
         SelectedGroup = Groups.FirstOrDefault(group => group.Id == selectedId) ?? Groups.FirstOrDefault();
     }
@@ -297,10 +283,5 @@ public sealed class TaskGroupListItem
     public static TaskGroupListItem CreateGroup(TodoGroup group, int totalCount, int activeCount)
     {
         return new TaskGroupListItem(group.Id, group.Name, group.IconKey, totalCount, activeCount, group);
-    }
-
-    public static TaskGroupListItem CreateSystem(string id, string name, string iconKey, int totalCount, int activeCount)
-    {
-        return new TaskGroupListItem(id, name, iconKey, totalCount, activeCount, null);
     }
 }

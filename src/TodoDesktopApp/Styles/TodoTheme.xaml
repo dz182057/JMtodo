@@ -113,13 +113,24 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="10">
+                            CornerRadius="10"
+                            RenderTransformOrigin="0.5,0.5">
+                        <Border.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="1" />
+                        </Border.RenderTransform>
                         <ContentPresenter Margin="{TemplateBinding Padding}"
                                           HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                           RecognizesAccessKey="True" />
                     </Border>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Root" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="0.96" ScaleY="0.96" />
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Root" Property="Opacity" Value="0.45" />
                         </Trigger>
@@ -244,6 +255,8 @@
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Foreground" Value="#1F2937" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="TextAlignment" Value="Left" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Template">
             <Setter.Value>
@@ -254,16 +267,16 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="8">
                         <Grid>
-                            <ScrollViewer x:Name="PART_ContentHost"
-                                          Margin="{TemplateBinding Padding}"
-                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                             <TextBlock x:Name="Placeholder"
                                        Margin="{TemplateBinding Padding}"
+                                       HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                        Foreground="{StaticResource Brush.Placeholder}"
                                        IsHitTestVisible="False"
                                        Text="{TemplateBinding Tag}"
                                        Visibility="Collapsed" />
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -289,7 +302,7 @@
 
     <Style x:Key="TextBox.Search" TargetType="{x:Type TextBox}" BasedOn="{StaticResource TextBox.Modern}">
         <Setter Property="Height" Value="40" />
-        <Setter Property="Padding" Value="42,0,12,0" />
+        <Setter Property="Padding" Value="46,0,12,0" />
         <Setter Property="Tag" Value="搜索标题、备注、关键词..." />
     </Style>
 
@@ -571,12 +584,43 @@
                             <Grid x:Name="PART_MonthView"
                                   Grid.Row="1"
                                   Margin="8,8,8,8"
-                                  HorizontalAlignment="Center" />
+                                  HorizontalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="36" />
+                                    <ColumnDefinition Width="36" />
+                                    <ColumnDefinition Width="36" />
+                                    <ColumnDefinition Width="36" />
+                                    <ColumnDefinition Width="36" />
+                                    <ColumnDefinition Width="36" />
+                                    <ColumnDefinition Width="36" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="24" />
+                                    <RowDefinition Height="30" />
+                                    <RowDefinition Height="30" />
+                                    <RowDefinition Height="30" />
+                                    <RowDefinition Height="30" />
+                                    <RowDefinition Height="30" />
+                                    <RowDefinition Height="30" />
+                                </Grid.RowDefinitions>
+                            </Grid>
                             <Grid x:Name="PART_YearView"
                                   Grid.Row="1"
                                   Margin="8,8,8,8"
                                   HorizontalAlignment="Center"
-                                  Visibility="Hidden" />
+                                  Visibility="Hidden">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="63" />
+                                    <ColumnDefinition Width="63" />
+                                    <ColumnDefinition Width="63" />
+                                    <ColumnDefinition Width="63" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="36" />
+                                    <RowDefinition Height="36" />
+                                    <RowDefinition Height="36" />
+                                </Grid.RowDefinitions>
+                            </Grid>
                         </Grid>
                     </Border>
                 </ControlTemplate>
@@ -756,7 +800,7 @@
         <Setter Property="Padding" Value="12,0,12,0" />
         <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderLight}" />
         <Setter Property="BorderThickness" Value="0,0,0,1" />
-        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Template">
@@ -768,10 +812,6 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}">
                             <Grid Margin="{TemplateBinding Padding}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="18" />
-                                </Grid.ColumnDefinitions>
                                 <ContentPresenter Content="{TemplateBinding Content}"
                                                   ContentTemplate="{TemplateBinding ContentTemplate}"
                                                   ContentStringFormat="{TemplateBinding ContentStringFormat}"
@@ -780,9 +820,8 @@
                                                   RecognizesAccessKey="True"
                                                   SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                                 <TextBlock x:Name="SortArrow"
-                                           Grid.Column="1"
-                                           Text="↑"
-                                           FontSize="14"
+                                           Text="▲"
+                                           FontSize="11"
                                            FontWeight="Bold"
                                            Foreground="{StaticResource Brush.Primary}"
                                            HorizontalAlignment="Right"
@@ -810,13 +849,13 @@
                         <Trigger Property="SortDirection" Value="Ascending">
                             <Setter TargetName="Root" Property="Background" Value="#EEF5FF" />
                             <Setter Property="Foreground" Value="{StaticResource Brush.Primary}" />
-                            <Setter TargetName="SortArrow" Property="Text" Value="↑" />
+                            <Setter TargetName="SortArrow" Property="Text" Value="▲" />
                             <Setter TargetName="SortArrow" Property="Visibility" Value="Visible" />
                         </Trigger>
                         <Trigger Property="SortDirection" Value="Descending">
                             <Setter TargetName="Root" Property="Background" Value="#EEF5FF" />
                             <Setter Property="Foreground" Value="{StaticResource Brush.Primary}" />
-                            <Setter TargetName="SortArrow" Property="Text" Value="↓" />
+                            <Setter TargetName="SortArrow" Property="Text" Value="▼" />
                             <Setter TargetName="SortArrow" Property="Visibility" Value="Visible" />
                         </Trigger>
                     </ControlTemplate.Triggers>

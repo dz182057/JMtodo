@@ -4,6 +4,8 @@ public sealed class TodoSearchCriteria
 {
     public string? Keyword { get; set; }
     public TodoStatus? Status { get; set; }
+    public string? GroupId { get; set; }
+    public bool FilterNoGroup { get; set; }
     public DateOnly? StartDateFrom { get; set; }
     public DateOnly? StartDateTo { get; set; }
     public DateOnly? DueDateFrom { get; set; }

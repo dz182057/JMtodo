@@ -26,31 +26,22 @@ public sealed class TodoService
     public IReadOnlyList<TodoItem> GetFloatingTodos()
     {
         var today = DateOnly.FromDateTime(DateTime.Now);
-        var todos = Search(new TodoSearchCriteria { IncludeNoDue = true })
-            .Where(todo => todo.Status == TodoStatus.Active && todo.StartDate <= today)
+        var todos = Search(new TodoSearchCriteria { Status = TodoStatus.Active, IncludeNoDue = true })
+            .Where(todo => todo.StartDate <= today)
             .ToList();
 
         var result = new List<TodoItem>();
-        var roots = todos
-            .Where(todo => !todo.IsSubtask)
-            .OrderBy(todo => todo.SortOrder)
-            .ThenBy(todo => todo.CreatedAt)
-            .ToList();
+        var roots = OrderBySortThenDefault(todos.Where(todo => !todo.IsSubtask)).ToList();
 
         foreach (var root in roots)
         {
             result.Add(root);
 
-            result.AddRange(todos
-                .Where(todo => todo.ParentId == root.Id)
-                .OrderBy(todo => todo.SortOrder)
-                .ThenBy(todo => todo.CreatedAt));
+            result.AddRange(OrderBySortThenDefault(todos.Where(todo => todo.ParentId == root.Id)));
         }
 
-        result.AddRange(todos
-            .Where(todo => todo.IsSubtask && roots.All(root => root.Id != todo.ParentId))
-            .OrderBy(todo => todo.SortOrder)
-            .ThenBy(todo => todo.CreatedAt));
+        result.AddRange(OrderBySortThenDefault(todos
+            .Where(todo => todo.IsSubtask && roots.All(root => root.Id != todo.ParentId))));
 
         return result;
     }
@@ -124,7 +115,7 @@ public sealed class TodoService
 
     public TodoItem CreateSubtask(string parentId, string title, string? note, DateOnly startDate, DateOnly? dueDate)
     {
-        var parent = _repository.GetById(parentId) ?? throw new InvalidOperationException("找不到父任务。");
+        var parent = _repository.GetById(parentId) ?? throw new InvalidOperationException("找不到主任务。");
         if (parent.IsSubtask)
         {
             throw new InvalidOperationException("暂时只支持二级子任务。");
@@ -137,7 +128,7 @@ public sealed class TodoService
 
         if (parent.Status != TodoStatus.Active)
         {
-            throw new InvalidOperationException("只有未完成的一级任务可以添加子任务。");
+            throw new InvalidOperationException("只有未完成的主任务可以添加子任务。");
         }
 
         return CreateTodo(title, note, startDate, dueDate, parent.Id, parent.GroupId);
@@ -194,6 +185,43 @@ public sealed class TodoService
         NotifyChanged();
     }
 
+    public void MoveRootTodosToGroup(IEnumerable<string> todoIds, string groupId)
+    {
+        if (string.IsNullOrWhiteSpace(groupId) || _repository.GetGroups().All(group => group.Id != groupId))
+        {
+            throw new InvalidOperationException("找不到目标任务组。");
+        }
+
+        var selectedIds = todoIds
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        if (selectedIds.Count == 0)
+        {
+            throw new InvalidOperationException("请选择要移动的主任务。");
+        }
+
+        var allTodos = _repository.Search(new TodoSearchCriteria { IncludeNoDue = true });
+        var selectedRoots = allTodos.Where(todo => selectedIds.Contains(todo.Id)).ToList();
+        if (selectedRoots.Count != selectedIds.Count || selectedRoots.Any(todo => todo.IsSubtask))
+        {
+            throw new InvalidOperationException("只能移动主任务，不能包含子任务。");
+        }
+
+        var now = DateTime.Now;
+        foreach (var root in selectedRoots)
+        {
+            MoveTodoToGroup(root, groupId, now);
+
+            foreach (var subtask in allTodos.Where(todo => todo.ParentId == root.Id))
+            {
+                MoveTodoToGroup(subtask, groupId, now);
+            }
+        }
+
+        NotifyChanged();
+    }
+
     public void Complete(string id)
     {
         var item = _repository.GetById(id) ?? throw new InvalidOperationException("找不到要完成的任务。");
@@ -219,10 +247,18 @@ public sealed class TodoService
     public void SoftDelete(string id)
     {
         var item = _repository.GetById(id) ?? throw new InvalidOperationException("找不到要删除的任务。");
-        item.Status = TodoStatus.Deleted;
-        item.DeletedAt = DateTime.Now;
-        item.UpdatedAt = DateTime.Now;
-        _repository.Update(item);
+        var now = DateTime.Now;
+        SoftDeleteItem(item, now);
+
+        if (!item.IsSubtask)
+        {
+            foreach (var subtask in _repository.Search(new TodoSearchCriteria { IncludeNoDue = true })
+                         .Where(todo => todo.ParentId == item.Id))
+            {
+                SoftDeleteItem(subtask, now);
+            }
+        }
+
         NotifyChanged();
     }
 
@@ -239,8 +275,33 @@ public sealed class TodoService
 
     public void DeletePermanent(string id)
     {
+        var item = _repository.GetById(id);
+        if (item is not null && !item.IsSubtask)
+        {
+            foreach (var subtask in _repository.Search(new TodoSearchCriteria { IncludeNoDue = true })
+                         .Where(todo => todo.ParentId == item.Id))
+            {
+                _repository.DeletePermanent(subtask.Id);
+            }
+        }
+
         _repository.DeletePermanent(id);
         NotifyChanged();
+    }
+
+    private void SoftDeleteItem(TodoItem item, DateTime deletedAt)
+    {
+        item.Status = TodoStatus.Deleted;
+        item.DeletedAt = deletedAt;
+        item.UpdatedAt = deletedAt;
+        _repository.Update(item);
+    }
+
+    private void MoveTodoToGroup(TodoItem item, string groupId, DateTime updatedAt)
+    {
+        item.GroupId = groupId;
+        item.UpdatedAt = updatedAt;
+        _repository.Update(item);
     }
 
     public bool TryReorderActiveTodo(string draggedId, string targetId, bool insertBefore)
@@ -276,7 +337,7 @@ public sealed class TodoService
             return false;
         }
 
-        var ordered = siblings.OrderBy(todo => todo.SortOrder).ThenBy(todo => todo.CreatedAt).ToList();
+        var ordered = OrderBySortThenDefault(siblings).ToList();
         ordered.RemoveAll(todo => todo.Id == dragged.Id);
         var targetIndex = ordered.FindIndex(todo => todo.Id == target.Id);
         if (targetIndex < 0)
@@ -313,6 +374,19 @@ public sealed class TodoService
 
         return trimmedName;
     }
+
+    private static IOrderedEnumerable<TodoItem> OrderBySortThenDefault(IEnumerable<TodoItem> todos)
+    {
+        return todos
+            .OrderBy(todo => HasSortOrder(todo) ? 0 : 1)
+            .ThenBy(todo => HasSortOrder(todo) ? todo.SortOrder : int.MaxValue)
+            .ThenBy(todo => todo.DueDate.HasValue ? 0 : 1)
+            .ThenBy(todo => todo.DueDate)
+            .ThenBy(todo => todo.StartDate)
+            .ThenBy(todo => todo.CreatedAt);
+    }
+
+    private static bool HasSortOrder(TodoItem todo) => todo.SortOrder > 0;
 
     private static string? NormalizeGroupDescription(string? description)
     {

@@ -14,7 +14,6 @@
         TextOptions.TextRenderingMode="ClearType"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
-        StateChanged="Window_StateChanged"
         Closing="Window_Closing">
     <Window.Resources>
         <ResourceDictionary>
@@ -60,13 +59,110 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
+
+        <Style x:Key="CenteredTaskGridTextBlockStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="TextAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="Text.Label.Compact" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource Text.Label}">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Height" Value="16" />
+            <Setter Property="Margin" Value="0,0,0,3" />
+        </Style>
+
+        <Style x:Key="FilterToggleButtonStyle" TargetType="{x:Type ToggleButton}">
+            <Setter Property="Height" Value="40" />
+            <Setter Property="MinWidth" Value="96" />
+            <Setter Property="Padding" Value="14,0,14,0" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform />
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ToggleButton}">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10">
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#F3F7FF" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#EEF5FF" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource Brush.Primary}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.96" ScaleY="0.96" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="HierarchyLevelPillStyle" TargetType="{x:Type Border}" BasedOn="{StaticResource Pill.NoDue}">
+            <Setter Property="MinWidth" Value="56" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Background" Value="#EEF5FF" />
+            <Setter Property="BorderBrush" Value="#CFE0FF" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSubtask}" Value="True">
+                    <Setter Property="Background" Value="#F8FAFE" />
+                    <Setter Property="BorderBrush" Value="#DDE5F2" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="HierarchyPillTextStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource Brush.Primary}" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSubtask}" Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource Brush.TextSecondary}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="SubtaskCountPillStyle" TargetType="{x:Type Border}" BasedOn="{StaticResource Pill.NoDue}">
+            <Setter Property="MinWidth" Value="96" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Background" Value="#F3F7FF" />
+            <Setter Property="BorderBrush" Value="#DCE7F7" />
+        </Style>
         </ResourceDictionary>
     </Window.Resources>
 
     <Grid Background="{StaticResource Brush.AppBg}">
         <Grid.RowDefinitions>
             <RowDefinition Height="96" />
-            <RowDefinition Height="244" />
+            <RowDefinition Height="132" />
             <RowDefinition Height="*" />
             <RowDefinition Height="92" />
         </Grid.RowDefinitions>
@@ -108,7 +204,7 @@
                                    FontSize="24"
                                    FontWeight="SemiBold"
                                    Foreground="{StaticResource Brush.TextPrimary}" />
-                        <TextBlock Text="管理任务、搜索历史、恢复已删除事项"
+                        <TextBlock Text="管理任务"
                                    Margin="0,6,0,0"
                                    FontSize="14"
                                    Foreground="{StaticResource Brush.TextSecondary}" />
@@ -175,130 +271,295 @@
 
         <Border Grid.Row="1"
                 Margin="24,0,24,0"
-                Height="244"
-                Padding="20,14,20,14"
+                Height="132"
+                Padding="16,12,16,10"
                 Background="{StaticResource Brush.Surface}"
                 BorderBrush="{StaticResource Brush.Border}"
                 BorderThickness="1"
-                CornerRadius="14"
+                CornerRadius="12"
                 Effect="{StaticResource Shadow.Card}">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="64" />
-                    <RowDefinition Height="12" />
-                    <RowDefinition Height="64" />
-                    <RowDefinition Height="14" />
                     <RowDefinition Height="58" />
+                    <RowDefinition Height="8" />
+                    <RowDefinition Height="34" />
                 </Grid.RowDefinitions>
 
-                <StackPanel Orientation="Horizontal">
-                    <StackPanel Width="420" Height="64">
-                        <TextBlock Text="关键词" Style="{StaticResource Text.Label}" />
-                        <Grid>
-                            <Path Width="18"
-                                  Height="18"
-                                  Margin="14,0,0,0"
-                                  HorizontalAlignment="Left"
-                                  VerticalAlignment="Center"
-                                  Data="M7.5,2 A5.5,5.5 0 1 0 7.5,13 A5.5,5.5 0 1 0 7.5,2 M11.5,11.5 L16,16"
-                                  Stroke="#70809A"
-                                  StrokeThickness="1.8"
-                                  StrokeStartLineCap="Round"
-                                  StrokeEndLineCap="Round"
-                                  Stretch="Uniform"
-                                  Panel.ZIndex="1" />
-                            <TextBox Text="{Binding Keyword, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource TextBox.Search}" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                                  VerticalScrollBarVisibility="Disabled">
+                        <StackPanel Orientation="Horizontal">
+                            <StackPanel Width="300" Height="58">
+                                <TextBlock Text="关键词" Style="{StaticResource Text.Label.Compact}" />
+                                <Grid>
+                                    <Path Width="16"
+                                          Height="16"
+                                          Margin="12,0,0,0"
+                                          HorizontalAlignment="Left"
+                                          VerticalAlignment="Center"
+                                          Data="M7.5,2 A5.5,5.5 0 1 0 7.5,13 A5.5,5.5 0 1 0 7.5,2 M11.5,11.5 L16,16"
+                                          Stroke="#70809A"
+                                          StrokeThickness="1.8"
+                                          StrokeStartLineCap="Round"
+                                          StrokeEndLineCap="Round"
+                                          IsHitTestVisible="False"
+                                          Stretch="Uniform"
+                                          Panel.ZIndex="1" />
+                                    <TextBox Height="36"
+                                             Padding="44,0,12,0"
+                                             Text="{Binding Keyword, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource TextBox.Search}" />
+                                </Grid>
+                            </StackPanel>
+
+                            <StackPanel Width="116" Height="58" Margin="12,0,0,0">
+                                <TextBlock Text="状态" Style="{StaticResource Text.Label.Compact}" />
+                                <ComboBox Height="36"
+                                          FontSize="13"
+                                          ItemsSource="{Binding StatusFilters}"
+                                          SelectedItem="{Binding SelectedStatusFilter}"
+                                          Style="{StaticResource ComboBox.Modern}" />
+                            </StackPanel>
+
+                            <StackPanel Width="210" Height="58" Margin="12,0,0,0">
+                                <StackPanel.Style>
+                                    <Style TargetType="{x:Type StackPanel}">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ShowDueDateFilter}" Value="False">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <TextBlock Text="计划完成" Style="{StaticResource Text.Label.Compact}" />
+                                <controls:ModernDateRangePicker Width="210"
+                                                                MinWidth="210"
+                                                                Height="36"
+                                                                FontSize="13"
+                                                                StartDate="{Binding DueDateFrom, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                EndDate="{Binding DueDateTo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+
+                            <CheckBox Content="含不限期"
+                                      IsChecked="{Binding IncludeNoDue}"
+                                      MinHeight="40"
+                                      Margin="12,18,0,0"
+                                      FontSize="13">
+                                <CheckBox.Style>
+                                    <Style TargetType="{x:Type CheckBox}" BasedOn="{StaticResource CheckBox.Modern}">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ShowDueDateFilter}" Value="False">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </CheckBox.Style>
+                            </CheckBox>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                Margin="14,18,0,0"
+                                VerticalAlignment="Top">
+                        <Grid Width="96" Height="40">
+                            <ToggleButton x:Name="FilterOptionsButton"
+                                          AutomationProperties.Name="筛选项"
+                                          Style="{StaticResource FilterToggleButtonStyle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Width="15"
+                                          Height="15"
+                                          Data="M2,4 L14,4 M4,8 L12,8 M6,12 L10,12"
+                                          Stroke="{StaticResource Brush.TextPrimary}"
+                                          StrokeThickness="1.8"
+                                          StrokeStartLineCap="Round"
+                                          StrokeEndLineCap="Round"
+                                          Stretch="Uniform" />
+                                    <TextBlock Text="筛选项" Margin="7,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </ToggleButton>
+                            <Popup IsOpen="{Binding IsChecked, ElementName=FilterOptionsButton, Mode=TwoWay}"
+                                   PlacementTarget="{Binding ElementName=FilterOptionsButton}"
+                                   Placement="Bottom"
+                                   HorizontalOffset="-280"
+                                   VerticalOffset="-2"
+                                   AllowsTransparency="True"
+                                   StaysOpen="False"
+                                   PopupAnimation="Fade">
+                                <Grid Margin="12">
+                                    <Border Width="376"
+                                            Padding="14"
+                                            Background="{StaticResource Brush.Surface}"
+                                            BorderBrush="{StaticResource Brush.Border}"
+                                            BorderThickness="1"
+                                            CornerRadius="12"
+                                            controls:RoundedClip.Enabled="True"
+                                            Effect="{StaticResource Shadow.Popup}">
+                                        <StackPanel>
+                                            <TextBlock Text="筛选条件"
+                                                       FontSize="13"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{StaticResource Brush.TextSecondary}" />
+                                            <WrapPanel Margin="0,10,0,0">
+                                                <CheckBox Content="计划完成"
+                                                          IsChecked="{Binding ShowDueDateFilter}"
+                                                          MinWidth="102"
+                                                          MinHeight="34"
+                                                          Style="{StaticResource CheckBox.Modern}" />
+                                                <CheckBox Content="起始日期"
+                                                          IsChecked="{Binding ShowStartDateFilter}"
+                                                          MinWidth="102"
+                                                          MinHeight="34"
+                                                          Style="{StaticResource CheckBox.Modern}" />
+                                                <CheckBox Content="创建时间"
+                                                          IsChecked="{Binding ShowCreatedAtFilter}"
+                                                          MinWidth="102"
+                                                          MinHeight="34"
+                                                          Style="{StaticResource CheckBox.Modern}" />
+                                                <CheckBox Content="更新时间"
+                                                          IsChecked="{Binding ShowUpdatedAtFilter}"
+                                                          MinWidth="102"
+                                                          MinHeight="34"
+                                                          Style="{StaticResource CheckBox.Modern}" />
+                                            </WrapPanel>
+
+                                            <CheckBox Content="包含不限期"
+                                                      IsChecked="{Binding IncludeNoDue}"
+                                                      MinHeight="34"
+                                                      Margin="0,4,0,0"
+                                                      Style="{StaticResource CheckBox.Modern}" />
+
+                                            <StackPanel Margin="0,10,0,0">
+                                                <StackPanel Margin="0,0,0,10">
+                                                    <StackPanel.Style>
+                                                        <Style TargetType="{x:Type StackPanel}">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding ShowStartDateFilter}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </StackPanel.Style>
+                                                    <TextBlock Text="起始日期" Style="{StaticResource Text.Label.Compact}" />
+                                                    <controls:ModernDateRangePicker Width="328"
+                                                                                    MinWidth="328"
+                                                                                    Height="36"
+                                                                                    FontSize="13"
+                                                                                    StartDate="{Binding StartDateFrom, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                                    EndDate="{Binding StartDateTo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                </StackPanel>
+
+                                                <StackPanel Margin="0,0,0,10">
+                                                    <StackPanel.Style>
+                                                        <Style TargetType="{x:Type StackPanel}">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding ShowCreatedAtFilter}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </StackPanel.Style>
+                                                    <TextBlock Text="创建时间" Style="{StaticResource Text.Label.Compact}" />
+                                                    <controls:ModernDateRangePicker Width="328"
+                                                                                    MinWidth="328"
+                                                                                    Height="36"
+                                                                                    FontSize="13"
+                                                                                    StartDate="{Binding CreatedAtFrom, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                                    EndDate="{Binding CreatedAtTo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                </StackPanel>
+
+                                                <StackPanel>
+                                                    <StackPanel.Style>
+                                                        <Style TargetType="{x:Type StackPanel}">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding ShowUpdatedAtFilter}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </StackPanel.Style>
+                                                    <TextBlock Text="更新时间" Style="{StaticResource Text.Label.Compact}" />
+                                                    <controls:ModernDateRangePicker Width="328"
+                                                                                    MinWidth="328"
+                                                                                    Height="36"
+                                                                                    FontSize="13"
+                                                                                    StartDate="{Binding UpdatedAtFrom, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                                    EndDate="{Binding UpdatedAtTo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </Popup>
                         </Grid>
+                        <Button Width="80"
+                                Height="40"
+                                Margin="10,0,0,0"
+                                Padding="14,0,14,0"
+                                Style="{StaticResource Button.Primary}"
+                                Command="{Binding RefreshCommand}"
+                                Content="搜索" />
+                        <Button Width="72"
+                                Height="40"
+                                Margin="10,0,0,0"
+                                Padding="12,0,12,0"
+                                Style="{StaticResource Button.Secondary}"
+                                Command="{Binding ClearFiltersCommand}"
+                                Content="清空" />
                     </StackPanel>
-                    <StackPanel Width="140" Height="64" Margin="16,0,0,0">
-                        <TextBlock Text="状态" Style="{StaticResource Text.Label}" />
-                        <ComboBox ItemsSource="{Binding StatusFilters}"
-                                  SelectedItem="{Binding SelectedStatusFilter}"
-                                  Style="{StaticResource ComboBox.Modern}" />
-                    </StackPanel>
-                    <StackPanel Width="176" Height="64" Margin="16,0,0,0">
-                        <TextBlock Text="起始日期从" Style="{StaticResource Text.Label}" />
-                        <controls:ModernDatePicker SelectedDate="{Binding StartDateFrom, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                   Placeholder="选择日期" />
-                    </StackPanel>
-                    <StackPanel Width="176" Height="64" Margin="16,0,0,0">
-                        <TextBlock Text="起始日期到" Style="{StaticResource Text.Label}" />
-                        <controls:ModernDatePicker SelectedDate="{Binding StartDateTo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                   Placeholder="选择日期" />
-                    </StackPanel>
-                    <StackPanel Width="124" Height="64" Margin="16,0,0,0" VerticalAlignment="Bottom">
-                        <CheckBox Content="包含不限期"
-                                  IsChecked="{Binding IncludeNoDue}"
-                                  Margin="0,22,0,0"
-                                  Style="{StaticResource CheckBox.Modern}" />
-                    </StackPanel>
-                </StackPanel>
+                </Grid>
 
-                <StackPanel Grid.Row="2" Orientation="Horizontal">
-                    <StackPanel Width="176" Height="64">
-                        <TextBlock Text="计划完成从" Style="{StaticResource Text.Label}" />
-                        <controls:ModernDatePicker SelectedDate="{Binding DueDateFrom, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                   Placeholder="选择日期" />
-                    </StackPanel>
-                    <StackPanel Width="176" Height="64" Margin="16,0,0,0">
-                        <TextBlock Text="计划完成到" Style="{StaticResource Text.Label}" />
-                        <controls:ModernDatePicker SelectedDate="{Binding DueDateTo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                   Placeholder="选择日期" />
-                    </StackPanel>
-                    <StackPanel Width="176" Height="64" Margin="16,0,0,0">
-                        <TextBlock Text="创建从" Style="{StaticResource Text.Label}" />
-                        <controls:ModernDatePicker SelectedDate="{Binding CreatedAtFrom, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                   Placeholder="选择日期" />
-                    </StackPanel>
-                    <StackPanel Width="176" Height="64" Margin="16,0,0,0">
-                        <TextBlock Text="更新从" Style="{StaticResource Text.Label}" />
-                        <controls:ModernDatePicker SelectedDate="{Binding UpdatedAtFrom, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                   Placeholder="选择日期" />
-                    </StackPanel>
-                    <StackPanel Width="176" Height="64" Margin="16,0,0,0">
-                        <TextBlock Text="更新到" Style="{StaticResource Text.Label}" />
-                        <controls:ModernDatePicker SelectedDate="{Binding UpdatedAtTo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                   Placeholder="选择日期" />
-                    </StackPanel>
-                    <Button Width="96"
-                            Margin="16,22,0,0"
-                            Style="{StaticResource Button.Primary}"
-                            Command="{Binding RefreshCommand}"
-                            Content="搜索" />
-                    <Button Width="80"
-                            Margin="16,22,0,0"
-                            Style="{StaticResource Button.Secondary}"
-                            Command="{Binding ClearFiltersCommand}"
-                            Content="清空" />
-                </StackPanel>
-
-                <ScrollViewer Grid.Row="4"
+                <ScrollViewer Grid.Row="2"
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Disabled">
                     <ItemsControl ItemsSource="{Binding GroupSummaries}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <WrapPanel Orientation="Horizontal" />
+                                <StackPanel Orientation="Horizontal" />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Height="40"
-                                        MinWidth="156"
-                                        Margin="0,0,10,0"
-                                        Padding="12,0,12,0"
-                                        Background="#F7FAFF"
-                                        BorderBrush="#DCE7F7"
+                                <Border Height="32"
+                                        MinWidth="132"
+                                        Margin="0,0,8,0"
+                                        Padding="10,0,10,0"
+                                        Cursor="Hand"
                                         BorderThickness="1"
-                                        CornerRadius="10">
+                                        CornerRadius="8"
+                                        MouseLeftButtonUp="GroupSummary_MouseLeftButtonUp">
+                                    <Border.Style>
+                                        <Style TargetType="{x:Type Border}">
+                                            <Setter Property="Background" Value="#F7FAFF" />
+                                            <Setter Property="BorderBrush" Value="#DCE7F7" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="Background" Value="#EEF5FF" />
+                                                    <Setter Property="BorderBrush" Value="{StaticResource Brush.Primary}" />
+                                                </DataTrigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#F3F7FF" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Border Width="24"
-                                                Height="24"
-                                                CornerRadius="7"
+                                        <Border Width="22"
+                                                Height="22"
+                                                CornerRadius="6"
                                                 Background="{Binding IconBackground}">
-                                            <Path Width="14"
-                                                  Height="14"
+                                            <Path Width="13"
+                                                  Height="13"
                                                   Data="{Binding IconGeometry}"
                                                   Stroke="{Binding IconForeground}"
                                                   StrokeThickness="1.7"
@@ -311,15 +572,17 @@
                                         </Border>
                                         <TextBlock Text="{Binding Name}"
                                                    Margin="8,0,0,0"
-                                                   MaxWidth="92"
+                                                   MaxWidth="82"
+                                                   FontSize="13"
                                                    FontWeight="SemiBold"
                                                    Foreground="{StaticResource Brush.TextPrimary}"
                                                    TextTrimming="CharacterEllipsis"
                                                    VerticalAlignment="Center" />
                                         <TextBlock Text="{Binding CountText}"
-                                                   Margin="10,0,0,0"
-                                                   FontSize="12"
+                                                   Margin="8,0,0,0"
+                                                   FontSize="11"
                                                    Foreground="{StaticResource Brush.TextSecondary}"
+                                                   Typography.NumeralAlignment="Tabular"
                                                    VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Border>
@@ -331,21 +594,137 @@
         </Border>
 
         <Border Grid.Row="2"
-                Margin="24,16,24,0"
+                Margin="24,10,24,0"
                 Background="{StaticResource Brush.Surface}"
                 BorderBrush="{StaticResource Brush.Border}"
                 BorderThickness="1"
                 CornerRadius="14"
                 Effect="{StaticResource Shadow.Card}"
                 ClipToBounds="True">
-            <DataGrid x:Name="TaskGrid"
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="0" />
+                    <ColumnDefinition Width="218" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="1"
+                        Width="218"
+                        Panel.ZIndex="10"
+                        Background="{StaticResource Brush.Surface}"
+                        BorderBrush="{StaticResource Brush.BorderLight}"
+                        BorderThickness="0">
+                    <DataGrid x:Name="PinnedActionGrid"
+                          Tag="PinnedActionColumn"
+                          ClipToBounds="True"
+                          ItemsSource="{Binding Todos}"
+                          Style="{StaticResource DataGrid.Modern}"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          RowHeight="54"
+                          ColumnHeaderHeight="48"
+                          RowStyle="{StaticResource ModernTaskDataGridRowStyle}"
+                          CellStyle="{StaticResource ModernTaskDataGridCellStyle}"
+                          FocusVisualStyle="{x:Null}"
+                          EnableRowVirtualization="True"
+                          EnableColumnVirtualization="False"
+                          CanUserResizeColumns="False"
+                          CanUserSortColumns="False"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.CanContentScroll="True"
+                          HorizontalGridLinesBrush="Transparent"
+                          VerticalGridLinesBrush="Transparent"
+                          Loaded="PinnedActionGrid_Loaded"
+                          SelectionChanged="PinnedActionGrid_SelectionChanged">
+                    <DataGrid.Resources>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="Transparent" />
+                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#111827" />
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="Transparent" />
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#111827" />
+                        <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource ModernScrollBarStyle}" />
+                    </DataGrid.Resources>
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="操作"
+                                                Width="204"
+                                                MinWidth="204"
+                                                MaxWidth="204"
+                                                CanUserResize="False"
+                                                CanUserSort="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <StackPanel.Style>
+                                                <Style TargetType="{x:Type StackPanel}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding StatusText}" Value="已删除">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </StackPanel.Style>
+                                            <Button Width="72"
+                                                    Height="34"
+                                                    Padding="10,0,10,0"
+                                                    Style="{StaticResource Button.Secondary}"
+                                                    Click="RowEditButton_Click"
+                                                    Content="编辑" />
+                                            <Button Width="72"
+                                                    Height="34"
+                                                    Margin="8,0,0,0"
+                                                    Padding="10,0,10,0"
+                                                    Style="{StaticResource Button.Danger}"
+                                                    Click="RowSoftDeleteButton_Click"
+                                                    Content="删除" />
+                                        </StackPanel>
+
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <StackPanel.Style>
+                                                <Style TargetType="{x:Type StackPanel}">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding StatusText}" Value="已删除">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </StackPanel.Style>
+                                            <Button Width="72"
+                                                    Height="34"
+                                                    Padding="10,0,10,0"
+                                                    Style="{StaticResource Button.Purple}"
+                                                    Click="RowRestoreButton_Click"
+                                                    Content="恢复" />
+                                            <Button Width="88"
+                                                    Height="34"
+                                                    Margin="8,0,0,0"
+                                                    Padding="10,0,10,0"
+                                                    Style="{StaticResource Button.Danger}"
+                                                    Click="RowPermanentDeleteButton_Click"
+                                                    Content="彻底删除" />
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+
+                <DataGrid x:Name="TaskGrid"
+                      Grid.Column="0"
+                      Panel.ZIndex="0"
+                      Tag="ScrollableTaskColumns"
+                      ClipToBounds="True"
+                      MinWidth="0"
                       ItemsSource="{Binding Todos}"
                       SelectedItem="{Binding SelectedTodo}"
                       Style="{StaticResource DataGrid.Modern}"
                       IsReadOnly="True"
                       SelectionMode="Single"
-                      RowHeight="58"
-                      ColumnHeaderHeight="52"
+                      RowHeight="54"
+                      ColumnHeaderHeight="48"
                       RowStyle="{StaticResource ModernTaskDataGridRowStyle}"
                       CellStyle="{StaticResource ModernTaskDataGridCellStyle}"
                       FocusVisualStyle="{x:Null}"
@@ -354,10 +733,11 @@
                       CanUserResizeColumns="True"
                       CanUserSortColumns="True"
                       ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                      ScrollViewer.VerticalScrollBarVisibility="Hidden"
                       ScrollViewer.CanContentScroll="True"
                       HorizontalGridLinesBrush="Transparent"
                       VerticalGridLinesBrush="Transparent"
+                      Loaded="TaskGrid_Loaded"
                       SelectionChanged="TaskGrid_SelectionChanged"
                       Sorting="TaskGrid_Sorting"
                       AllowDrop="True"
@@ -370,13 +750,14 @@
                     <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#111827" />
                     <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="Transparent" />
                     <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#111827" />
+                    <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource CenteredTaskGridTextBlockStyle}" />
                     <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource ModernScrollBarStyle}" />
                 </DataGrid.Resources>
                 <DataGrid.Columns>
                     <DataGridTemplateColumn x:Name="SelectionColumn"
                                             Header=""
-                                            Width="44"
-                                            MinWidth="44"
+                                            Width="0"
+                                            MinWidth="0"
                                             CanUserResize="False"
                                             CanUserSort="False"
                                             Visibility="Collapsed">
@@ -390,28 +771,61 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTemplateColumn Width="220" MinWidth="160" SortMemberPath="Title">
+                    <DataGridTemplateColumn Width="390" MinWidth="340" SortMemberPath="Title">
+                        <DataGridTemplateColumn.HeaderStyle>
+                            <Style TargetType="{x:Type DataGridColumnHeader}" BasedOn="{StaticResource DataGrid.Header.Modern}">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            </Style>
+                        </DataGridTemplateColumn.HeaderStyle>
                         <DataGridTemplateColumn.Header>
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Button Width="56"
-                                        Height="30"
-                                        Padding="8,0,8,0"
-                                        Style="{StaticResource Button.Secondary}"
-                                        Click="ToggleMultiSelectButton_Click"
-                                        Content="{Binding DataContext.MultiSelectButtonText, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                <TextBlock Text="标题" Margin="10,0,0,0" VerticalAlignment="Center" />
-                            </StackPanel>
+                            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                                <CheckBox HorizontalAlignment="Left"
+                                          VerticalAlignment="Center"
+                                          MinWidth="76"
+                                          MinHeight="40"
+                                          Content="多选"
+                                          IsChecked="{Binding DataContext.IsMultiSelectMode, RelativeSource={RelativeSource AncestorType=DataGrid}, Mode=TwoWay}"
+                                          Style="{StaticResource CheckBox.Modern}"
+                                          Click="MultiSelectCheckBox_Click" />
+                                <TextBlock Text="任务结构"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                            </Grid>
                         </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Grid>
+                                <Grid MinHeight="54">
                                     <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="40" />
                                         <ColumnDefinition Width="28" />
+                                        <ColumnDefinition Width="38" />
                                         <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <Button Width="24"
+                                    <CheckBox IsChecked="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected, Mode=TwoWay}"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Center"
+                                              Width="40"
+                                              Height="40"
+                                              Margin="0"
+                                              PreviewMouseLeftButtonDown="RowSelectionCheckBox_PreviewMouseLeftButtonDown">
+                                        <CheckBox.Style>
+                                            <Style TargetType="{x:Type CheckBox}" BasedOn="{StaticResource CheckBox.Modern}">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding DataContext.IsMultiSelectMode, RelativeSource={RelativeSource AncestorType=DataGrid}}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </CheckBox.Style>
+                                    </CheckBox>
+                                    <Button Grid.Column="1"
+                                            Width="24"
                                             Height="24"
                                             Padding="0"
+                                            FontSize="16"
+                                            FontWeight="Bold"
                                             Content="{Binding ExpandButtonText}"
                                             Click="ToggleSubtasksButton_Click">
                                         <Button.Style>
@@ -427,21 +841,155 @@
                                             </Style>
                                         </Button.Style>
                                     </Button>
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding TitleDisplayText}"
-                                               FontWeight="SemiBold"
-                                               Foreground="{StaticResource Brush.TextPrimary}"
-                                               TextTrimming="CharacterEllipsis"
-                                               VerticalAlignment="Center" />
+
+                                    <Grid Grid.Column="2"
+                                          Width="34"
+                                          Height="44"
+                                          HorizontalAlignment="Left"
+                                          VerticalAlignment="Center">
+                                        <Border Width="26"
+                                                Height="24"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Center"
+                                                Background="{StaticResource Brush.Primary50}"
+                                                BorderBrush="#CFE0FF"
+                                                BorderThickness="1"
+                                                CornerRadius="7">
+                                            <Border.Style>
+                                                <Style TargetType="{x:Type Border}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSubtask}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <Path Width="16"
+                                                  Height="13"
+                                                  Data="M2,5 L7,5 L8.7,7 L14,7 L14,13 L2,13 Z"
+                                                  Stroke="{StaticResource Brush.Primary}"
+                                                  Fill="#DCE9FF"
+                                                  StrokeThickness="1.4"
+                                                  StrokeLineJoin="Round"
+                                                  Stretch="Uniform"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                                        </Border>
+
+                                        <Grid>
+                                            <Grid.Style>
+                                                <Style TargetType="{x:Type Grid}">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSubtask}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Grid.Style>
+                                            <Path Data="M5,-4 L5,22 L14,22"
+                                                  Stroke="#B9CDFC"
+                                                  StrokeThickness="1.5"
+                                                  StrokeDashArray="2 2"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  Stretch="None" />
+                                            <Border Width="20"
+                                                    Height="20"
+                                                    Margin="12,0,0,0"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Center"
+                                                    Background="#FFFFFF"
+                                                    BorderBrush="#B8C4D6"
+                                                    BorderThickness="1.6"
+                                                    CornerRadius="10">
+                                                <Path Width="11"
+                                                      Height="8"
+                                                      Data="M1,4 L4,7 L10,1"
+                                                      Stroke="{StaticResource Brush.Primary}"
+                                                      StrokeThickness="1.8"
+                                                      StrokeStartLineCap="Round"
+                                                      StrokeEndLineCap="Round"
+                                                      Stretch="Uniform">
+                                                    <Path.Style>
+                                                        <Style TargetType="{x:Type Path}">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding StatusText}" Value="已完成">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Path.Style>
+                                                </Path>
+                                            </Border>
+                                        </Grid>
+                                    </Grid>
+
+                                    <StackPanel Grid.Column="3"
+                                                VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Title}"
+                                                   FontSize="14"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource Brush.TextPrimary}"
+                                                   HorizontalAlignment="Stretch"
+                                                   TextAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding ParentDisplayText}"
+                                                   Margin="0,4,0,0"
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource Brush.TextSecondary}"
+                                                   HorizontalAlignment="Stretch"
+                                                   TextAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis">
+                                            <TextBlock.Style>
+                                                <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource CenteredTaskGridTextBlockStyle}">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSubtask}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="4"
+                                                Orientation="Horizontal"
+                                                Margin="12,0,0,0"
+                                                VerticalAlignment="Center">
+                                        <Border Style="{StaticResource HierarchyLevelPillStyle}">
+                                            <TextBlock Text="{Binding LevelText}" Style="{StaticResource HierarchyPillTextStyle}" />
+                                        </Border>
+                                        <Border Margin="8,0,0,0">
+                                            <Border.Style>
+                                                <Style TargetType="{x:Type Border}" BasedOn="{StaticResource SubtaskCountPillStyle}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasSubtasks}" Value="False">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock Text="{Binding SubtaskCountText}"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{StaticResource Brush.Primary}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center" />
+                                        </Border>
+                                    </StackPanel>
                                 </Grid>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="层级" Binding="{Binding LevelText}" Width="88" MinWidth="72" SortMemberPath="IsSubtask" />
                     <DataGridTextColumn Header="任务组" Binding="{Binding GroupDisplayText}" Width="112" MinWidth="88" SortMemberPath="GroupDisplayText" />
                     <DataGridTextColumn Header="备注" Binding="{Binding Note}" Width="140" MinWidth="96" SortMemberPath="Note">
                         <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="{x:Type TextBlock}">
+                            <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource CenteredTaskGridTextBlockStyle}">
                                 <Setter Property="TextTrimming" Value="CharacterEllipsis" />
                                 <Setter Property="VerticalAlignment" Value="Center" />
                             </Style>
@@ -451,7 +999,7 @@
                     <DataGridTemplateColumn Header="状态" Width="90" MinWidth="78" SortMemberPath="Status">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Border Style="{StaticResource StatusPillStyle}">
+                                <Border HorizontalAlignment="Center" Style="{StaticResource StatusPillStyle}">
                                     <TextBlock Text="{Binding StatusText}" Style="{StaticResource StatusPillTextStyle}" />
                                 </Border>
                             </DataTemplate>
@@ -466,7 +1014,7 @@
                                 <Grid>
                                     <TextBlock Text="{Binding DueDateText}" VerticalAlignment="Center">
                                         <TextBlock.Style>
-                                            <Style TargetType="{x:Type TextBlock}">
+                                            <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource CenteredTaskGridTextBlockStyle}">
                                                 <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
                                                 <Setter Property="Visibility" Value="Visible" />
                                                 <Style.Triggers>
@@ -477,7 +1025,7 @@
                                             </Style>
                                         </TextBlock.Style>
                                     </TextBlock>
-                                    <Border>
+                                    <Border HorizontalAlignment="Center">
                                         <Border.Style>
                                             <Style TargetType="{x:Type Border}" BasedOn="{StaticResource Pill.NoDue}">
                                                 <Setter Property="Visibility" Value="Collapsed" />
@@ -519,7 +1067,7 @@
                             <DataTemplate>
                                 <TextBlock Text="{Binding CompletedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}, TargetNullValue=—}" VerticalAlignment="Center">
                                     <TextBlock.Style>
-                                        <Style TargetType="{x:Type TextBlock}">
+                                        <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource CenteredTaskGridTextBlockStyle}">
                                             <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding CompletedAt}" Value="{x:Null}">
@@ -537,7 +1085,7 @@
                             <DataTemplate>
                                 <TextBlock Text="{Binding DeletedAt, StringFormat={}{0:yyyy-MM-dd}, TargetNullValue=—}" VerticalAlignment="Center">
                                     <TextBlock.Style>
-                                        <Style TargetType="{x:Type TextBlock}">
+                                        <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource CenteredTaskGridTextBlockStyle}">
                                             <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding DeletedAt}" Value="{x:Null}">
@@ -551,67 +1099,10 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTemplateColumn Header="操作" Width="204" MinWidth="190" CanUserSort="False">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                        <StackPanel.Style>
-                                            <Style TargetType="{x:Type StackPanel}">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding StatusText}" Value="已删除">
-                                                        <Setter Property="Visibility" Value="Collapsed" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </StackPanel.Style>
-                                        <Button Width="72"
-                                                Height="34"
-                                                Padding="10,0,10,0"
-                                                Style="{StaticResource Button.Secondary}"
-                                                Click="RowEditButton_Click"
-                                                Content="编辑" />
-                                        <Button Width="72"
-                                                Height="34"
-                                                Margin="8,0,0,0"
-                                                Padding="10,0,10,0"
-                                                Style="{StaticResource Button.Danger}"
-                                                Click="RowSoftDeleteButton_Click"
-                                                Content="删除" />
-                                    </StackPanel>
-
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                        <StackPanel.Style>
-                                            <Style TargetType="{x:Type StackPanel}">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding StatusText}" Value="已删除">
-                                                        <Setter Property="Visibility" Value="Visible" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </StackPanel.Style>
-                                        <Button Width="72"
-                                                Height="34"
-                                                Padding="10,0,10,0"
-                                                Style="{StaticResource Button.Purple}"
-                                                Click="RowRestoreButton_Click"
-                                                Content="恢复" />
-                                        <Button Width="88"
-                                                Height="34"
-                                                Margin="8,0,0,0"
-                                                Padding="10,0,10,0"
-                                                Style="{StaticResource Button.Danger}"
-                                                Click="RowPermanentDeleteButton_Click"
-                                                Content="彻底删除" />
-                                    </StackPanel>
-                                </Grid>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
+
+            </Grid>
         </Border>
 
         <Border Grid.Row="3"
@@ -632,28 +1123,54 @@
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock Text="{Binding SelectedCountText}"
                                FontSize="14"
-                               Foreground="{StaticResource Brush.TextSecondary}" />
+                               Foreground="{StaticResource Brush.TextSecondary}"
+                               Typography.NumeralAlignment="Tabular" />
                     <TextBlock Text="{Binding TotalCountText}"
                                Margin="0,4,0,0"
                                FontSize="13"
-                               Foreground="{StaticResource Brush.TextTertiary}" />
+                               Foreground="{StaticResource Brush.TextTertiary}"
+                               Typography.NumeralAlignment="Tabular" />
                 </StackPanel>
                 <StackPanel Grid.Column="1"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center">
                     <Button Width="116"
-                            Style="{StaticResource Button.Secondary}"
-                            IsEnabled="{Binding HasSingleSelection}"
                             Click="AddSubtaskButton_Click"
-                            Content="添加子任务" />
+                            Content="添加子任务">
+                        <Button.Style>
+                            <Style TargetType="{x:Type Button}" BasedOn="{StaticResource Button.Secondary}">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CanAddSubtask}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Width="132"
+                            Margin="12,0,0,0"
+                            IsEnabled="{Binding CanMoveSelectedTodosToGroup}"
+                            Click="MoveToGroupButton_Click"
+                            Content="移动到任务组">
+                        <Button.Style>
+                            <Style TargetType="{x:Type Button}" BasedOn="{StaticResource Button.Purple}">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ShowMoveToGroupButton}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                     <Button Width="120"
                             Margin="12,0,0,0"
                             Style="{StaticResource Button.Success}"
                             IsEnabled="{Binding CanApplyBatchStatusAction}"
                             Click="CompleteButton_Click"
                             Content="标记完成" />
-                    <Border Width="1" Height="28" Margin="16,0,4,0" Background="{StaticResource Brush.Border}" />
                     <Button Width="132"
                             Margin="12,0,0,0"
                             Style="{StaticResource Button.Warning}"

@@ -19,10 +19,12 @@ public partial class MainWindow : Window
     private readonly WindowLevelService _windowLevelService;
     private readonly MainViewModel _viewModel;
     private bool _allowClose;
-    private bool _wasMinimized;
-    private bool _suppressFloatingOnRestore;
     private System.Windows.Point? _taskGridDragStart;
     private TodoItem? _taskGridDraggedTodo;
+    private ScrollViewer? _taskGridScrollViewer;
+    private ScrollViewer? _pinnedActionGridScrollViewer;
+    private bool _isSyncingGridScroll;
+    private bool _isSyncingGridSelection;
 
     public MainWindow(TodoService todoService, FloatingTaskWindow floatingWindow, WindowLevelService windowLevelService)
     {
@@ -33,7 +35,7 @@ public partial class MainWindow : Window
         _windowLevelService = windowLevelService;
         _viewModel = new MainViewModel(todoService);
         DataContext = _viewModel;
-        ApplySortIndicators(MainViewModel.DefaultSortMemberPath, ListSortDirection.Ascending);
+        ClearSortIndicators();
     }
 
     public void OpenFromUserRequest()
@@ -43,7 +45,6 @@ public partial class MainWindow : Window
             Show();
         }
 
-        _suppressFloatingOnRestore = WindowState == WindowState.Minimized;
         WindowState = WindowState.Normal;
         Activate();
         Topmost = true;
@@ -123,6 +124,57 @@ public partial class MainWindow : Window
         }
     }
 
+    private void MoveToGroupButton_Click(object sender, RoutedEventArgs e)
+    {
+        var selectedTodos = GetSelectedTodos();
+        if (selectedTodos.Count == 0)
+        {
+            ConfirmDialogWindow.ShowInfo(this, "没有选中任务", "请先选择一个或多个主任务。");
+            return;
+        }
+
+        if (selectedTodos.Any(todo => todo.IsSubtask))
+        {
+            ConfirmDialogWindow.ShowInfo(this, "不能移动子任务", "移动到任务组只支持主任务，请取消勾选子任务后再操作。");
+            return;
+        }
+
+        var dialog = new MoveToGroupDialogWindow(_todoService.GetGroups(), selectedTodos.Count) { Owner = this };
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        var confirmDialog = new ConfirmDialogWindow
+        {
+            Owner = this,
+            TitleText = "确认移动",
+            MessageText = $"确定将 {selectedTodos.Count} 个主任务移动到「{dialog.TargetGroupName}」吗？\n这些主任务下的子任务会一起移动。",
+            ConfirmText = "确认移动",
+            CancelText = "取消"
+        };
+
+        if (confirmDialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            var targetGroupId = dialog.SelectedGroupId;
+            if (dialog.CreateNewGroup)
+            {
+                targetGroupId = _todoService.CreateGroup(dialog.NewGroupName, dialog.NewGroupIconKey).Id;
+            }
+
+            _todoService.MoveRootTodosToGroup(selectedTodos.Select(todo => todo.Id), targetGroupId!);
+        }
+        catch (InvalidOperationException ex)
+        {
+            ConfirmDialogWindow.ShowInfo(this, "移动失败", ex.Message);
+        }
+    }
+
     private void RowSoftDeleteButton_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.DataContext is TodoItem todo)
@@ -147,35 +199,75 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ToggleMultiSelectButton_Click(object sender, RoutedEventArgs e)
+    private void MultiSelectCheckBox_Click(object sender, RoutedEventArgs e)
     {
-        var enableMultiSelect = !_viewModel.IsMultiSelectMode;
+        e.Handled = true;
+        var enableMultiSelect = (sender as System.Windows.Controls.CheckBox)?.IsChecked == true;
         var selectedTodo = TaskGrid.SelectedItems.Cast<TodoItem>().FirstOrDefault();
 
         if (!enableMultiSelect)
         {
-            TaskGrid.SelectedItems.Clear();
+            if (TaskGrid.SelectionMode == DataGridSelectionMode.Extended)
+            {
+                TaskGrid.SelectedItems.Clear();
+            }
+            else
+            {
+                TaskGrid.SelectedItem = null;
+            }
         }
 
         _viewModel.IsMultiSelectMode = enableMultiSelect;
-        SelectionColumn.Visibility = enableMultiSelect ? Visibility.Visible : Visibility.Collapsed;
         TaskGrid.SelectionMode = enableMultiSelect ? DataGridSelectionMode.Extended : DataGridSelectionMode.Single;
+        PinnedActionGrid.SelectionMode = enableMultiSelect ? DataGridSelectionMode.Extended : DataGridSelectionMode.Single;
 
         if (!enableMultiSelect && selectedTodo is not null)
         {
             TaskGrid.SelectedItem = selectedTodo;
         }
 
-        _viewModel.SelectedCount = TaskGrid.SelectedItems.Count;
+        UpdateSelectionFromTaskGrid();
+        SyncPinnedActionGridSelection();
+    }
+
+    private void RowSelectionCheckBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not TodoItem todo)
+        {
+            return;
+        }
+
+        if (TaskGrid.SelectedItems.Contains(todo))
+        {
+            TaskGrid.SelectedItems.Remove(todo);
+        }
+        else
+        {
+            TaskGrid.SelectedItems.Add(todo);
+        }
+
+        UpdateSelectionFromTaskGrid();
+        e.Handled = true;
+    }
+
+    private void GroupSummary_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is TodoGroupSummary summary)
+        {
+            _viewModel.ToggleGroupFilter(summary);
+        }
     }
 
     private void SoftDeleteTodo(TodoItem todo)
     {
+        var messageText = todo.IsSubtask
+            ? "确定要删除这个任务吗？任务会移入已删除列表。"
+            : "确定要删除这个主任务吗？它对应的所有子任务也会一起移入已删除列表。";
         var dialog = new ConfirmDialogWindow
         {
             Owner = this,
             TitleText = "确认删除",
-            MessageText = "确定要删除这个任务吗？任务会移入已删除列表。",
+            MessageText = messageText,
             ConfirmText = "确认删除",
             CancelText = "取消"
         };
@@ -205,11 +297,14 @@ public partial class MainWindow : Window
 
     private void PermanentDeleteTodo(TodoItem todo)
     {
+        var messageText = todo.IsSubtask
+            ? "确定要彻底删除这个任务吗？此操作不可恢复。"
+            : "确定要彻底删除这个主任务吗？它对应的所有子任务也会一起彻底删除，此操作不可恢复。";
         var dialog = new ConfirmDialogWindow
         {
             Owner = this,
             TitleText = "彻底删除",
-            MessageText = "确定要彻底删除这个任务吗？此操作不可恢复。",
+            MessageText = messageText,
             ConfirmText = "确认删除",
             CancelText = "取消"
         };
@@ -227,7 +322,151 @@ public partial class MainWindow : Window
 
     private void TaskGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        _viewModel.SelectedCount = TaskGrid.SelectedItems.Count;
+        if (_isSyncingGridSelection)
+        {
+            return;
+        }
+
+        UpdateSelectionFromTaskGrid();
+        SyncPinnedActionGridSelection();
+    }
+
+    private void PinnedActionGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (_isSyncingGridSelection)
+        {
+            return;
+        }
+
+        SyncTaskGridSelectionFromPinnedActionGrid();
+    }
+
+    private void TaskGrid_Loaded(object sender, RoutedEventArgs e)
+    {
+        _taskGridScrollViewer = FindDescendant<ScrollViewer>(TaskGrid);
+        if (_taskGridScrollViewer is null)
+        {
+            return;
+        }
+
+        _taskGridScrollViewer.ScrollChanged -= TaskGridScrollViewer_ScrollChanged;
+        _taskGridScrollViewer.ScrollChanged += TaskGridScrollViewer_ScrollChanged;
+        SyncScrollViewer(_pinnedActionGridScrollViewer, _taskGridScrollViewer.VerticalOffset);
+    }
+
+    private void PinnedActionGrid_Loaded(object sender, RoutedEventArgs e)
+    {
+        _pinnedActionGridScrollViewer = FindDescendant<ScrollViewer>(PinnedActionGrid);
+        if (_pinnedActionGridScrollViewer is null)
+        {
+            return;
+        }
+
+        _pinnedActionGridScrollViewer.ScrollChanged -= PinnedActionGridScrollViewer_ScrollChanged;
+        _pinnedActionGridScrollViewer.ScrollChanged += PinnedActionGridScrollViewer_ScrollChanged;
+        SyncScrollViewer(_pinnedActionGridScrollViewer, _taskGridScrollViewer?.VerticalOffset ?? 0);
+        SyncPinnedActionGridSelection();
+    }
+
+    private void TaskGridScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        if (Math.Abs(e.VerticalChange) < double.Epsilon &&
+            Math.Abs(e.ExtentHeightChange) < double.Epsilon &&
+            Math.Abs(e.ViewportHeightChange) < double.Epsilon)
+        {
+            return;
+        }
+
+        SyncScrollViewer(_pinnedActionGridScrollViewer, e.VerticalOffset);
+    }
+
+    private void PinnedActionGridScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        if (Math.Abs(e.VerticalChange) < double.Epsilon &&
+            Math.Abs(e.ExtentHeightChange) < double.Epsilon &&
+            Math.Abs(e.ViewportHeightChange) < double.Epsilon)
+        {
+            return;
+        }
+
+        SyncScrollViewer(_taskGridScrollViewer, e.VerticalOffset);
+    }
+
+    private void SyncScrollViewer(ScrollViewer? target, double verticalOffset)
+    {
+        if (_isSyncingGridScroll || target is null || Math.Abs(target.VerticalOffset - verticalOffset) < 0.01)
+        {
+            return;
+        }
+
+        try
+        {
+            _isSyncingGridScroll = true;
+            target.ScrollToVerticalOffset(verticalOffset);
+        }
+        finally
+        {
+            _isSyncingGridScroll = false;
+        }
+    }
+
+    private void SyncPinnedActionGridSelection()
+    {
+        var selectedTodos = TaskGrid.SelectedItems.Cast<TodoItem>().ToList();
+        if (PinnedActionGrid.SelectionMode == DataGridSelectionMode.Single && selectedTodos.Count > 1)
+        {
+            selectedTodos = selectedTodos.Take(1).ToList();
+        }
+
+        try
+        {
+            _isSyncingGridSelection = true;
+
+            if (PinnedActionGrid.SelectionMode == DataGridSelectionMode.Single)
+            {
+                PinnedActionGrid.SelectedItem = selectedTodos.FirstOrDefault();
+                return;
+            }
+
+            PinnedActionGrid.SelectedItems.Clear();
+            foreach (var todo in selectedTodos)
+            {
+                PinnedActionGrid.SelectedItems.Add(todo);
+            }
+        }
+        finally
+        {
+            _isSyncingGridSelection = false;
+        }
+    }
+
+    private void SyncTaskGridSelectionFromPinnedActionGrid()
+    {
+        var selectedTodos = PinnedActionGrid.SelectedItems.Cast<TodoItem>().ToList();
+
+        try
+        {
+            _isSyncingGridSelection = true;
+
+            if (TaskGrid.SelectionMode == DataGridSelectionMode.Single)
+            {
+                TaskGrid.SelectedItem = PinnedActionGrid.SelectedItem as TodoItem;
+            }
+            else
+            {
+                TaskGrid.SelectedItems.Clear();
+                foreach (var todo in selectedTodos)
+                {
+                    TaskGrid.SelectedItems.Add(todo);
+                }
+            }
+        }
+        finally
+        {
+            _isSyncingGridSelection = false;
+        }
+
+        UpdateSelectionFromTaskGrid();
     }
 
     private void TaskGrid_Sorting(object sender, DataGridSortingEventArgs e)
@@ -239,6 +478,13 @@ public partial class MainWindow : Window
         }
 
         e.Handled = true;
+        if (e.Column.SortDirection == ListSortDirection.Descending)
+        {
+            _viewModel.ClearManualSort();
+            ClearSortIndicators();
+            return;
+        }
+
         var direction = e.Column.SortDirection == ListSortDirection.Ascending
             ? ListSortDirection.Descending
             : ListSortDirection.Ascending;
@@ -320,27 +566,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private void Window_StateChanged(object? sender, EventArgs e)
-    {
-        if (WindowState == WindowState.Minimized)
-        {
-            _wasMinimized = true;
-            return;
-        }
-
-        if (_wasMinimized && WindowState == WindowState.Normal)
-        {
-            _wasMinimized = false;
-            if (_suppressFloatingOnRestore)
-            {
-                _suppressFloatingOnRestore = false;
-                return;
-            }
-
-            ShowFloatingOrOpenManager();
-        }
-    }
-
     private void Window_Closing(object? sender, CancelEventArgs e)
     {
         if (_allowClose)
@@ -390,7 +615,7 @@ public partial class MainWindow : Window
 
         if (parent.Status != TodoStatus.Active)
         {
-            ConfirmDialogWindow.ShowInfo(this, "不能添加子任务", "只有未完成的一级任务可以添加子任务。");
+            ConfirmDialogWindow.ShowInfo(this, "不能添加子任务", "只有未完成的主任务可以添加子任务。");
             return;
         }
 
@@ -418,6 +643,14 @@ public partial class MainWindow : Window
     private List<TodoItem> GetSelectedTodos()
     {
         return TaskGrid.SelectedItems.Cast<TodoItem>().ToList();
+    }
+
+    private void UpdateSelectionFromTaskGrid()
+    {
+        var selectedTodos = GetSelectedTodos();
+        _viewModel.SelectedTodo = selectedTodos.LastOrDefault();
+        _viewModel.SelectedCount = selectedTodos.Count;
+        _viewModel.SelectedSubtaskCount = selectedTodos.Count(todo => todo.IsSubtask);
     }
 
     private void ShowFloatingOrOpenManager()
@@ -477,6 +710,14 @@ public partial class MainWindow : Window
         }
     }
 
+    private void ClearSortIndicators()
+    {
+        foreach (var column in TaskGrid.Columns)
+        {
+            column.SortDirection = null;
+        }
+    }
+
     private static bool IsInteractiveElement(DependencyObject? source)
     {
         return FindAncestor<System.Windows.Controls.Primitives.ButtonBase>(source) is not null ||
@@ -495,6 +736,33 @@ public partial class MainWindow : Window
             }
 
             source = VisualTreeHelper.GetParent(source);
+        }
+
+        return null;
+    }
+
+    private static T? FindDescendant<T>(DependencyObject? source)
+        where T : DependencyObject
+    {
+        if (source is null)
+        {
+            return null;
+        }
+
+        var childCount = VisualTreeHelper.GetChildrenCount(source);
+        for (var i = 0; i < childCount; i++)
+        {
+            var child = VisualTreeHelper.GetChild(source, i);
+            if (child is T match)
+            {
+                return match;
+            }
+
+            var descendant = FindDescendant<T>(child);
+            if (descendant is not null)
+            {
+                return descendant;
+            }
         }
 
         return null;

@@ -1,6 +1,8 @@
 bin/
 obj/
 .vs/
+.*/
+AGENTS.md
 *.user
 *.suo
 *.sqlite

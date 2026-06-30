@@ -62,78 +62,28 @@
         </Setter>
     </Style>
 
-    <Style x:Key="ModernScrollArrowButtonStyle" TargetType="{x:Type RepeatButton}">
-        <Setter Property="Width" Value="28" />
-        <Setter Property="Height" Value="22" />
-        <Setter Property="Background" Value="#FFFFFF" />
-        <Setter Property="BorderBrush" Value="#DDE5F2" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type RepeatButton}">
-                    <Border x:Name="Root"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="8">
-                        <ContentPresenter HorizontalAlignment="Center"
-                                          VerticalAlignment="Center" />
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="#F3F7FF" />
-                            <Setter TargetName="Root" Property="BorderBrush" Value="#CFE0FF" />
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="#EAF1FF" />
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="Root" Property="Opacity" Value="0.45" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
     <Style x:Key="ModernScrollTrackButtonStyle" TargetType="{x:Type RepeatButton}">
-        <Setter Property="Background" Value="#E9EEF7" />
+        <Setter Property="Background" Value="Transparent" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type RepeatButton}">
                     <Border Height="12"
-                            CornerRadius="6"
-                            Background="#E9EEF7" />
+                            Background="{TemplateBinding Background}" />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
 
     <ControlTemplate x:Key="ModernHorizontalScrollBarTemplate" TargetType="{x:Type ScrollBar}">
-        <Grid Margin="12,4,12,6">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="28" />
-                <ColumnDefinition Width="8" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="8" />
-                <ColumnDefinition Width="28" />
-            </Grid.ColumnDefinitions>
-
-            <RepeatButton Grid.Column="0"
-                          Command="{x:Static ScrollBar.LineLeftCommand}"
-                          Style="{StaticResource ModernScrollArrowButtonStyle}">
-                <TextBlock Text="‹"
-                           FontSize="18"
-                           FontWeight="Bold"
-                           Foreground="#536179"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center" />
-            </RepeatButton>
-
+        <Grid Margin="12,5,12,5">
+            <Border Height="12"
+                    VerticalAlignment="Center"
+                    Background="#E9EEF7"
+                    CornerRadius="6" />
             <Track x:Name="PART_Track"
-                   Grid.Column="2"
+                   Height="12"
+                   VerticalAlignment="Center"
                    IsDirectionReversed="False">
                 <Track.DecreaseRepeatButton>
                     <RepeatButton Command="{x:Static ScrollBar.PageLeftCommand}"
@@ -147,17 +97,6 @@
                                   Style="{StaticResource ModernScrollTrackButtonStyle}" />
                 </Track.IncreaseRepeatButton>
             </Track>
-
-            <RepeatButton Grid.Column="4"
-                          Command="{x:Static ScrollBar.LineRightCommand}"
-                          Style="{StaticResource ModernScrollArrowButtonStyle}">
-                <TextBlock Text="›"
-                           FontSize="18"
-                           FontWeight="Bold"
-                           Foreground="#536179"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center" />
-            </RepeatButton>
         </Grid>
     </ControlTemplate>
 
@@ -194,6 +133,8 @@
         <Setter Property="Template" Value="{StaticResource ModernHorizontalScrollBarTemplate}" />
         <Style.Triggers>
             <Trigger Property="Orientation" Value="Vertical">
+                <Setter Property="Height" Value="Auto" />
+                <Setter Property="MinHeight" Value="0" />
                 <Setter Property="Width" Value="14" />
                 <Setter Property="MinWidth" Value="14" />
                 <Setter Property="Template" Value="{StaticResource ModernVerticalScrollBarTemplate}" />

@@ -46,9 +46,8 @@
         </Style>
 
         <Style x:Key="FloatingTaskCard" TargetType="{x:Type Border}">
-            <Setter Property="MinHeight" Value="104" />
             <Setter Property="Margin" Value="0,0,0,10" />
-            <Setter Property="Padding" Value="12,10,10,10" />
+            <Setter Property="Padding" Value="12" />
             <Setter Property="Background" Value="#FFFFFF" />
             <Setter Property="BorderBrush" Value="#E5EBF4" />
             <Setter Property="BorderThickness" Value="1" />
@@ -59,37 +58,35 @@
                     <Setter Property="Background" Value="#F8FBFF" />
                     <Setter Property="BorderBrush" Value="#CFE0FF" />
                 </Trigger>
-                <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                <DataTrigger Binding="{Binding MainTask.IsCompleted}" Value="True">
                     <Setter Property="Opacity" Value="0.68" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="FloatingStatusDot" TargetType="{x:Type Ellipse}">
-            <Setter Property="Width" Value="6" />
-            <Setter Property="Height" Value="6" />
-            <Setter Property="Fill" Value="#FFB15C" />
+        <Style x:Key="FloatingTaskProgressPill" TargetType="{x:Type Border}">
+            <Setter Property="MinWidth" Value="38" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Padding" Value="8,0,8,0" />
+            <Setter Property="Background" Value="#EEF5FF" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
             <Style.Triggers>
-                <DataTrigger Binding="{Binding FloatingStatusText}" Value="已完成">
-                    <Setter Property="Fill" Value="#20B56B" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding FloatingStatusText}" Value="不限期">
-                    <Setter Property="Fill" Value="#A78BFA" />
+                <DataTrigger Binding="{Binding HasSubtasks}" Value="False">
+                    <Setter Property="Visibility" Value="Collapsed" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="FloatingStatusText" TargetType="{x:Type TextBlock}">
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="Foreground" Value="#D66A00" />
-            <Setter Property="VerticalAlignment" Value="Center" />
+        <Style x:Key="FloatingSubtaskRow" TargetType="{x:Type Grid}">
+            <Setter Property="MinHeight" Value="36" />
+            <Setter Property="Margin" Value="0,0,0,2" />
+            <Setter Property="Background" Value="Transparent" />
             <Style.Triggers>
-                <DataTrigger Binding="{Binding FloatingStatusText}" Value="已完成">
-                    <Setter Property="Foreground" Value="#178A4A" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding FloatingStatusText}" Value="不限期">
-                    <Setter Property="Foreground" Value="#6C55E8" />
-                </DataTrigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F8FBFF" />
+                </Trigger>
             </Style.Triggers>
         </Style>
 
@@ -104,6 +101,111 @@
                     <Setter Property="TextDecorations" Value="Strikethrough" />
                 </DataTrigger>
             </Style.Triggers>
+        </Style>
+
+        <Style x:Key="FloatingSubtaskTitleText" TargetType="{x:Type TextBlock}">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="Foreground" Value="#263247" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                    <Setter Property="Foreground" Value="#8A95A8" />
+                    <Setter Property="TextDecorations" Value="Strikethrough" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="FloatingTaskContextMenu" TargetType="{x:Type ContextMenu}">
+            <Setter Property="MinWidth" Value="164" />
+            <Setter Property="Padding" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="HasDropShadow" Value="False" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ContextMenu}">
+                        <Border Padding="6" Background="Transparent">
+                            <Border Background="#FFFFFF"
+                                    BorderBrush="{StaticResource Brush.Border}"
+                                    BorderThickness="1"
+                                    CornerRadius="12"
+                                    Effect="{StaticResource Shadow.Popup}"
+                                    Padding="{TemplateBinding Padding}"
+                                    SnapsToDevicePixels="True">
+                                <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle" />
+                            </Border>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="FloatingAddSubtaskMenuItem" TargetType="{x:Type MenuItem}">
+            <Setter Property="Height" Value="42" />
+            <Setter Property="MinWidth" Value="164" />
+            <Setter Property="Padding" Value="10,0,12,0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+            <Setter Property="FontFamily" Value="Microsoft YaHei UI, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type MenuItem}">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="9"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="26" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border x:Name="IconChip"
+                                        Width="22"
+                                        Height="22"
+                                        CornerRadius="8"
+                                        Background="#EAF8F0"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center">
+                                    <Path Width="11"
+                                          Height="11"
+                                          Data="M5.5,1 L5.5,10 M1,5.5 L10,5.5"
+                                          Stroke="{StaticResource Brush.Success}"
+                                          StrokeThickness="1.8"
+                                          StrokeStartLineCap="Round"
+                                          StrokeEndLineCap="Round"
+                                          Stretch="Fill"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                                </Border>
+                                <ContentPresenter Grid.Column="1"
+                                                  ContentSource="Header"
+                                                  RecognizesAccessKey="True"
+                                                  HorizontalAlignment="Left"
+                                                  VerticalAlignment="Center" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#F3F7FF" />
+                                <Setter TargetName="IconChip" Property="Background" Value="#DDF4E8" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.45" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
 
@@ -124,7 +226,6 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="72" />
                 <RowDefinition x:Name="TaskListRow" Height="*" />
-                <RowDefinition x:Name="QuickAddRow" Height="62" />
                 <RowDefinition x:Name="FooterRow" Height="32" />
             </Grid.RowDefinitions>
 
@@ -198,19 +299,23 @@
                           Margin="12,10,12,0"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled">
-                <ItemsControl ItemsSource="{Binding Todos}">
+                <ScrollViewer.Resources>
+                    <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource ModernScrollBarStyle}" />
+                </ScrollViewer.Resources>
+                <ItemsControl ItemsSource="{Binding TaskGroups}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border Style="{StaticResource FloatingTaskCard}"
-                                    Tag="{Binding}"
+                                    Tag="{Binding MainTask}"
                                     AllowDrop="True"
                                     PreviewMouseLeftButtonDown="FloatingTaskCard_PreviewMouseLeftButtonDown"
                                     MouseMove="FloatingTaskCard_MouseMove"
                                     DragOver="FloatingTaskCard_DragOver"
                                     Drop="FloatingTaskCard_Drop">
                                 <Border.ContextMenu>
-                                    <ContextMenu>
+                                    <ContextMenu Style="{StaticResource FloatingTaskContextMenu}">
                                         <MenuItem Header="添加子任务"
+                                                  Style="{StaticResource FloatingAddSubtaskMenuItem}"
                                                   Click="AddSubtaskMenuItem_Click"
                                                   IsEnabled="{Binding PlacementTarget.Tag.CanCreateSubtask, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                     </ContextMenu>
@@ -218,73 +323,111 @@
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="24" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="34" />
+                                        <ColumnDefinition Width="8" />
                                         <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="42" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="28" />
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="23" />
-                                        <RowDefinition Height="23" />
+                                        <RowDefinition Height="28" />
+                                        <RowDefinition Height="22" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
 
                                     <CheckBox Grid.Row="0"
                                               Grid.Column="0"
-                                              Margin="0,2,0,0"
-                                              IsChecked="{Binding IsCompleted, Mode=OneWay}"
-                                              Tag="{Binding}"
+                                              Margin="0,5,0,0"
+                                              IsChecked="{Binding MainTask.IsCompleted, Mode=OneWay}"
+                                              Tag="{Binding MainTask}"
                                               Click="TaskCheckBox_Click"
                                               Style="{StaticResource CheckBox.Modern}" />
 
+                                    <Border Grid.Row="0"
+                                            Grid.RowSpan="2"
+                                            Grid.Column="2"
+                                            Width="32"
+                                            Height="32"
+                                            CornerRadius="10"
+                                            Background="{Binding MainTask.IconBackground}"
+                                            VerticalAlignment="Top">
+                                        <Path Width="17"
+                                              Height="17"
+                                              Data="{Binding MainTask.IconGeometry}"
+                                              Stroke="{Binding MainTask.IconForeground}"
+                                              StrokeThickness="1.8"
+                                              StrokeStartLineCap="Round"
+                                              StrokeEndLineCap="Round"
+                                              StrokeLineJoin="Round"
+                                              Stretch="Uniform"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                                    </Border>
+
                                     <TextBlock Grid.Row="0"
-                                               Grid.Column="1"
+                                               Grid.Column="4"
+                                               DataContext="{Binding MainTask}"
                                                Text="{Binding DisplayTitle}"
+                                               ToolTip="{Binding FloatingRelationText}"
                                                Style="{StaticResource FloatingTitleText}" />
 
+                                    <Border Grid.Row="0"
+                                            Grid.Column="5"
+                                            Margin="8,0,8,0"
+                                            Style="{StaticResource FloatingTaskProgressPill}">
+                                        <TextBlock Text="{Binding ProgressText}"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource Brush.Primary}"
+                                                   Typography.NumeralAlignment="Tabular"
+                                                   TextAlignment="Center"
+                                                   VerticalAlignment="Center" />
+                                    </Border>
+
                                     <Button Grid.Row="0"
-                                            Grid.Column="2"
-                                            Width="28"
-                                            Height="24"
+                                            Grid.Column="6"
+                                            Width="26"
+                                            MinWidth="26"
+                                            Height="26"
                                             Padding="0"
                                             HorizontalAlignment="Right"
                                             Style="{StaticResource Button.Ghost}"
+                                            Tag="{Binding MainTask}"
+                                            Click="EditTaskButton_Click"
+                                            ToolTip="编辑任务"
                                             Content="..." />
 
-                                    <StackPanel Grid.Row="1"
-                                                Grid.Column="1"
-                                                Grid.ColumnSpan="2"
-                                                Orientation="Horizontal"
-                                                VerticalAlignment="Center">
-                                        <Ellipse Style="{StaticResource FloatingStatusDot}" VerticalAlignment="Center" />
-                                        <TextBlock Text="{Binding FloatingStatusText}"
-                                                   Margin="8,0,0,0"
-                                                   Style="{StaticResource FloatingStatusText}" />
+                                    <Grid Grid.Row="1"
+                                          Grid.Column="4"
+                                          Grid.ColumnSpan="3"
+                                          DataContext="{Binding MainTask}"
+                                          VerticalAlignment="Center">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
                                         <TextBlock Text="◷"
-                                                   Margin="10,0,0,0"
                                                    FontSize="14"
                                                    Foreground="#70809A"
                                                    VerticalAlignment="Center" />
-                                        <TextBlock Text="{Binding FloatingDateText}"
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding FloatingDateText}"
                                                    Margin="5,0,0,0"
                                                    FontSize="13"
                                                    Foreground="{StaticResource Brush.TextSecondary}"
+                                                   TextTrimming="CharacterEllipsis"
                                                    VerticalAlignment="Center" />
-                                    </StackPanel>
+                                    </Grid>
 
                                     <TextBlock Grid.Row="2"
-                                               Grid.Column="1"
-                                               Grid.ColumnSpan="2"
-                                               Text="{Binding FloatingRelationText}"
-                                               Margin="0,2,0,0"
-                                               FontSize="12"
-                                               Foreground="{StaticResource Brush.TextTertiary}"
-                                               TextTrimming="CharacterEllipsis" />
-
-                                    <TextBlock Grid.Row="3"
-                                               Grid.Column="1"
-                                               Grid.ColumnSpan="2"
+                                               Grid.Column="4"
+                                               Grid.ColumnSpan="3"
+                                               DataContext="{Binding MainTask}"
                                                Text="{Binding Note}"
-                                               Margin="0,4,0,0"
+                                               Margin="0,5,0,0"
                                                FontSize="13"
                                                Foreground="{StaticResource Brush.TextSecondary}"
                                                TextTrimming="CharacterEllipsis">
@@ -299,6 +442,147 @@
                                             </Style>
                                         </TextBlock.Style>
                                     </TextBlock>
+
+                                    <Grid Grid.Row="3"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="7"
+                                          Margin="0,8,0,0">
+                                        <Grid.Style>
+                                            <Style TargetType="{x:Type Grid}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasSubtasks}" Value="False">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Grid.Style>
+                                        <ItemsControl ItemsSource="{Binding Subtasks}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Style="{StaticResource FloatingSubtaskRow}"
+                                                          Tag="{Binding}"
+                                                          AllowDrop="True"
+                                                          PreviewMouseLeftButtonDown="FloatingTaskCard_PreviewMouseLeftButtonDown"
+                                                          MouseMove="FloatingTaskCard_MouseMove"
+                                                          DragOver="FloatingTaskCard_DragOver"
+                                                          Drop="FloatingTaskCard_Drop">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="32" />
+                                                            <ColumnDefinition Width="26" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="26" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="36" />
+                                                            <RowDefinition Height="Auto" />
+                                                        </Grid.RowDefinitions>
+
+                                                        <Grid Grid.Column="0"
+                                                              Grid.RowSpan="2"
+                                                              IsHitTestVisible="False">
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="18" />
+                                                                <RowDefinition Height="*" />
+                                                            </Grid.RowDefinitions>
+
+                                                            <Border Width="1"
+                                                                    HorizontalAlignment="Left"
+                                                                    Margin="12,0,0,0"
+                                                                    Background="#DDE6FF" />
+                                                            <Border Grid.Row="1"
+                                                                    Width="1"
+                                                                    HorizontalAlignment="Left"
+                                                                    Margin="12,0,0,0"
+                                                                    Background="#DDE6FF">
+                                                                <Border.Style>
+                                                                    <Style TargetType="{x:Type Border}">
+                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsLastSubtask}" Value="True">
+                                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </Border.Style>
+                                                            </Border>
+                                                            <Border Grid.Row="1"
+                                                                    Width="20"
+                                                                    Height="1"
+                                                                    HorizontalAlignment="Left"
+                                                                    VerticalAlignment="Top"
+                                                                    Margin="12,0,0,0"
+                                                                    Background="#DDE6FF" />
+                                                        </Grid>
+
+                                                        <CheckBox Grid.Column="1"
+                                                                  HorizontalAlignment="Right"
+                                                                  VerticalAlignment="Center"
+                                                                  IsChecked="{Binding IsCompleted, Mode=OneWay}"
+                                                                  Tag="{Binding}"
+                                                                  Click="TaskCheckBox_Click"
+                                                                  Style="{StaticResource CheckBox.Modern}" />
+
+                                                        <TextBlock Grid.Column="2"
+                                                                   Margin="8,0,0,0"
+                                                                   Text="{Binding DisplayTitle}"
+                                                                   ToolTip="{Binding FloatingRelationText}"
+                                                                   Style="{StaticResource FloatingSubtaskTitleText}" />
+
+                                                        <StackPanel Grid.Column="3"
+                                                                    Margin="8,0,0,0"
+                                                                    Orientation="Horizontal"
+                                                                    HorizontalAlignment="Right"
+                                                                    VerticalAlignment="Center">
+                                                            <TextBlock Text="◷"
+                                                                       FontSize="13"
+                                                                       Foreground="#70809A"
+                                                                       VerticalAlignment="Center" />
+                                                            <TextBlock Text="{Binding FloatingDateText}"
+                                                                       Margin="5,0,0,0"
+                                                                       FontSize="12"
+                                                                       Foreground="{StaticResource Brush.TextTertiary}"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       VerticalAlignment="Center" />
+                                                        </StackPanel>
+
+                                                        <Button Grid.Column="4"
+                                                                Width="24"
+                                                                MinWidth="24"
+                                                                Height="24"
+                                                                Padding="0"
+                                                                HorizontalAlignment="Right"
+                                                                Style="{StaticResource Button.Ghost}"
+                                                                Tag="{Binding}"
+                                                                Click="EditTaskButton_Click"
+                                                                ToolTip="编辑任务"
+                                                                Content="..." />
+
+                                                        <TextBlock Grid.Row="1"
+                                                                   Grid.Column="2"
+                                                                   Grid.ColumnSpan="3"
+                                                                   Margin="8,-2,0,6"
+                                                                   Text="{Binding Note}"
+                                                                   FontSize="12"
+                                                                   Foreground="{StaticResource Brush.TextTertiary}"
+                                                                   TextTrimming="CharacterEllipsis">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="{x:Type TextBlock}">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding HasNote}" Value="False">
+                                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Grid>
                                 </Grid>
                             </Border>
                         </DataTemplate>
@@ -306,44 +590,7 @@
                 </ItemsControl>
             </ScrollViewer>
 
-            <Border Grid.Row="2"
-                    Padding="12,9,12,9"
-                    Background="#FFFFFF"
-                    BorderBrush="{StaticResource Brush.BorderLight}"
-                    BorderThickness="0,1,0,0">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="8" />
-                        <ColumnDefinition Width="72" />
-                    </Grid.ColumnDefinitions>
-                    <Grid>
-                        <TextBlock Text="+"
-                                   Width="36"
-                                   FontSize="18"
-                                   Foreground="#70809A"
-                                   HorizontalAlignment="Left"
-                                   VerticalAlignment="Center"
-                                   TextAlignment="Center"
-                                   Panel.ZIndex="1" />
-                        <TextBox x:Name="QuickTitleTextBox"
-                                 Height="42"
-                                 Padding="36,0,10,0"
-                                 Tag="快速添加任务..."
-                                 Text="{Binding QuickTitle, UpdateSourceTrigger=PropertyChanged}"
-                                 KeyDown="QuickTitleTextBox_KeyDown"
-                                 Style="{StaticResource TextBox.Modern}" />
-                    </Grid>
-                    <Button Grid.Column="2"
-                            Width="72"
-                            Height="42"
-                            Style="{StaticResource Button.Primary}"
-                            Command="{Binding AddQuickTodoCommand}"
-                            Content="新增" />
-                </Grid>
-            </Border>
-
-            <Grid Grid.Row="3" Background="#FFFFFF" Margin="16,0,16,0">
+            <Grid Grid.Row="2" Background="#FFFFFF" Margin="16,0,16,0">
                 <TextBlock Text="{Binding TotalCountText}"
                            FontSize="12"
                            Foreground="{StaticResource Brush.TextSecondary}"
@@ -357,7 +604,7 @@
             </Grid>
 
             <primitives:Thumb x:Name="ResizeThumb"
-                              Grid.RowSpan="4"
+                              Grid.RowSpan="3"
                               Width="28"
                               Height="28"
                               HorizontalAlignment="Right"

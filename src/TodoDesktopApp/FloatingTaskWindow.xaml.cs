@@ -160,15 +160,6 @@ public partial class FloatingTaskWindow : Window
         }
     }
 
-    private void QuickTitleTextBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter && _viewModel.AddQuickTodoCommand.CanExecute(null))
-        {
-            _viewModel.AddQuickTodoCommand.Execute(null);
-            e.Handled = true;
-        }
-    }
-
     private void Header_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.ButtonState == MouseButtonState.Pressed)
@@ -200,7 +191,7 @@ public partial class FloatingTaskWindow : Window
 
         if (parent.SourceTask.Status != TodoStatus.Active)
         {
-            ConfirmDialogWindow.ShowInfo(this, "不能添加子任务", "只有未完成的一级任务可以添加子任务。");
+            ConfirmDialogWindow.ShowInfo(this, "不能添加子任务", "只有未完成的主任务可以添加子任务。");
             return;
         }
 
@@ -214,6 +205,23 @@ public partial class FloatingTaskWindow : Window
         _viewModel.CreateSubtask(parent, editor.Title, editor.Note, editor.GetStartDate(), editor.GetDueDate());
     }
 
+    private void EditTaskButton_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is not FloatingTaskItemViewModel todo)
+        {
+            return;
+        }
+
+        var editor = new TodoEditorViewModel(todo.SourceTask.Clone());
+        var dialog = new TaskEditWindow(editor) { Owner = this, Title = "编辑任务" };
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        _viewModel.Update(todo, editor.Title, editor.Note, editor.GetStartDate(), editor.GetDueDate());
+    }
+
     private void FloatingTaskCard_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         _taskDragStart = null;
@@ -223,7 +231,8 @@ public partial class FloatingTaskWindow : Window
             return;
         }
 
-        if (sender is FrameworkElement { Tag: FloatingTaskItemViewModel todo } && todo.Status == TodoStatus.Active)
+        var todo = GetFloatingTask(e.OriginalSource as DependencyObject);
+        if (todo?.Status == TodoStatus.Active)
         {
             _taskDragStart = e.GetPosition(this);
             _draggedTask = todo;
@@ -256,7 +265,7 @@ public partial class FloatingTaskWindow : Window
     private void FloatingTaskCard_DragOver(object sender, System.Windows.DragEventArgs e)
     {
         var dragged = e.Data.GetData(typeof(FloatingTaskItemViewModel)) as FloatingTaskItemViewModel;
-        var target = (sender as FrameworkElement)?.Tag as FloatingTaskItemViewModel;
+        var target = GetFloatingTask(e.OriginalSource as DependencyObject);
         e.Effects = CanReorder(dragged, target) ? System.Windows.DragDropEffects.Move : System.Windows.DragDropEffects.None;
         e.Handled = true;
     }
@@ -264,15 +273,17 @@ public partial class FloatingTaskWindow : Window
     private void FloatingTaskCard_Drop(object sender, System.Windows.DragEventArgs e)
     {
         var dragged = e.Data.GetData(typeof(FloatingTaskItemViewModel)) as FloatingTaskItemViewModel;
-        var target = (sender as FrameworkElement)?.Tag as FloatingTaskItemViewModel;
+        var targetHost = FindFloatingTaskHost(e.OriginalSource as DependencyObject) ?? sender as FrameworkElement;
+        var target = targetHost?.Tag as FloatingTaskItemViewModel;
         if (!CanReorder(dragged, target))
         {
+            e.Handled = true;
             return;
         }
 
-        var card = sender as FrameworkElement;
-        var insertBefore = card is null || e.GetPosition(card).Y < card.ActualHeight / 2;
+        var insertBefore = targetHost is null || e.GetPosition(targetHost).Y < targetHost.ActualHeight / 2;
         _viewModel.TryReorder(dragged!.TaskId, target!.TaskId, insertBefore);
+        e.Handled = true;
     }
 
     private void PinButton_Click(object sender, RoutedEventArgs e)
@@ -986,6 +997,26 @@ public partial class FloatingTaskWindow : Window
         }
 
         return Math.Min(Math.Max(value, min), max);
+    }
+
+    private static FloatingTaskItemViewModel? GetFloatingTask(DependencyObject? source)
+    {
+        return FindFloatingTaskHost(source)?.Tag as FloatingTaskItemViewModel;
+    }
+
+    private static FrameworkElement? FindFloatingTaskHost(DependencyObject? source)
+    {
+        while (source is not null)
+        {
+            if (source is FrameworkElement { Tag: FloatingTaskItemViewModel } element)
+            {
+                return element;
+            }
+
+            source = VisualTreeHelper.GetParent(source);
+        }
+
+        return null;
     }
 
     private static bool CanReorder(FloatingTaskItemViewModel? dragged, FloatingTaskItemViewModel? target)

@@ -272,6 +272,15 @@ public sealed class TodoRepository
             query = query.Where(todo => todo.Status == criteria.Status.Value);
         }
 
+        if (criteria.FilterNoGroup)
+        {
+            query = query.Where(todo => string.IsNullOrWhiteSpace(todo.GroupId));
+        }
+        else if (!string.IsNullOrWhiteSpace(criteria.GroupId))
+        {
+            query = query.Where(todo => todo.GroupId == criteria.GroupId);
+        }
+
         if (criteria.StartDateFrom.HasValue)
         {
             query = query.Where(todo => todo.StartDate >= criteria.StartDateFrom.Value);
@@ -333,6 +342,11 @@ public sealed class TodoRepository
             query = query.Where(todo => todo.UpdatedAt <= end);
         }
 
+        if (criteria.Status == TodoStatus.Active)
+        {
+            query = ExcludeSubtasksUnderInactiveParents(query, items);
+        }
+
         return SortSearchResults(query.ToList(), items);
     }
 
@@ -340,10 +354,6 @@ public sealed class TodoRepository
     {
         return Search(new TodoSearchCriteria { Status = TodoStatus.Active })
             .Where(todo => todo.StartDate <= today)
-            .OrderBy(todo => todo.DueDate.HasValue ? 0 : 1)
-            .ThenBy(todo => todo.DueDate)
-            .ThenBy(todo => todo.StartDate)
-            .ThenBy(todo => todo.CreatedAt)
             .ToList();
     }
 
@@ -520,18 +530,29 @@ public sealed class TodoRepository
         };
     }
 
+    private static IEnumerable<TodoItem> ExcludeSubtasksUnderInactiveParents(
+        IEnumerable<TodoItem> todos,
+        IReadOnlyList<TodoItem> allItems)
+    {
+        var parentStatusesById = allItems.ToDictionary(todo => todo.Id, todo => todo.Status);
+
+        return todos.Where(todo =>
+            !todo.IsSubtask ||
+            string.IsNullOrWhiteSpace(todo.ParentId) ||
+            !parentStatusesById.TryGetValue(todo.ParentId, out var parentStatus) ||
+            parentStatus == TodoStatus.Active);
+    }
+
     private static IReadOnlyList<TodoItem> SortSearchResults(IReadOnlyList<TodoItem> filteredItems, IReadOnlyList<TodoItem> allItems)
     {
-        var rootSortOrders = allItems
-            .Where(todo => !todo.IsSubtask)
-            .GroupBy(todo => todo.Id)
-            .ToDictionary(group => group.Key, group => group.First().SortOrder);
+        var activeRootIndexes = BuildActiveRootIndexes(allItems);
+        var activeSubtaskIndexes = BuildActiveSubtaskIndexes(allItems);
 
         return filteredItems
             .OrderBy(StatusRank)
-            .ThenBy(todo => todo.Status == TodoStatus.Active ? GetRootSortOrder(todo, rootSortOrders) : int.MaxValue)
+            .ThenBy(todo => todo.Status == TodoStatus.Active ? GetRootIndex(todo, activeRootIndexes) : int.MaxValue)
             .ThenBy(todo => todo.Status == TodoStatus.Active ? (todo.IsSubtask ? 1 : 0) : 0)
-            .ThenBy(todo => todo.Status == TodoStatus.Active && todo.IsSubtask ? todo.SortOrder : 0)
+            .ThenBy(todo => todo.Status == TodoStatus.Active && todo.IsSubtask ? GetSubtaskIndex(todo, activeSubtaskIndexes) : 0)
             .ThenBy(todo => todo.Status == TodoStatus.Active ? todo.CreatedAt : DateTime.MinValue)
             .ThenBy(todo => todo.Status == TodoStatus.Active ? string.Empty : string.IsNullOrWhiteSpace(todo.GroupName) ? "1" : "0")
             .ThenBy(todo => todo.Status == TodoStatus.Active ? string.Empty : todo.GroupDisplayText)
@@ -544,17 +565,62 @@ public sealed class TodoRepository
             .ToList();
     }
 
-    private static int GetRootSortOrder(TodoItem todo, IReadOnlyDictionary<string, int> rootSortOrders)
+    private static IReadOnlyDictionary<string, int> BuildActiveRootIndexes(IReadOnlyList<TodoItem> items)
+    {
+        return OrderBySortThenDefault(items.Where(todo => todo.Status == TodoStatus.Active && !todo.IsSubtask))
+            .Select((todo, index) => (todo.Id, Index: index))
+            .ToDictionary(item => item.Id, item => item.Index);
+    }
+
+    private static IReadOnlyDictionary<string, int> BuildActiveSubtaskIndexes(IReadOnlyList<TodoItem> items)
+    {
+        var result = new Dictionary<string, int>();
+        var siblingGroups = items
+            .Where(todo => todo.Status == TodoStatus.Active && todo.IsSubtask && !string.IsNullOrWhiteSpace(todo.ParentId))
+            .GroupBy(todo => todo.ParentId!);
+
+        foreach (var siblingGroup in siblingGroups)
+        {
+            foreach (var item in OrderBySortThenDefault(siblingGroup).Select((todo, index) => (todo.Id, Index: index)))
+            {
+                result[item.Id] = item.Index;
+            }
+        }
+
+        return result;
+    }
+
+    private static IOrderedEnumerable<TodoItem> OrderBySortThenDefault(IEnumerable<TodoItem> todos)
+    {
+        return todos
+            .OrderBy(todo => HasSortOrder(todo) ? 0 : 1)
+            .ThenBy(todo => HasSortOrder(todo) ? todo.SortOrder : int.MaxValue)
+            .ThenBy(todo => todo.DueDate.HasValue ? 0 : 1)
+            .ThenBy(todo => todo.DueDate)
+            .ThenBy(todo => todo.StartDate)
+            .ThenBy(todo => todo.CreatedAt);
+    }
+
+    private static int GetRootIndex(TodoItem todo, IReadOnlyDictionary<string, int> rootIndexes)
     {
         if (!todo.IsSubtask)
         {
-            return todo.SortOrder;
+            return rootIndexes.TryGetValue(todo.Id, out var index) ? index : int.MaxValue;
         }
 
-        return todo.ParentId is not null && rootSortOrders.TryGetValue(todo.ParentId, out var sortOrder)
-            ? sortOrder
+        return todo.ParentId is not null && rootIndexes.TryGetValue(todo.ParentId, out var parentIndex)
+            ? parentIndex
             : int.MaxValue;
     }
+
+    private static int GetSubtaskIndex(TodoItem todo, IReadOnlyDictionary<string, int> subtaskIndexes)
+    {
+        return subtaskIndexes.TryGetValue(todo.Id, out var index)
+            ? index
+            : int.MaxValue;
+    }
+
+    private static bool HasSortOrder(TodoItem todo) => todo.SortOrder > 0;
 
     private static int StatusRank(TodoItem todo)
     {

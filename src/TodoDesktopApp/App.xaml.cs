@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Threading;
 using TodoDesktopApp.Data;
 using TodoDesktopApp.Services;
 using TodoDesktopApp.ViewModels;
@@ -40,7 +41,7 @@ public partial class App : System.Windows.Application
             isFloatingVisible: () => _floatingWindow.IsVisible);
 
         _mainWindow.Show();
-        _floatingWindow.RefreshVisibilityFromTasks(activate: false);
+        Dispatcher.BeginInvoke(new Action(_mainWindow.OpenFromUserRequest), DispatcherPriority.ApplicationIdle);
     }
 
     protected override void OnExit(ExitEventArgs e)

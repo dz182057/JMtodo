@@ -18,6 +18,7 @@ public sealed class TodoItem
     public DateTime? DeletedAt { get; set; }
     public int SortOrder { get; set; }
     public bool HasSubtasks { get; set; }
+    public int SubtaskCount { get; set; }
     public bool IsExpanded { get; set; } = true;
 
     public string StatusText => Status switch
@@ -36,25 +37,23 @@ public sealed class TodoItem
 
     public bool CanCreateSubtask => !IsSubtask && Status == TodoStatus.Active;
 
-    public string TitleDisplayText => IsSubtask ? $"  - {Title}" : Title;
-
     public string ExpandButtonText => HasSubtasks ? IsExpanded ? "▾" : "▸" : string.Empty;
 
-    public string LevelText => IsSubtask ? "子任务" : "一级任务";
+    public string LevelText => IsSubtask ? "子任务" : "主任务";
+
+    public string SubtaskCountText => SubtaskCount > 0 ? $"含 {SubtaskCount} 个子任务" : string.Empty;
 
     public string GroupDisplayText => string.IsNullOrWhiteSpace(GroupName) ? "未分组" : GroupName;
 
+    public string ParentDisplayText =>
+        IsSubtask
+            ? $"主任务：{(string.IsNullOrWhiteSpace(ParentTitle) ? "未找到主任务" : ParentTitle)}"
+            : string.Empty;
+
     public string FloatingRelationText =>
         IsSubtask
-            ? $"子任务 · {ParentTitle ?? "未找到父任务"}"
+            ? $"子任务 · {ParentTitle ?? "未找到主任务"}"
             : GroupDisplayText;
-
-    public string FloatingStatusText =>
-        Status == TodoStatus.Completed
-            ? "已完成"
-            : DueDate.HasValue
-                ? StatusText
-                : "不限期";
 
     public string FloatingDateText => DueDate?.ToString("yyyy-MM-dd") ?? "不限期";
 
@@ -87,6 +86,7 @@ public sealed class TodoItem
             DeletedAt = DeletedAt,
             SortOrder = SortOrder,
             HasSubtasks = HasSubtasks,
+            SubtaskCount = SubtaskCount,
             IsExpanded = IsExpanded
         };
     }

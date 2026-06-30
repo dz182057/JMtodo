@@ -14,10 +14,18 @@ public sealed class MainViewModel : ViewModelBase
     private readonly HashSet<string> _currentRootTodoIds = new();
     private TodoItem? _selectedTodo;
     private int _selectedCount;
+    private int _selectedSubtaskCount;
     private string? _keyword;
     private string _selectedStatusFilter = "未完成";
+    private string? _selectedGroupId;
+    private bool _filterNoGroup;
+    private bool _isUpdatingFilters;
     private bool _isMultiSelectMode;
     private bool _includeNoDue = true;
+    private bool _showStartDateFilter;
+    private bool _showDueDateFilter = true;
+    private bool _showCreatedAtFilter;
+    private bool _showUpdatedAtFilter;
     private DateTime? _startDateFrom;
     private DateTime? _startDateTo;
     private DateTime? _dueDateFrom;
@@ -53,13 +61,24 @@ public sealed class MainViewModel : ViewModelBase
         get => _selectedTodo;
         set
         {
-            if (SetProperty(ref _selectedTodo, value))
+            if (EqualityComparer<TodoItem?>.Default.Equals(_selectedTodo, value))
             {
-                OnPropertyChanged(nameof(SelectedCountText));
-                OnPropertyChanged(nameof(HasSelection));
-                OnPropertyChanged(nameof(HasSingleSelection));
-                OnPropertyChanged(nameof(CanApplyBatchStatusAction));
+                return;
             }
+
+            _selectedTodo = value;
+            if (!IsMultiSelectMode)
+            {
+                OnPropertyChanged();
+            }
+
+            OnPropertyChanged(nameof(SelectedCountText));
+            OnPropertyChanged(nameof(HasSelection));
+            OnPropertyChanged(nameof(HasSingleSelection));
+            OnPropertyChanged(nameof(CanAddSubtask));
+            OnPropertyChanged(nameof(CanApplyBatchStatusAction));
+            OnPropertyChanged(nameof(CanMoveSelectedTodosToGroup));
+            OnPropertyChanged(nameof(ShowMoveToGroupButton));
         }
     }
 
@@ -73,7 +92,25 @@ public sealed class MainViewModel : ViewModelBase
                 OnPropertyChanged(nameof(SelectedCountText));
                 OnPropertyChanged(nameof(HasSelection));
                 OnPropertyChanged(nameof(HasSingleSelection));
+                OnPropertyChanged(nameof(CanAddSubtask));
                 OnPropertyChanged(nameof(CanApplyBatchStatusAction));
+                OnPropertyChanged(nameof(CanMoveSelectedTodosToGroup));
+                OnPropertyChanged(nameof(ShowMoveToGroupButton));
+            }
+        }
+    }
+
+    public int SelectedSubtaskCount
+    {
+        get => _selectedSubtaskCount;
+        set
+        {
+            if (SetProperty(ref _selectedSubtaskCount, value))
+            {
+                OnPropertyChanged(nameof(HasSelectedSubtask));
+                OnPropertyChanged(nameof(CanAddSubtask));
+                OnPropertyChanged(nameof(CanMoveSelectedTodosToGroup));
+                OnPropertyChanged(nameof(ShowMoveToGroupButton));
             }
         }
     }
@@ -86,7 +123,15 @@ public sealed class MainViewModel : ViewModelBase
 
     public bool HasSingleSelection => SelectedCount == 1;
 
+    public bool HasSelectedSubtask => SelectedSubtaskCount > 0;
+
+    public bool CanAddSubtask => SelectedCount == 1 && !HasSelectedSubtask && SelectedTodo is { IsSubtask: false, Status: TodoStatus.Active };
+
     public bool CanApplyBatchStatusAction => HasSelection && SelectedStatusFilter != "已删除";
+
+    public bool CanMoveSelectedTodosToGroup => HasSelection && !HasSelectedSubtask;
+
+    public bool ShowMoveToGroupButton => !HasSelectedSubtask;
 
     public bool IsMultiSelectMode
     {
@@ -116,6 +161,10 @@ public sealed class MainViewModel : ViewModelBase
             if (SetProperty(ref _selectedStatusFilter, value))
             {
                 OnPropertyChanged(nameof(CanApplyBatchStatusAction));
+                if (!_isUpdatingFilters)
+                {
+                    Refresh();
+                }
             }
         }
     }
@@ -124,6 +173,30 @@ public sealed class MainViewModel : ViewModelBase
     {
         get => _includeNoDue;
         set => SetProperty(ref _includeNoDue, value);
+    }
+
+    public bool ShowStartDateFilter
+    {
+        get => _showStartDateFilter;
+        set => SetProperty(ref _showStartDateFilter, value);
+    }
+
+    public bool ShowDueDateFilter
+    {
+        get => _showDueDateFilter;
+        set => SetProperty(ref _showDueDateFilter, value);
+    }
+
+    public bool ShowCreatedAtFilter
+    {
+        get => _showCreatedAtFilter;
+        set => SetProperty(ref _showCreatedAtFilter, value);
+    }
+
+    public bool ShowUpdatedAtFilter
+    {
+        get => _showUpdatedAtFilter;
+        set => SetProperty(ref _showUpdatedAtFilter, value);
     }
 
     public DateTime? StartDateFrom
@@ -178,9 +251,10 @@ public sealed class MainViewModel : ViewModelBase
     {
         var criteria = BuildCriteria();
         var selectedId = SelectedTodo?.Id;
-        var searchResults = SortTodos(_todoService.Search(criteria))
+        var sortedResults = SortTodos(_todoService.Search(criteria))
             .Where(todo => SelectedStatusFilter == "已删除" || todo.Status != TodoStatus.Deleted)
             .ToList();
+        var searchResults = ArrangeByHierarchy(sortedResults);
         ApplyHierarchyState(searchResults);
 
         Todos.Clear();
@@ -191,6 +265,7 @@ public sealed class MainViewModel : ViewModelBase
 
         SelectedTodo = Todos.FirstOrDefault(todo => todo.Id == selectedId);
         SelectedCount = SelectedTodo is null ? 0 : 1;
+        SelectedSubtaskCount = SelectedTodo?.IsSubtask == true ? 1 : 0;
         RefreshGroupSummaries();
         OnPropertyChanged(nameof(TotalCountText));
     }
@@ -199,6 +274,40 @@ public sealed class MainViewModel : ViewModelBase
     {
         _manualSortMemberPath = memberPath;
         _manualSortDirection = direction;
+        Refresh();
+    }
+
+    public void ClearManualSort()
+    {
+        _manualSortMemberPath = null;
+        _manualSortDirection = ListSortDirection.Ascending;
+        Refresh();
+    }
+
+    public void ToggleGroupFilter(TodoGroupSummary summary)
+    {
+        if (summary.IsNoGroup)
+        {
+            _filterNoGroup = !_filterNoGroup;
+            _selectedGroupId = null;
+        }
+        else
+        {
+            var isSelected = _selectedGroupId == summary.GroupId;
+            _selectedGroupId = isSelected ? null : summary.GroupId;
+            _filterNoGroup = false;
+        }
+
+        _isUpdatingFilters = true;
+        try
+        {
+            SelectedStatusFilter = "未完成";
+        }
+        finally
+        {
+            _isUpdatingFilters = false;
+        }
+
         Refresh();
     }
 
@@ -219,17 +328,28 @@ public sealed class MainViewModel : ViewModelBase
 
     public void ClearFilters()
     {
-        Keyword = null;
-        SelectedStatusFilter = "未完成";
-        IncludeNoDue = true;
-        StartDateFrom = null;
-        StartDateTo = null;
-        DueDateFrom = null;
-        DueDateTo = null;
-        CreatedAtFrom = null;
-        CreatedAtTo = null;
-        UpdatedAtFrom = null;
-        UpdatedAtTo = null;
+        _isUpdatingFilters = true;
+        try
+        {
+            Keyword = null;
+            SelectedStatusFilter = "全部";
+            _selectedGroupId = null;
+            _filterNoGroup = false;
+            IncludeNoDue = true;
+            StartDateFrom = null;
+            StartDateTo = null;
+            DueDateFrom = null;
+            DueDateTo = null;
+            CreatedAtFrom = null;
+            CreatedAtTo = null;
+            UpdatedAtFrom = null;
+            UpdatedAtTo = null;
+        }
+        finally
+        {
+            _isUpdatingFilters = false;
+        }
+
         Refresh();
     }
 
@@ -245,15 +365,17 @@ public sealed class MainViewModel : ViewModelBase
                 "已删除" => TodoStatus.Deleted,
                 _ => null
             },
+            GroupId = _selectedGroupId,
+            FilterNoGroup = _filterNoGroup,
             IncludeNoDue = IncludeNoDue,
-            StartDateFrom = ToDateOnly(StartDateFrom),
-            StartDateTo = ToDateOnly(StartDateTo),
-            DueDateFrom = ToDateOnly(DueDateFrom),
-            DueDateTo = ToDateOnly(DueDateTo),
-            CreatedAtFrom = CreatedAtFrom,
-            CreatedAtTo = CreatedAtTo,
-            UpdatedAtFrom = UpdatedAtFrom,
-            UpdatedAtTo = UpdatedAtTo
+            StartDateFrom = ShowStartDateFilter ? ToDateOnly(StartDateFrom) : null,
+            StartDateTo = ShowStartDateFilter ? ToDateOnly(StartDateTo) : null,
+            DueDateFrom = ShowDueDateFilter ? ToDateOnly(DueDateFrom) : null,
+            DueDateTo = ShowDueDateFilter ? ToDateOnly(DueDateTo) : null,
+            CreatedAtFrom = ShowCreatedAtFilter ? CreatedAtFrom : null,
+            CreatedAtTo = ShowCreatedAtFilter ? CreatedAtTo : null,
+            UpdatedAtFrom = ShowUpdatedAtFilter ? UpdatedAtFrom : null,
+            UpdatedAtTo = ShowUpdatedAtFilter ? UpdatedAtTo : null
         };
     }
 
@@ -270,16 +392,18 @@ public sealed class MainViewModel : ViewModelBase
             _currentRootTodoIds.Add(rootId);
         }
 
-        var rootIdsWithSubtasks = todos
+        var subtaskCountsByParentId = todos
             .Where(todo => todo.IsSubtask && !string.IsNullOrWhiteSpace(todo.ParentId))
-            .Select(todo => todo.ParentId!)
-            .ToHashSet();
+            .GroupBy(todo => todo.ParentId!)
+            .ToDictionary(group => group.Key, group => group.Count());
+        var rootIdsWithSubtasks = subtaskCountsByParentId.Keys.ToHashSet();
 
         _collapsedTodoIds.RemoveWhere(id => !rootIdsWithSubtasks.Contains(id));
 
         foreach (var todo in todos)
         {
             todo.HasSubtasks = !todo.IsSubtask && rootIdsWithSubtasks.Contains(todo.Id);
+            todo.SubtaskCount = !todo.IsSubtask && subtaskCountsByParentId.TryGetValue(todo.Id, out var subtaskCount) ? subtaskCount : 0;
             todo.IsExpanded = !todo.HasSubtasks || !_collapsedTodoIds.Contains(todo.Id);
         }
     }
@@ -299,12 +423,54 @@ public sealed class MainViewModel : ViewModelBase
             return SortByManualField(todos, _manualSortMemberPath, _manualSortDirection);
         }
 
-        return todos
-            .OrderBy(todo => todo.DueDate.HasValue ? 0 : 1)
-            .ThenBy(todo => todo.DueDate)
-            .ThenBy(todo => todo.StartDate)
-            .ThenBy(todo => todo.CreatedAt)
-            .ToList();
+        // Search 已按 SortOrder 优先返回默认顺序，避免主界面覆盖拖拽后的顺序。
+        return todos.ToList();
+    }
+
+    private static IReadOnlyList<TodoItem> ArrangeByHierarchy(IReadOnlyList<TodoItem> sortedTodos)
+    {
+        var rootIds = sortedTodos
+            .Where(todo => !todo.IsSubtask)
+            .Select(todo => todo.Id)
+            .ToHashSet();
+        var childrenByParentId = sortedTodos
+            .Where(todo => todo.IsSubtask &&
+                           !string.IsNullOrWhiteSpace(todo.ParentId) &&
+                           rootIds.Contains(todo.ParentId))
+            .GroupBy(todo => todo.ParentId!)
+            .ToDictionary(group => group.Key, group => group.ToList());
+        var result = new List<TodoItem>(sortedTodos.Count);
+        var addedIds = new HashSet<string>();
+
+        foreach (var todo in sortedTodos)
+        {
+            if (todo.IsSubtask &&
+                !string.IsNullOrWhiteSpace(todo.ParentId) &&
+                rootIds.Contains(todo.ParentId))
+            {
+                continue;
+            }
+
+            AddTodo(todo);
+
+            if (!todo.IsSubtask && childrenByParentId.TryGetValue(todo.Id, out var children))
+            {
+                foreach (var child in children)
+                {
+                    AddTodo(child);
+                }
+            }
+        }
+
+        return result;
+
+        void AddTodo(TodoItem todo)
+        {
+            if (addedIds.Add(todo.Id))
+            {
+                result.Add(todo);
+            }
+        }
     }
 
     private static IReadOnlyList<TodoItem> SortByManualField(
@@ -408,38 +574,59 @@ public sealed class MainViewModel : ViewModelBase
         var activeItems = _todoService.Search(new TodoSearchCriteria { IncludeNoDue = true })
             .Where(todo => todo.Status != TodoStatus.Deleted)
             .ToList();
+        var activeTaskIds = _todoService.Search(new TodoSearchCriteria { Status = TodoStatus.Active, IncludeNoDue = true })
+            .Select(todo => todo.Id)
+            .ToHashSet();
 
         foreach (var group in groups)
         {
             var groupItems = activeItems.Where(todo => todo.GroupId == group.Id).ToList();
             GroupSummaries.Add(new TodoGroupSummary(
+                group.Id,
                 group.Name,
                 group.IconKey,
                 groupItems.Count,
-                groupItems.Count(todo => todo.Status == TodoStatus.Active)));
+                groupItems.Count(todo => activeTaskIds.Contains(todo.Id)),
+                _selectedGroupId == group.Id,
+                isNoGroup: false));
         }
 
         var noGroupItems = activeItems.Where(todo => string.IsNullOrWhiteSpace(todo.GroupId)).ToList();
         if (noGroupItems.Count > 0)
         {
             GroupSummaries.Add(new TodoGroupSummary(
+                null,
                 "未分组",
                 "inbox",
                 noGroupItems.Count,
-                noGroupItems.Count(todo => todo.Status == TodoStatus.Active)));
+                noGroupItems.Count(todo => activeTaskIds.Contains(todo.Id)),
+                _filterNoGroup,
+                isNoGroup: true));
         }
     }
 }
 
 public sealed class TodoGroupSummary
 {
-    public TodoGroupSummary(string name, string iconKey, int totalCount, int activeCount)
+    public TodoGroupSummary(
+        string? groupId,
+        string name,
+        string iconKey,
+        int totalCount,
+        int activeCount,
+        bool isSelected,
+        bool isNoGroup)
     {
+        GroupId = groupId;
         Name = name;
         IconKey = string.IsNullOrWhiteSpace(iconKey) ? "folder" : iconKey;
         TotalCount = totalCount;
         ActiveCount = activeCount;
+        IsSelected = isSelected;
+        IsNoGroup = isNoGroup;
     }
+
+    public string? GroupId { get; }
 
     public string Name { get; }
 
@@ -448,6 +635,10 @@ public sealed class TodoGroupSummary
     public int TotalCount { get; }
 
     public int ActiveCount { get; }
+
+    public bool IsSelected { get; }
+
+    public bool IsNoGroup { get; }
 
     public string CountText => $"未完成 {ActiveCount} / 共 {TotalCount}";
 

@@ -7,13 +7,10 @@ namespace TodoDesktopApp.ViewModels;
 public sealed class FloatingViewModel : ViewModelBase
 {
     private readonly TodoService _todoService;
-    private string _quickTitle = string.Empty;
-    private string? _errorMessage;
 
     public FloatingViewModel(TodoService todoService)
     {
         _todoService = todoService;
-        AddQuickTodoCommand = new RelayCommand(_ => AddQuickTodo(), _ => CanAddQuickTodo);
         _todoService.Changed += (_, _) => Reload();
         Reload();
     }
@@ -22,28 +19,7 @@ public sealed class FloatingViewModel : ViewModelBase
 
     public ObservableCollection<FloatingTaskItemViewModel> Todos { get; } = new();
 
-    public RelayCommand AddQuickTodoCommand { get; }
-
-    public string QuickTitle
-    {
-        get => _quickTitle;
-        set
-        {
-            if (SetProperty(ref _quickTitle, value))
-            {
-                OnPropertyChanged(nameof(CanAddQuickTodo));
-                AddQuickTodoCommand.RaiseCanExecuteChanged();
-            }
-        }
-    }
-
-    public bool CanAddQuickTodo => !string.IsNullOrWhiteSpace(QuickTitle);
-
-    public string? ErrorMessage
-    {
-        get => _errorMessage;
-        set => SetProperty(ref _errorMessage, value);
-    }
+    public ObservableCollection<FloatingTaskGroupViewModel> TaskGroups { get; } = new();
 
     public string TotalCountText => $"共 {Todos.Count} 项任务";
 
@@ -55,14 +31,26 @@ public sealed class FloatingViewModel : ViewModelBase
 
     public void Reload()
     {
+        var groupsById = _todoService.GetGroups().ToDictionary(group => group.Id);
+        var floatingTodos = _todoService.GetFloatingTodos()
+            .Select(todo => new FloatingTaskItemViewModel(todo, ResolveIconKey(todo, groupsById)))
+            .ToList();
+
         Todos.Clear();
-        foreach (var todo in _todoService.GetFloatingTodos())
+        TaskGroups.Clear();
+        foreach (var todo in floatingTodos)
         {
-            Todos.Add(new FloatingTaskItemViewModel(todo));
+            Todos.Add(todo);
+        }
+
+        foreach (var group in BuildTaskGroups(floatingTodos))
+        {
+            TaskGroups.Add(group);
         }
 
         OnPropertyChanged(nameof(TotalCountText));
         OnPropertyChanged(nameof(CompletedCountText));
+        OnPropertyChanged(nameof(TaskGroups));
         VisibleTasksChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -81,36 +69,100 @@ public sealed class FloatingViewModel : ViewModelBase
         _todoService.CreateSubtask(parent.TaskId, title, note, startDate, dueDate);
     }
 
+    public void Update(FloatingTaskItemViewModel todo, string title, string? note, DateOnly startDate, DateOnly? dueDate)
+    {
+        var item = todo.SourceTask.Clone();
+        item.Title = title;
+        item.Note = note;
+        item.StartDate = startDate;
+        item.DueDate = dueDate;
+        _todoService.Update(item);
+    }
+
     public bool TryReorder(string draggedId, string targetId, bool insertBefore)
     {
         return _todoService.TryReorderActiveTodo(draggedId, targetId, insertBefore);
     }
 
-    private void AddQuickTodo()
+    private static IReadOnlyList<FloatingTaskGroupViewModel> BuildTaskGroups(IReadOnlyList<FloatingTaskItemViewModel> todos)
     {
-        if (string.IsNullOrWhiteSpace(QuickTitle))
+        var groupsByTaskId = new Dictionary<string, FloatingTaskGroupViewModel>();
+        var result = new List<FloatingTaskGroupViewModel>();
+
+        foreach (var todo in todos.Where(todo => !todo.IsSubTask))
         {
-            ErrorMessage = "请输入任务标题。";
-            return;
+            var group = new FloatingTaskGroupViewModel(todo);
+            groupsByTaskId[todo.TaskId] = group;
+            result.Add(group);
         }
 
-        _todoService.Create(QuickTitle, null, DateOnly.FromDateTime(DateTime.Now), null);
-        QuickTitle = string.Empty;
-        ErrorMessage = null;
+        foreach (var todo in todos.Where(todo => todo.IsSubTask))
+        {
+            if (todo.ParentTaskId is not null && groupsByTaskId.TryGetValue(todo.ParentTaskId, out var parentGroup))
+            {
+                parentGroup.Subtasks.Add(todo);
+                continue;
+            }
+
+            result.Add(new FloatingTaskGroupViewModel(todo));
+        }
+
+        foreach (var group in result)
+        {
+            for (var i = 0; i < group.Subtasks.Count; i++)
+            {
+                group.Subtasks[i].IsLastSubtask = i == group.Subtasks.Count - 1;
+            }
+        }
+
+        return result;
     }
+
+    private static string ResolveIconKey(TodoItem todo, IReadOnlyDictionary<string, TodoGroup> groupsById)
+    {
+        if (!string.IsNullOrWhiteSpace(todo.GroupId) &&
+            groupsById.TryGetValue(todo.GroupId, out var group) &&
+            !string.IsNullOrWhiteSpace(group.IconKey))
+        {
+            return group.IconKey;
+        }
+
+        return "inbox";
+    }
+}
+
+public sealed class FloatingTaskGroupViewModel
+{
+    public FloatingTaskGroupViewModel(FloatingTaskItemViewModel mainTask)
+    {
+        MainTask = mainTask;
+    }
+
+    public FloatingTaskItemViewModel MainTask { get; }
+
+    public ObservableCollection<FloatingTaskItemViewModel> Subtasks { get; } = new();
+
+    public bool HasSubtasks => Subtasks.Count > 0;
+
+    public int TotalSubtaskCount => Subtasks.Count;
+
+    public int CompletedSubtaskCount => Subtasks.Count(todo => todo.IsCompleted);
+
+    public string ProgressText => HasSubtasks ? $"{CompletedSubtaskCount}/{TotalSubtaskCount}" : string.Empty;
 }
 
 public sealed class FloatingTaskItemViewModel
 {
-    public FloatingTaskItemViewModel(TodoItem sourceTask)
+    public FloatingTaskItemViewModel(TodoItem sourceTask, string iconKey)
     {
         SourceTask = sourceTask;
         TaskId = sourceTask.Id;
         ParentTaskId = sourceTask.ParentId;
         Title = sourceTask.Title;
-        DisplayTitle = sourceTask.IsSubtask ? $"└  {sourceTask.Title}" : sourceTask.Title;
+        DisplayTitle = sourceTask.Title;
         IsSubTask = sourceTask.IsSubtask;
         ParentTitle = sourceTask.ParentTitle;
+        IconKey = string.IsNullOrWhiteSpace(iconKey) ? "inbox" : iconKey;
     }
 
     public string TaskId { get; }
@@ -123,7 +175,11 @@ public sealed class FloatingTaskItemViewModel
 
     public bool IsSubTask { get; }
 
+    public bool IsLastSubtask { get; internal set; }
+
     public string? ParentTitle { get; }
+
+    public string IconKey { get; }
 
     public TodoItem SourceTask { get; }
 
@@ -141,9 +197,15 @@ public sealed class FloatingTaskItemViewModel
 
     public string FloatingRelationText => SourceTask.FloatingRelationText;
 
-    public string FloatingStatusText => SourceTask.FloatingStatusText;
-
     public string FloatingDateText => SourceTask.FloatingDateText;
 
     public bool HasNote => SourceTask.HasNote;
+
+    public System.Windows.Media.Geometry IconGeometry => IconOption.Geometry;
+
+    public System.Windows.Media.Brush IconForeground => IconOption.Foreground;
+
+    public System.Windows.Media.Brush IconBackground => IconOption.Background;
+
+    private TaskGroupIconOption IconOption => TaskGroupIconCatalog.Get(IconKey);
 }
