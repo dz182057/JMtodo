@@ -6,19 +6,25 @@ namespace TodoDesktopApp.Data;
 
 public sealed class TodoRepository
 {
-    private const int SchemaVersion = 4;
+    private const int SchemaVersion = 5;
+    private readonly string _dataDirectory;
+    private readonly string _attachmentRootDirectory;
     private readonly string _databasePath;
     private readonly string _connectionString;
 
     public TodoRepository()
     {
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var dataDirectory = Path.Combine(appData, "JMtodo");
-        Directory.CreateDirectory(dataDirectory);
+        _dataDirectory = Path.Combine(appData, "JMtodo");
+        _attachmentRootDirectory = Path.Combine(_dataDirectory, "attachments");
+        Directory.CreateDirectory(_dataDirectory);
+        Directory.CreateDirectory(_attachmentRootDirectory);
 
-        _databasePath = Path.Combine(dataDirectory, "todos.db");
+        _databasePath = Path.Combine(_dataDirectory, "todos.db");
         _connectionString = new SqliteConnectionStringBuilder { DataSource = _databasePath }.ToString();
     }
+
+    public string AttachmentRootDirectory => _attachmentRootDirectory;
 
     public void Initialize()
     {
@@ -150,6 +156,19 @@ public sealed class TodoRepository
                 deleted_at TEXT NULL,
                 sort_order INTEGER NOT NULL DEFAULT 0
             );
+
+            CREATE TABLE IF NOT EXISTS todo_attachments (
+                id TEXT PRIMARY KEY,
+                todo_id TEXT NOT NULL,
+                original_name TEXT NOT NULL,
+                stored_file_name TEXT NOT NULL,
+                relative_path TEXT NOT NULL,
+                file_size INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_todo_attachments_todo_id
+            ON todo_attachments (todo_id);
             """;
         command.ExecuteNonQuery();
     }
@@ -442,10 +461,82 @@ public sealed class TodoRepository
     public void DeletePermanent(string id)
     {
         using var connection = OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = "DELETE FROM todos WHERE id = $id;";
-        command.Parameters.AddWithValue("$id", id);
-        command.ExecuteNonQuery();
+        using var transaction = connection.BeginTransaction();
+
+        using (var attachmentCommand = connection.CreateCommand())
+        {
+            attachmentCommand.Transaction = transaction;
+            attachmentCommand.CommandText = "DELETE FROM todo_attachments WHERE todo_id = $id;";
+            attachmentCommand.Parameters.AddWithValue("$id", id);
+            attachmentCommand.ExecuteNonQuery();
+        }
+
+        using (var todoCommand = connection.CreateCommand())
+        {
+            todoCommand.Transaction = transaction;
+            todoCommand.CommandText = "DELETE FROM todos WHERE id = $id;";
+            todoCommand.Parameters.AddWithValue("$id", id);
+            todoCommand.ExecuteNonQuery();
+        }
+
+        transaction.Commit();
+    }
+
+    public void InsertAttachments(IEnumerable<TodoAttachment> attachments)
+    {
+        var items = attachments.ToList();
+        if (items.Count == 0)
+        {
+            return;
+        }
+
+        using var connection = OpenConnection();
+        using var transaction = connection.BeginTransaction();
+
+        foreach (var attachment in items)
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText =
+                """
+                INSERT INTO todo_attachments (
+                    id, todo_id, original_name, stored_file_name, relative_path, file_size, created_at
+                )
+                VALUES (
+                    $id, $todo_id, $original_name, $stored_file_name, $relative_path, $file_size, $created_at
+                );
+                """;
+            AddAttachmentParameters(command, attachment);
+            command.ExecuteNonQuery();
+        }
+
+        transaction.Commit();
+    }
+
+    public void DeleteAttachments(IEnumerable<string> attachmentIds)
+    {
+        var ids = attachmentIds
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        if (ids.Count == 0)
+        {
+            return;
+        }
+
+        using var connection = OpenConnection();
+        using var transaction = connection.BeginTransaction();
+
+        foreach (var id in ids)
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = "DELETE FROM todo_attachments WHERE id = $id;";
+            command.Parameters.AddWithValue("$id", id);
+            command.ExecuteNonQuery();
+        }
+
+        transaction.Commit();
     }
 
     private IReadOnlyList<TodoItem> GetAll()
@@ -481,6 +572,7 @@ public sealed class TodoRepository
             items.Add(ReadTodo(reader));
         }
 
+        LoadAttachments(connection, items);
         return items;
     }
 
@@ -508,6 +600,50 @@ public sealed class TodoRepository
         command.Parameters.AddWithValue("$sort_order", item.SortOrder);
     }
 
+    private static void AddAttachmentParameters(SqliteCommand command, TodoAttachment attachment)
+    {
+        command.Parameters.AddWithValue("$id", attachment.Id);
+        command.Parameters.AddWithValue("$todo_id", attachment.TodoId);
+        command.Parameters.AddWithValue("$original_name", attachment.OriginalFileName);
+        command.Parameters.AddWithValue("$stored_file_name", attachment.StoredFileName);
+        command.Parameters.AddWithValue("$relative_path", attachment.RelativePath);
+        command.Parameters.AddWithValue("$file_size", attachment.FileSize);
+        command.Parameters.AddWithValue("$created_at", FormatDateTime(attachment.CreatedAt));
+    }
+
+    private void LoadAttachments(SqliteConnection connection, IReadOnlyList<TodoItem> items)
+    {
+        if (items.Count == 0)
+        {
+            return;
+        }
+
+        var todosById = items.ToDictionary(todo => todo.Id, StringComparer.Ordinal);
+        using var command = connection.CreateCommand();
+        command.CommandText =
+            """
+            SELECT id,
+                   todo_id,
+                   original_name,
+                   stored_file_name,
+                   relative_path,
+                   file_size,
+                   created_at
+            FROM todo_attachments
+            ORDER BY created_at, original_name COLLATE NOCASE;
+            """;
+
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var attachment = ReadAttachment(reader);
+            if (todosById.TryGetValue(attachment.TodoId, out var todo))
+            {
+                todo.Attachments.Add(attachment);
+            }
+        }
+    }
+
     private static TodoItem ReadTodo(SqliteDataReader reader)
     {
         return new TodoItem
@@ -527,6 +663,22 @@ public sealed class TodoRepository
             SortOrder = reader.GetInt32(12),
             ParentTitle = reader.IsDBNull(13) ? null : reader.GetString(13),
             GroupName = reader.IsDBNull(14) ? null : reader.GetString(14)
+        };
+    }
+
+    private TodoAttachment ReadAttachment(SqliteDataReader reader)
+    {
+        var relativePath = reader.GetString(4);
+        return new TodoAttachment
+        {
+            Id = reader.GetString(0),
+            TodoId = reader.GetString(1),
+            OriginalFileName = reader.GetString(2),
+            StoredFileName = reader.GetString(3),
+            RelativePath = relativePath,
+            FullPath = GetAttachmentFullPath(relativePath),
+            FileSize = reader.GetInt64(5),
+            CreatedAt = DateTime.Parse(reader.GetString(6))
         };
     }
 
@@ -630,6 +782,12 @@ public sealed class TodoRepository
     private static string FormatDate(DateOnly date) => date.ToString("yyyy-MM-dd");
 
     private static string FormatDateTime(DateTime dateTime) => dateTime.ToString("O");
+
+    private string GetAttachmentFullPath(string relativePath)
+    {
+        var normalizedPath = relativePath.Replace('/', Path.DirectorySeparatorChar);
+        return Path.Combine(_dataDirectory, normalizedPath);
+    }
 
     private static string NormalizeIconKey(string? iconKey)
     {

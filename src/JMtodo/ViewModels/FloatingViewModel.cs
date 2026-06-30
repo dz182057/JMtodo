@@ -64,19 +64,37 @@ public sealed class FloatingViewModel : ViewModelBase
         _todoService.Reopen(todo.TaskId);
     }
 
-    public void CreateSubtask(FloatingTaskItemViewModel parent, string title, string? note, DateOnly startDate, DateOnly? dueDate)
+    public void CreateSubtask(
+        FloatingTaskItemViewModel parent,
+        string title,
+        string? note,
+        DateOnly startDate,
+        DateOnly? dueDate,
+        IEnumerable<string>? attachmentFilePaths)
     {
-        _todoService.CreateSubtask(parent.TaskId, title, note, startDate, dueDate);
+        _todoService.CreateSubtask(parent.TaskId, title, note, startDate, dueDate, attachmentFilePaths);
     }
 
-    public void Update(FloatingTaskItemViewModel todo, string title, string? note, DateOnly startDate, DateOnly? dueDate)
+    public void Update(
+        FloatingTaskItemViewModel todo,
+        string title,
+        string? note,
+        DateOnly startDate,
+        DateOnly? dueDate,
+        IReadOnlyCollection<string>? keptAttachmentIds,
+        IEnumerable<string>? newAttachmentFilePaths)
     {
         var item = todo.SourceTask.Clone();
         item.Title = title;
         item.Note = note;
         item.StartDate = startDate;
         item.DueDate = dueDate;
-        _todoService.Update(item);
+        _todoService.Update(item, keptAttachmentIds, newAttachmentFilePaths);
+    }
+
+    public void OpenAttachment(TodoAttachment attachment)
+    {
+        _todoService.OpenAttachment(attachment);
     }
 
     public bool TryReorder(string draggedId, string targetId, bool insertBefore)
@@ -200,6 +218,10 @@ public sealed class FloatingTaskItemViewModel
     public string FloatingDateText => SourceTask.FloatingDateText;
 
     public bool HasNote => SourceTask.HasNote;
+
+    public bool HasAttachments => SourceTask.HasAttachments;
+
+    public IReadOnlyList<TodoAttachment> Attachments => SourceTask.Attachments;
 
     public System.Windows.Media.Geometry IconGeometry => IconOption.Geometry;
 

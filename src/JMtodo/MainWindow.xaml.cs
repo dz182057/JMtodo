@@ -24,6 +24,7 @@ public partial class MainWindow : Window
     private ScrollViewer? _taskGridScrollViewer;
     private ScrollViewer? _pinnedActionGridScrollViewer;
     private bool _isSyncingGridScroll;
+    private bool _isSyncingHorizontalScroll;
     private bool _isSyncingGridSelection;
 
     public MainWindow(TodoService todoService, FloatingTaskWindow floatingWindow, WindowLevelService windowLevelService)
@@ -351,7 +352,10 @@ public partial class MainWindow : Window
 
         _taskGridScrollViewer.ScrollChanged -= TaskGridScrollViewer_ScrollChanged;
         _taskGridScrollViewer.ScrollChanged += TaskGridScrollViewer_ScrollChanged;
+        TaskGrid.SizeChanged -= TaskGrid_SizeChanged;
+        TaskGrid.SizeChanged += TaskGrid_SizeChanged;
         SyncScrollViewer(_pinnedActionGridScrollViewer, _taskGridScrollViewer.VerticalOffset);
+        UpdateTaskHorizontalScrollBar();
     }
 
     private void PinnedActionGrid_Loaded(object sender, RoutedEventArgs e)
@@ -364,12 +368,22 @@ public partial class MainWindow : Window
 
         _pinnedActionGridScrollViewer.ScrollChanged -= PinnedActionGridScrollViewer_ScrollChanged;
         _pinnedActionGridScrollViewer.ScrollChanged += PinnedActionGridScrollViewer_ScrollChanged;
+        PinnedActionGrid.SizeChanged -= PinnedActionGrid_SizeChanged;
+        PinnedActionGrid.SizeChanged += PinnedActionGrid_SizeChanged;
         SyncScrollViewer(_pinnedActionGridScrollViewer, _taskGridScrollViewer?.VerticalOffset ?? 0);
+        UpdateTaskHorizontalScrollBar();
         SyncPinnedActionGridSelection();
     }
 
     private void TaskGridScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
     {
+        if (Math.Abs(e.HorizontalChange) > double.Epsilon ||
+            Math.Abs(e.ExtentWidthChange) > double.Epsilon ||
+            Math.Abs(e.ViewportWidthChange) > double.Epsilon)
+        {
+            UpdateTaskHorizontalScrollBar();
+        }
+
         if (Math.Abs(e.VerticalChange) < double.Epsilon &&
             Math.Abs(e.ExtentHeightChange) < double.Epsilon &&
             Math.Abs(e.ViewportHeightChange) < double.Epsilon)
@@ -378,6 +392,62 @@ public partial class MainWindow : Window
         }
 
         SyncScrollViewer(_pinnedActionGridScrollViewer, e.VerticalOffset);
+    }
+
+    private void TaskGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        UpdateTaskHorizontalScrollBar();
+    }
+
+    private void PinnedActionGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        UpdateTaskHorizontalScrollBar();
+    }
+
+    private void TaskHorizontalScrollBar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_isSyncingHorizontalScroll || _taskGridScrollViewer is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _isSyncingHorizontalScroll = true;
+            _taskGridScrollViewer.ScrollToHorizontalOffset(e.NewValue);
+        }
+        finally
+        {
+            _isSyncingHorizontalScroll = false;
+        }
+    }
+
+    private void UpdateTaskHorizontalScrollBar()
+    {
+        if (_taskGridScrollViewer is null)
+        {
+            TaskHorizontalScrollBar.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        var maximum = Math.Max(0, _taskGridScrollViewer.ScrollableWidth);
+        var pinnedWidth = Math.Max(0, PinnedActionGrid.ActualWidth);
+        // 外置滚动条横跨固定操作列，滑块比例按整张表的可见宽度计算。
+        var tableViewportWidth = Math.Max(0, _taskGridScrollViewer.ViewportWidth + pinnedWidth);
+
+        try
+        {
+            _isSyncingHorizontalScroll = true;
+            TaskHorizontalScrollBar.Maximum = maximum;
+            TaskHorizontalScrollBar.ViewportSize = tableViewportWidth;
+            TaskHorizontalScrollBar.LargeChange = Math.Max(16, _taskGridScrollViewer.ViewportWidth);
+            TaskHorizontalScrollBar.Value = Math.Min(maximum, _taskGridScrollViewer.HorizontalOffset);
+            TaskHorizontalScrollBar.Visibility = maximum > 0.1 ? Visibility.Visible : Visibility.Collapsed;
+        }
+        finally
+        {
+            _isSyncingHorizontalScroll = false;
+        }
     }
 
     private void PinnedActionGridScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
@@ -586,7 +656,13 @@ public partial class MainWindow : Window
             return;
         }
 
-        _todoService.Create(editor.Title, editor.Note, editor.GetStartDate(), editor.GetDueDate(), editor.SelectedGroupId);
+        _todoService.Create(
+            editor.Title,
+            editor.Note,
+            editor.GetStartDate(),
+            editor.GetDueDate(),
+            editor.SelectedGroupId,
+            editor.GetNewAttachmentPaths());
     }
 
     private void EditTodo(TodoItem todo)
@@ -602,7 +678,7 @@ public partial class MainWindow : Window
         todo.Note = editor.Note;
         todo.StartDate = editor.GetStartDate();
         todo.DueDate = editor.GetDueDate();
-        _todoService.Update(todo);
+        _todoService.Update(todo, editor.GetKeptAttachmentIds(), editor.GetNewAttachmentPaths());
     }
 
     private void AddSubtask(TodoItem parent)
@@ -626,7 +702,54 @@ public partial class MainWindow : Window
             return;
         }
 
-        _todoService.CreateSubtask(parent.Id, editor.Title, editor.Note, editor.GetStartDate(), editor.GetDueDate());
+        _todoService.CreateSubtask(
+            parent.Id,
+            editor.Title,
+            editor.Note,
+            editor.GetStartDate(),
+            editor.GetDueDate(),
+            editor.GetNewAttachmentPaths());
+    }
+
+    private void TaskAttachmentButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.Button button || button.Tag is not TodoItem todo || todo.Attachments.Count == 0)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        if (todo.Attachments.Count == 1)
+        {
+            OpenAttachment(todo.Attachments[0]);
+            return;
+        }
+
+        if (button.ContextMenu is not null)
+        {
+            button.ContextMenu.PlacementTarget = button;
+            button.ContextMenu.IsOpen = true;
+        }
+    }
+
+    private void AttachmentMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is TodoAttachment attachment)
+        {
+            OpenAttachment(attachment);
+        }
+    }
+
+    private void OpenAttachment(TodoAttachment attachment)
+    {
+        try
+        {
+            _todoService.OpenAttachment(attachment);
+        }
+        catch (InvalidOperationException ex)
+        {
+            ConfirmDialogWindow.ShowInfo(this, "无法打开文件", ex.Message);
+        }
     }
 
     private TodoItem? RequireSelectedTodo()

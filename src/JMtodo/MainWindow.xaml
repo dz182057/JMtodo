@@ -65,6 +65,7 @@
             <Setter Property="TextAlignment" Value="Center" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
             <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
         </Style>
 
         <Style x:Key="Text.Label.Compact" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource Text.Label}">
@@ -155,6 +156,101 @@
             <Setter Property="Height" Value="24" />
             <Setter Property="Background" Value="#F3F7FF" />
             <Setter Property="BorderBrush" Value="#DCE7F7" />
+        </Style>
+
+        <Style x:Key="TaskAttachmentContextMenu" TargetType="{x:Type ContextMenu}">
+            <Setter Property="MinWidth" Value="280" />
+            <Setter Property="MaxWidth" Value="360" />
+            <Setter Property="Padding" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="HasDropShadow" Value="False" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ContextMenu}">
+                        <Border Padding="8" Background="Transparent">
+                            <Border MaxWidth="{TemplateBinding MaxWidth}"
+                                    Padding="{TemplateBinding Padding}"
+                                    Background="#FFFFFF"
+                                    BorderBrush="{StaticResource Brush.Border}"
+                                    BorderThickness="1"
+                                    CornerRadius="14"
+                                    Effect="{StaticResource Shadow.Popup}"
+                                    SnapsToDevicePixels="True">
+                                <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle" />
+                            </Border>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TaskAttachmentMenuItem" TargetType="{x:Type MenuItem}">
+            <Setter Property="Height" Value="44" />
+            <Setter Property="MinWidth" Value="268" />
+            <Setter Property="MaxWidth" Value="348" />
+            <Setter Property="Padding" Value="10,0,12,0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+            <Setter Property="FontFamily" Value="Microsoft YaHei UI, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="ToolTip" Value="{Binding FullPath}" />
+            <Setter Property="Tag" Value="{Binding}" />
+            <EventSetter Event="Click" Handler="AttachmentMenuItem_Click" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type MenuItem}">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="40" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border x:Name="IconChip"
+                                        Width="30"
+                                        Height="24"
+                                        CornerRadius="8"
+                                        Background="{Binding FileTypeBackground}"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding FileTypeLabel}"
+                                               FontSize="7.5"
+                                               FontWeight="Bold"
+                                               Foreground="{Binding FileTypeForeground}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding DisplayFileName}"
+                                           FontFamily="{TemplateBinding FontFamily}"
+                                           FontSize="{TemplateBinding FontSize}"
+                                           FontWeight="{TemplateBinding FontWeight}"
+                                           Foreground="{TemplateBinding Foreground}"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#F3F7FF" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.45" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         </ResourceDictionary>
     </Window.Resources>
@@ -599,15 +695,20 @@
                 BorderBrush="{StaticResource Brush.Border}"
                 BorderThickness="1"
                 CornerRadius="14"
-                Effect="{StaticResource Shadow.Card}"
+                controls:RoundedClip.Enabled="True"
                 ClipToBounds="True">
             <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="28" />
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" MinWidth="0" />
                     <ColumnDefinition Width="218" />
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="1"
+                <Border Grid.Row="0"
+                        Grid.Column="1"
                         Width="218"
                         Panel.ZIndex="10"
                         Background="{StaticResource Brush.Surface}"
@@ -645,9 +746,8 @@
                     </DataGrid.Resources>
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="操作"
-                                                Width="204"
+                                                Width="*"
                                                 MinWidth="204"
-                                                MaxWidth="204"
                                                 CanUserResize="False"
                                                 CanUserSort="False">
                             <DataGridTemplateColumn.CellTemplate>
@@ -713,6 +813,7 @@
                 </Border>
 
                 <DataGrid x:Name="TaskGrid"
+                      Grid.Row="0"
                       Grid.Column="0"
                       Panel.ZIndex="0"
                       Tag="ScrollableTaskColumns"
@@ -732,7 +833,7 @@
                       EnableColumnVirtualization="True"
                       CanUserResizeColumns="True"
                       CanUserSortColumns="True"
-                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                      ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                       ScrollViewer.VerticalScrollBarVisibility="Hidden"
                       ScrollViewer.CanContentScroll="True"
                       HorizontalGridLinesBrush="Transparent"
@@ -986,15 +1087,76 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="任务组" Binding="{Binding GroupDisplayText}" Width="112" MinWidth="88" SortMemberPath="GroupDisplayText" />
-                    <DataGridTextColumn Header="备注" Binding="{Binding Note}" Width="140" MinWidth="96" SortMemberPath="Note">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource CenteredTaskGridTextBlockStyle}">
-                                <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-                                <Setter Property="VerticalAlignment" Value="Center" />
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="任务组" Binding="{Binding GroupDisplayText}" Width="112" MinWidth="88" SortMemberPath="GroupDisplayText" ElementStyle="{StaticResource CenteredTaskGridTextBlockStyle}" />
+                    <DataGridTextColumn Header="备注" Binding="{Binding Note}" Width="140" MinWidth="96" SortMemberPath="Note" ElementStyle="{StaticResource CenteredTaskGridTextBlockStyle}" />
+
+                    <DataGridTemplateColumn Header="文件" Width="150" MinWidth="120" SortMemberPath="AttachmentCount">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Button Height="34"
+                                            MaxWidth="132"
+                                            Padding="10,0,10,0"
+                                            HorizontalAlignment="Center"
+                                            Tag="{Binding}"
+                                            Click="TaskAttachmentButton_Click"
+                                            ToolTip="{Binding AttachmentSummaryText}">
+                                        <Button.Style>
+                                            <Style TargetType="{x:Type Button}" BasedOn="{StaticResource Button.Secondary}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasAttachments}" Value="False">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                        <Button.ContextMenu>
+                                            <ContextMenu ItemsSource="{Binding PlacementTarget.Tag.Attachments, RelativeSource={RelativeSource Self}}"
+                                                         ItemContainerStyle="{StaticResource TaskAttachmentMenuItem}"
+                                                         Style="{StaticResource TaskAttachmentContextMenu}" />
+                                        </Button.ContextMenu>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Width="30"
+                                                    Height="22"
+                                                    CornerRadius="7"
+                                                    Background="{Binding AttachmentIconBackground}">
+                                                <TextBlock Text="{Binding AttachmentIconLabel}"
+                                                           FontSize="7.5"
+                                                           FontWeight="Bold"
+                                                           Foreground="{Binding AttachmentIconForeground}"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center" />
+                                            </Border>
+                                            <TextBlock Text="{Binding AttachmentSummaryText}"
+                                                       Width="78"
+                                                       Margin="7,0,0,0"
+                                                       FontSize="12"
+                                                       Foreground="{StaticResource Brush.TextPrimary}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+
+                                    <TextBlock Text="—"
+                                               Foreground="{StaticResource Brush.TextTertiary}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource CenteredTaskGridTextBlockStyle}">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasAttachments}" Value="False">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
 
                     <DataGridTemplateColumn Header="状态" Width="90" MinWidth="78" SortMemberPath="Status">
                         <DataGridTemplateColumn.CellTemplate>
@@ -1006,7 +1168,7 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTextColumn Header="起始日期" Binding="{Binding StartDateText}" Width="110" MinWidth="100" SortMemberPath="StartDate" />
+                    <DataGridTextColumn Header="起始日期" Binding="{Binding StartDateText}" Width="110" MinWidth="100" SortMemberPath="StartDate" ElementStyle="{StaticResource CenteredTaskGridTextBlockStyle}" />
 
                     <DataGridTemplateColumn Header="计划完成" Width="124" MinWidth="108" SortMemberPath="DueDate">
                         <DataGridTemplateColumn.CellTemplate>
@@ -1051,14 +1213,14 @@
                     <DataGridTemplateColumn Header="创建时间" Width="148" MinWidth="132" SortMemberPath="CreatedAt">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding CreatedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding CreatedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Style="{StaticResource CenteredTaskGridTextBlockStyle}" />
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                     <DataGridTemplateColumn Header="更新时间" Width="148" MinWidth="132" SortMemberPath="UpdatedAt">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding UpdatedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding UpdatedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Style="{StaticResource CenteredTaskGridTextBlockStyle}" />
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -1101,6 +1263,16 @@
 
                 </DataGrid.Columns>
             </DataGrid>
+
+                <ScrollBar x:Name="TaskHorizontalScrollBar"
+                           Grid.Row="1"
+                           Grid.ColumnSpan="2"
+                           Orientation="Horizontal"
+                           VerticalAlignment="Center"
+                           Minimum="0"
+                           SmallChange="16"
+                           Style="{StaticResource ModernScrollBarStyle}"
+                           ValueChanged="TaskHorizontalScrollBar_ValueChanged" />
 
             </Grid>
         </Border>

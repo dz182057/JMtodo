@@ -202,7 +202,13 @@ public partial class FloatingTaskWindow : Window
             return;
         }
 
-        _viewModel.CreateSubtask(parent, editor.Title, editor.Note, editor.GetStartDate(), editor.GetDueDate());
+        _viewModel.CreateSubtask(
+            parent,
+            editor.Title,
+            editor.Note,
+            editor.GetStartDate(),
+            editor.GetDueDate(),
+            editor.GetNewAttachmentPaths());
     }
 
     private void EditTaskButton_Click(object sender, RoutedEventArgs e)
@@ -219,7 +225,31 @@ public partial class FloatingTaskWindow : Window
             return;
         }
 
-        _viewModel.Update(todo, editor.Title, editor.Note, editor.GetStartDate(), editor.GetDueDate());
+        _viewModel.Update(
+            todo,
+            editor.Title,
+            editor.Note,
+            editor.GetStartDate(),
+            editor.GetDueDate(),
+            editor.GetKeptAttachmentIds(),
+            editor.GetNewAttachmentPaths());
+    }
+
+    private void FloatingAttachmentButton_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is not TodoAttachment attachment)
+        {
+            return;
+        }
+
+        try
+        {
+            _viewModel.OpenAttachment(attachment);
+        }
+        catch (InvalidOperationException ex)
+        {
+            ConfirmDialogWindow.ShowInfo(this, "无法打开文件", ex.Message);
+        }
     }
 
     private void FloatingTaskCard_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)

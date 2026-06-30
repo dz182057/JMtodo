@@ -1,5 +1,8 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using TodoDesktopApp.Models;
+using TodoDesktopApp.Services;
+using Brush = System.Windows.Media.Brush;
 
 namespace TodoDesktopApp.ViewModels;
 
@@ -34,6 +37,7 @@ public sealed class TodoEditorViewModel : ViewModelBase
         DueDate = item.DueDate?.ToDateTime(TimeOnly.MinValue);
         IsNoDue = !item.DueDate.HasValue;
         LoadGroupOptions(null, item.GroupId);
+        LoadAttachments(item.Attachments);
         UpdateValidationState();
     }
 
@@ -61,7 +65,15 @@ public sealed class TodoEditorViewModel : ViewModelBase
 
     public bool IsGroupSelectorVisible => string.IsNullOrWhiteSpace(Id) && !IsSubtask;
 
+    public bool HasAttachments => Attachments.Count > 0;
+
+    public bool CanAddAttachment => Attachments.Count < TodoService.MaxAttachmentCount;
+
+    public string AttachmentCountText => $"{Attachments.Count}/{TodoService.MaxAttachmentCount}";
+
     public ObservableCollection<TodoGroupOption> GroupOptions { get; } = new();
+
+    public ObservableCollection<TodoEditorAttachmentItem> Attachments { get; } = new();
 
     public string Title
     {
@@ -186,9 +198,68 @@ public sealed class TodoEditorViewModel : ViewModelBase
         UpdateValidationState();
     }
 
+    public void AddAttachmentFiles(IEnumerable<string> filePaths)
+    {
+        var paths = filePaths
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Select(Path.GetFullPath)
+            .Where(path => Attachments.All(attachment =>
+                !attachment.IsNew ||
+                !string.Equals(attachment.OpenPath, path, StringComparison.OrdinalIgnoreCase)))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (paths.Count == 0)
+        {
+            return;
+        }
+
+        if (Attachments.Count + paths.Count > TodoService.MaxAttachmentCount)
+        {
+            throw new InvalidOperationException($"一个任务最多关联 {TodoService.MaxAttachmentCount} 个文件。");
+        }
+
+        foreach (var path in paths)
+        {
+            if (!File.Exists(path))
+            {
+                throw new InvalidOperationException($"选择的文件不存在：{Path.GetFileName(path)}");
+            }
+
+            Attachments.Add(TodoEditorAttachmentItem.FromFile(path));
+        }
+
+        NotifyAttachmentStateChanged();
+    }
+
+    public void RemoveAttachment(TodoEditorAttachmentItem attachment)
+    {
+        if (Attachments.Remove(attachment))
+        {
+            NotifyAttachmentStateChanged();
+        }
+    }
+
     public DateOnly GetStartDate() => DateOnly.FromDateTime(StartDate!.Value);
 
     public DateOnly? GetDueDate() => IsNoDue || !DueDate.HasValue ? null : DateOnly.FromDateTime(DueDate.Value);
+
+    public IReadOnlyCollection<string> GetKeptAttachmentIds()
+    {
+        return Attachments
+            .Where(attachment => !attachment.IsNew && !string.IsNullOrWhiteSpace(attachment.Id))
+            .Select(attachment => attachment.Id!)
+            .ToList();
+    }
+
+    public IReadOnlyList<string> GetNewAttachmentPaths()
+    {
+        return Attachments
+            .Where(attachment => attachment.IsNew)
+            .Select(attachment => attachment.OpenPath)
+            .ToList();
+    }
+
+    public string AttachmentStateSignature => string.Join("|", Attachments.Select(attachment => attachment.StateKey));
 
     private void LoadGroupOptions(IEnumerable<TodoGroup>? groups, string? selectedGroupId)
     {
@@ -205,6 +276,23 @@ public sealed class TodoEditorViewModel : ViewModelBase
         }
 
         SelectedGroup = GroupOptions.FirstOrDefault(group => group.Id == selectedGroupId) ?? noGroup;
+    }
+
+    private void LoadAttachments(IEnumerable<TodoAttachment> attachments)
+    {
+        Attachments.Clear();
+        foreach (var attachment in attachments)
+        {
+            Attachments.Add(TodoEditorAttachmentItem.FromAttachment(attachment));
+        }
+    }
+
+    private void NotifyAttachmentStateChanged()
+    {
+        OnPropertyChanged(nameof(HasAttachments));
+        OnPropertyChanged(nameof(CanAddAttachment));
+        OnPropertyChanged(nameof(AttachmentCountText));
+        OnPropertyChanged(nameof(AttachmentStateSignature));
     }
 
     private void UpdateValidationState()
@@ -247,4 +335,87 @@ public sealed class TodoGroupOption
     public string Name { get; init; } = string.Empty;
 
     public override string ToString() => Name;
+}
+
+public sealed class TodoEditorAttachmentItem
+{
+    private TodoEditorAttachmentItem(
+        string? id,
+        string displayFileName,
+        string openPath,
+        long fileSize,
+        bool isNew)
+    {
+        Id = id;
+        DisplayFileName = displayFileName;
+        OpenPath = openPath;
+        FileSize = fileSize;
+        IsNew = isNew;
+    }
+
+    public string? Id { get; }
+
+    public string DisplayFileName { get; }
+
+    public string OpenPath { get; }
+
+    public long FileSize { get; }
+
+    public bool IsNew { get; }
+
+    public string FileSizeText => FormatFileSize(FileSize);
+
+    public string FileTypeLabel => FileTypeIcon.Label;
+
+    public Brush FileTypeForeground => FileTypeIcon.Foreground;
+
+    public Brush FileTypeBackground => FileTypeIcon.Background;
+
+    public string StateKey => IsNew ? $"new:{OpenPath}" : $"existing:{Id}";
+
+    private AttachmentFileTypeIcon FileTypeIcon => AttachmentFileTypeIconCatalog.Get(DisplayFileName);
+
+    public static TodoEditorAttachmentItem FromAttachment(TodoAttachment attachment)
+    {
+        return new TodoEditorAttachmentItem(
+            attachment.Id,
+            attachment.DisplayFileName,
+            attachment.FullPath,
+            attachment.FileSize,
+            isNew: false);
+    }
+
+    public static TodoEditorAttachmentItem FromFile(string filePath)
+    {
+        var fileInfo = new FileInfo(filePath);
+        return new TodoEditorAttachmentItem(
+            id: null,
+            fileInfo.Name,
+            fileInfo.FullName,
+            fileInfo.Length,
+            isNew: true);
+    }
+
+    private static string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024)
+        {
+            return $"{bytes} B";
+        }
+
+        var kb = bytes / 1024d;
+        if (kb < 1024)
+        {
+            return $"{kb:0.#} KB";
+        }
+
+        var mb = kb / 1024d;
+        if (mb < 1024)
+        {
+            return $"{mb:0.#} MB";
+        }
+
+        var gb = mb / 1024d;
+        return $"{gb:0.#} GB";
+    }
 }

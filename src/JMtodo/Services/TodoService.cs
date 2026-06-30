@@ -1,10 +1,14 @@
 using TodoDesktopApp.Data;
 using TodoDesktopApp.Models;
+using System.Diagnostics;
+using System.IO;
 
 namespace TodoDesktopApp.Services;
 
 public sealed class TodoService
 {
+    public const int MaxAttachmentCount = 10;
+
     private readonly TodoRepository _repository;
 
     public TodoService(TodoRepository repository)
@@ -108,12 +112,24 @@ public sealed class TodoService
         NotifyChanged();
     }
 
-    public TodoItem Create(string title, string? note, DateOnly startDate, DateOnly? dueDate, string? groupId = null)
+    public TodoItem Create(
+        string title,
+        string? note,
+        DateOnly startDate,
+        DateOnly? dueDate,
+        string? groupId = null,
+        IEnumerable<string>? attachmentFilePaths = null)
     {
-        return CreateTodo(title, note, startDate, dueDate, parentId: null, groupId);
+        return CreateTodo(title, note, startDate, dueDate, parentId: null, groupId, attachmentFilePaths);
     }
 
-    public TodoItem CreateSubtask(string parentId, string title, string? note, DateOnly startDate, DateOnly? dueDate)
+    public TodoItem CreateSubtask(
+        string parentId,
+        string title,
+        string? note,
+        DateOnly startDate,
+        DateOnly? dueDate,
+        IEnumerable<string>? attachmentFilePaths = null)
     {
         var parent = _repository.GetById(parentId) ?? throw new InvalidOperationException("找不到主任务。");
         if (parent.IsSubtask)
@@ -131,10 +147,17 @@ public sealed class TodoService
             throw new InvalidOperationException("只有未完成的主任务可以添加子任务。");
         }
 
-        return CreateTodo(title, note, startDate, dueDate, parent.Id, parent.GroupId);
+        return CreateTodo(title, note, startDate, dueDate, parent.Id, parent.GroupId, attachmentFilePaths);
     }
 
-    private TodoItem CreateTodo(string title, string? note, DateOnly startDate, DateOnly? dueDate, string? parentId, string? groupId)
+    private TodoItem CreateTodo(
+        string title,
+        string? note,
+        DateOnly startDate,
+        DateOnly? dueDate,
+        string? parentId,
+        string? groupId,
+        IEnumerable<string>? attachmentFilePaths)
     {
         if (string.IsNullOrWhiteSpace(title))
         {
@@ -145,6 +168,10 @@ public sealed class TodoService
         {
             throw new InvalidOperationException("找不到选择的任务组。");
         }
+
+        var newAttachmentPaths = NormalizeAttachmentPaths(attachmentFilePaths);
+        ValidateAttachmentLimit(0, newAttachmentPaths.Count);
+        ValidateAttachmentSources(newAttachmentPaths);
 
         var now = DateTime.Now;
         var item = new TodoItem
@@ -163,17 +190,22 @@ public sealed class TodoService
         };
 
         _repository.Insert(item);
+        AddAttachments(item.Id, newAttachmentPaths);
         NotifyChanged();
         return item;
     }
 
-    public void Update(TodoItem item)
+    public void Update(
+        TodoItem item,
+        IReadOnlyCollection<string>? keptAttachmentIds = null,
+        IEnumerable<string>? newAttachmentFilePaths = null)
     {
         if (string.IsNullOrWhiteSpace(item.Title))
         {
             throw new InvalidOperationException("任务标题不能为空。");
         }
 
+        var newAttachmentPaths = NormalizeAttachmentPaths(newAttachmentFilePaths);
         var existing = _repository.GetById(item.Id) ?? throw new InvalidOperationException("找不到要更新的任务。");
         existing.Title = item.Title.Trim();
         existing.Note = string.IsNullOrWhiteSpace(item.Note) ? null : item.Note.Trim();
@@ -182,7 +214,22 @@ public sealed class TodoService
         existing.UpdatedAt = DateTime.Now;
 
         _repository.Update(existing);
+        if (keptAttachmentIds is not null || newAttachmentPaths.Count > 0)
+        {
+            SyncAttachments(existing, keptAttachmentIds, newAttachmentPaths);
+        }
+
         NotifyChanged();
+    }
+
+    public void OpenAttachment(TodoAttachment attachment)
+    {
+        if (string.IsNullOrWhiteSpace(attachment.FullPath) || !File.Exists(attachment.FullPath))
+        {
+            throw new InvalidOperationException("文件不存在，可能已被移动或删除。");
+        }
+
+        Process.Start(new ProcessStartInfo(attachment.FullPath) { UseShellExecute = true });
     }
 
     public void MoveRootTodosToGroup(IEnumerable<string> todoIds, string groupId)
@@ -281,8 +328,14 @@ public sealed class TodoService
             foreach (var subtask in _repository.Search(new TodoSearchCriteria { IncludeNoDue = true })
                          .Where(todo => todo.ParentId == item.Id))
             {
+                DeleteAttachmentFiles(subtask);
                 _repository.DeletePermanent(subtask.Id);
             }
+        }
+
+        if (item is not null)
+        {
+            DeleteAttachmentFiles(item);
         }
 
         _repository.DeletePermanent(id);
@@ -387,6 +440,239 @@ public sealed class TodoService
     }
 
     private static bool HasSortOrder(TodoItem todo) => todo.SortOrder > 0;
+
+    private void SyncAttachments(
+        TodoItem existing,
+        IReadOnlyCollection<string>? keptAttachmentIds,
+        IReadOnlyList<string> newAttachmentPaths)
+    {
+        var existingIds = existing.Attachments.Select(attachment => attachment.Id).ToHashSet(StringComparer.Ordinal);
+        var keptIds = keptAttachmentIds is null
+            ? existingIds
+            : keptAttachmentIds
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct(StringComparer.Ordinal)
+                .ToHashSet(StringComparer.Ordinal);
+
+        if (keptIds.Any(id => !existingIds.Contains(id)))
+        {
+            throw new InvalidOperationException("附件数据已变化，请刷新后重试。");
+        }
+
+        ValidateAttachmentLimit(keptIds.Count, newAttachmentPaths.Count);
+        ValidateAttachmentSources(newAttachmentPaths);
+
+        var removedAttachments = existing.Attachments
+            .Where(attachment => !keptIds.Contains(attachment.Id))
+            .ToList();
+        var newAttachments = CopyAttachments(existing.Id, newAttachmentPaths);
+
+        try
+        {
+            _repository.DeleteAttachments(removedAttachments.Select(attachment => attachment.Id));
+            _repository.InsertAttachments(newAttachments);
+        }
+        catch
+        {
+            DeleteAttachmentFiles(newAttachments);
+            throw;
+        }
+
+        DeleteAttachmentFiles(removedAttachments);
+        CleanupAttachmentDirectory(existing.Id);
+    }
+
+    private void AddAttachments(string todoId, IReadOnlyList<string> sourcePaths)
+    {
+        if (sourcePaths.Count == 0)
+        {
+            return;
+        }
+
+        var attachments = CopyAttachments(todoId, sourcePaths);
+        try
+        {
+            _repository.InsertAttachments(attachments);
+        }
+        catch
+        {
+            DeleteAttachmentFiles(attachments);
+            throw;
+        }
+    }
+
+    private List<TodoAttachment> CopyAttachments(string todoId, IReadOnlyList<string> sourcePaths)
+    {
+        var result = new List<TodoAttachment>();
+        if (sourcePaths.Count == 0)
+        {
+            return result;
+        }
+
+        var taskDirectory = GetAttachmentTaskDirectory(todoId);
+        Directory.CreateDirectory(taskDirectory);
+
+        try
+        {
+            foreach (var sourcePath in sourcePaths)
+            {
+                var originalFileName = Path.GetFileName(sourcePath);
+                var storedFileName = CreateStoredFileName(originalFileName);
+                var destinationPath = Path.Combine(taskDirectory, storedFileName);
+                File.Copy(sourcePath, destinationPath, overwrite: false);
+
+                var fileInfo = new FileInfo(destinationPath);
+                result.Add(new TodoAttachment
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    TodoId = todoId,
+                    OriginalFileName = originalFileName,
+                    StoredFileName = storedFileName,
+                    RelativePath = CreateRelativeAttachmentPath(todoId, storedFileName),
+                    FullPath = destinationPath,
+                    FileSize = fileInfo.Length,
+                    CreatedAt = DateTime.Now
+                });
+            }
+        }
+        catch
+        {
+            DeleteAttachmentFiles(result);
+            CleanupAttachmentDirectory(todoId);
+            throw;
+        }
+
+        return result;
+    }
+
+    private static IReadOnlyList<string> NormalizeAttachmentPaths(IEnumerable<string>? filePaths)
+    {
+        if (filePaths is null)
+        {
+            return Array.Empty<string>();
+        }
+
+        var result = new List<string>();
+        foreach (var filePath in filePaths)
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                continue;
+            }
+
+            var fullPath = Path.GetFullPath(filePath);
+            if (result.Any(path => string.Equals(path, fullPath, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            result.Add(fullPath);
+        }
+
+        return result;
+    }
+
+    private static void ValidateAttachmentLimit(int existingCount, int newCount)
+    {
+        if (existingCount + newCount > MaxAttachmentCount)
+        {
+            throw new InvalidOperationException($"一个任务最多关联 {MaxAttachmentCount} 个文件。");
+        }
+    }
+
+    private static void ValidateAttachmentSources(IEnumerable<string> sourcePaths)
+    {
+        foreach (var sourcePath in sourcePaths)
+        {
+            if (!File.Exists(sourcePath))
+            {
+                throw new InvalidOperationException($"选择的文件不存在：{Path.GetFileName(sourcePath)}");
+            }
+        }
+    }
+
+    private void DeleteAttachmentFiles(TodoItem item)
+    {
+        DeleteAttachmentFiles(item.Attachments);
+        CleanupAttachmentDirectory(item.Id);
+    }
+
+    private static void DeleteAttachmentFiles(IEnumerable<TodoAttachment> attachments)
+    {
+        foreach (var attachment in attachments)
+        {
+            if (string.IsNullOrWhiteSpace(attachment.FullPath) || !File.Exists(attachment.FullPath))
+            {
+                continue;
+            }
+
+            try
+            {
+                File.Delete(attachment.FullPath);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+    }
+
+    private void CleanupAttachmentDirectory(string todoId)
+    {
+        var taskDirectory = GetAttachmentTaskDirectory(todoId);
+        if (!Directory.Exists(taskDirectory) || Directory.EnumerateFileSystemEntries(taskDirectory).Any())
+        {
+            return;
+        }
+
+        try
+        {
+            Directory.Delete(taskDirectory);
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+    }
+
+    private string GetAttachmentTaskDirectory(string todoId)
+    {
+        return Path.Combine(_repository.AttachmentRootDirectory, todoId);
+    }
+
+    private static string CreateRelativeAttachmentPath(string todoId, string storedFileName)
+    {
+        return $"attachments/{todoId}/{storedFileName}";
+    }
+
+    private static string CreateStoredFileName(string originalFileName)
+    {
+        var safeFileName = SanitizeFileName(originalFileName);
+        if (safeFileName.Length > 120)
+        {
+            var extension = Path.GetExtension(safeFileName);
+            var name = Path.GetFileNameWithoutExtension(safeFileName);
+            var maxNameLength = Math.Max(1, 120 - extension.Length);
+            safeFileName = $"{name[..Math.Min(name.Length, maxNameLength)]}{extension}";
+        }
+
+        return $"{DateTime.Now:yyyyMMddHHmmssfff}_{Guid.NewGuid().ToString("N")[..8]}_{safeFileName}";
+    }
+
+    private static string SanitizeFileName(string fileName)
+    {
+        var invalidChars = Path.GetInvalidFileNameChars();
+        var sanitized = new string(fileName
+            .Select(character => invalidChars.Contains(character) ? '_' : character)
+            .ToArray())
+            .Trim();
+
+        return string.IsNullOrWhiteSpace(sanitized) ? "file" : sanitized;
+    }
 
     private static string? NormalizeGroupDescription(string? description)
     {

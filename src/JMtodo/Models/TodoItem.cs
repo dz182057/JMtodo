@@ -1,3 +1,5 @@
+using Brush = System.Windows.Media.Brush;
+
 namespace TodoDesktopApp.Models;
 
 public sealed class TodoItem
@@ -20,6 +22,7 @@ public sealed class TodoItem
     public bool HasSubtasks { get; set; }
     public int SubtaskCount { get; set; }
     public bool IsExpanded { get; set; } = true;
+    public List<TodoAttachment> Attachments { get; set; } = new();
 
     public string StatusText => Status switch
     {
@@ -61,6 +64,31 @@ public sealed class TodoItem
 
     public bool HasNote => !string.IsNullOrWhiteSpace(Note);
 
+    public bool HasAttachments => Attachments.Count > 0;
+
+    public int AttachmentCount => Attachments.Count;
+
+    public string AttachmentCountText => HasAttachments ? $"{AttachmentCount} 个文件" : string.Empty;
+
+    public string AttachmentSummaryText => AttachmentCount switch
+    {
+        0 => "无文件",
+        1 => Attachments[0].DisplayFileName,
+        _ => $"{AttachmentCount} 个文件"
+    };
+
+    public string AttachmentIconLabel => AttachmentCount == 1
+        ? Attachments[0].FileTypeLabel
+        : AttachmentFileTypeIconCatalog.GetMultiple().Label;
+
+    public Brush AttachmentIconForeground => AttachmentCount == 1
+        ? Attachments[0].FileTypeForeground
+        : AttachmentFileTypeIconCatalog.GetMultiple().Foreground;
+
+    public Brush AttachmentIconBackground => AttachmentCount == 1
+        ? Attachments[0].FileTypeBackground
+        : AttachmentFileTypeIconCatalog.GetMultiple().Background;
+
     public bool IsOverdue =>
         Status == TodoStatus.Active &&
         DueDate.HasValue &&
@@ -87,7 +115,8 @@ public sealed class TodoItem
             SortOrder = SortOrder,
             HasSubtasks = HasSubtasks,
             SubtaskCount = SubtaskCount,
-            IsExpanded = IsExpanded
+            IsExpanded = IsExpanded,
+            Attachments = Attachments.Select(attachment => attachment.Clone()).ToList()
         };
     }
 }

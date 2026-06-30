@@ -3,9 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:TodoDesktopApp.Controls"
         Width="716"
-        Height="656"
+        Height="760"
         MinWidth="716"
-        MinHeight="656"
+        MinHeight="720"
         Icon="../Assets/JM_glass_alpha0_windows.ico"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
@@ -154,6 +154,238 @@
                                      Style="{StaticResource TextBox.Modern}" />
                         </StackPanel>
 
+                        <Border Margin="0,16,0,0"
+                                Padding="14,12,14,12"
+                                Background="{StaticResource Brush.SurfaceSoft}"
+                                BorderBrush="#E7EEF8"
+                                BorderThickness="1"
+                                CornerRadius="12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="40" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="文件"
+                                                   Style="{StaticResource DialogLabel}"
+                                                   Margin="0,0,8,0" />
+                                        <Border Height="24"
+                                                MinWidth="48"
+                                                Padding="8,0,8,0"
+                                                Background="#EEF5FF"
+                                                BorderBrush="#CFE0FF"
+                                                BorderThickness="1"
+                                                CornerRadius="12">
+                                            <TextBlock Text="{Binding AttachmentCountText}"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{StaticResource Brush.Primary}"
+                                                       Typography.NumeralAlignment="Tabular"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center" />
+                                        </Border>
+                                    </StackPanel>
+
+                                    <Button Grid.Column="1"
+                                            Width="112"
+                                            Height="40"
+                                            Padding="12,0,10,0"
+                                            HorizontalAlignment="Right"
+                                            Style="{StaticResource Button.Secondary}"
+                                            IsEnabled="{Binding CanAddAttachment}"
+                                            Click="SelectFilesButton_Click">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Path Width="14"
+                                                  Height="14"
+                                                  Data="M7,2 L7,12 M2,7 L12,7"
+                                                  Stroke="{StaticResource Brush.TextPrimary}"
+                                                  StrokeThickness="1.8"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  Stretch="Uniform" />
+                                            <TextBlock Text="选择文件"
+                                                       Margin="7,0,0,0"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+
+                                <Border Grid.Row="1"
+                                        Height="44"
+                                        Margin="0,10,0,0"
+                                        Background="#FFFFFF"
+                                        BorderBrush="#E5EAF3"
+                                        BorderThickness="1"
+                                        CornerRadius="8">
+                                    <Border.Style>
+                                        <Style TargetType="{x:Type Border}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasAttachments}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock Text="暂无关联文件"
+                                               FontSize="13"
+                                               Foreground="{StaticResource Brush.TextTertiary}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" />
+                                </Border>
+
+                                <ScrollViewer Grid.Row="1"
+                                              MaxHeight="158"
+                                              Margin="0,10,0,0"
+                                              VerticalScrollBarVisibility="Auto"
+                                              HorizontalScrollBarVisibility="Disabled">
+                                    <ScrollViewer.Style>
+                                        <Style TargetType="{x:Type ScrollViewer}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasAttachments}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ScrollViewer.Style>
+                                    <ItemsControl ItemsSource="{Binding Attachments}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Height="44"
+                                                        Margin="0,0,0,8"
+                                                        Padding="8,0,4,0"
+                                                        Background="#FFFFFF"
+                                                        BorderBrush="#E5EAF3"
+                                                        BorderThickness="1"
+                                                        CornerRadius="8">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="80" />
+                                                            <ColumnDefinition Width="40" />
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <Button Grid.Column="0"
+                                                                Height="40"
+                                                                Padding="8,0,8,0"
+                                                                HorizontalContentAlignment="Stretch"
+                                                                Style="{StaticResource Button.Ghost}"
+                                                                Tag="{Binding}"
+                                                                Click="OpenEditorAttachmentButton_Click"
+                                                                ToolTip="{Binding OpenPath}">
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="36" />
+                                                                    <ColumnDefinition Width="*" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <Border Width="30"
+                                                                        Height="24"
+                                                                        CornerRadius="8"
+                                                                        Background="{Binding FileTypeBackground}"
+                                                                        HorizontalAlignment="Left"
+                                                                        VerticalAlignment="Center">
+                                                                    <TextBlock Text="{Binding FileTypeLabel}"
+                                                                               FontSize="7.5"
+                                                                               FontWeight="Bold"
+                                                                               Foreground="{Binding FileTypeForeground}"
+                                                                               HorizontalAlignment="Center"
+                                                                               VerticalAlignment="Center" />
+                                                                </Border>
+                                                                <TextBlock Grid.Column="1"
+                                                                           Text="{Binding DisplayFileName}"
+                                                                           Margin="8,0,0,0"
+                                                                           FontSize="13"
+                                                                           Foreground="{StaticResource Brush.TextPrimary}"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           VerticalAlignment="Center" />
+                                                            </Grid>
+                                                        </Button>
+
+                                                        <TextBlock Grid.Column="1"
+                                                                   Text="{Binding FileSizeText}"
+                                                                   FontSize="12"
+                                                                   Foreground="{StaticResource Brush.TextTertiary}"
+                                                                   HorizontalAlignment="Right"
+                                                                   VerticalAlignment="Center"
+                                                                   Typography.NumeralAlignment="Tabular" />
+
+                                                        <Button Grid.Column="2"
+                                                                Width="40"
+                                                                Height="40"
+                                                                Padding="0"
+                                                                HorizontalAlignment="Right"
+                                                                Style="{StaticResource Button.Ghost}"
+                                                                Tag="{Binding}"
+                                                                Click="RemoveAttachmentButton_Click"
+                                                                ToolTip="移除文件">
+                                                            <Path Width="13"
+                                                                  Height="13"
+                                                                  Data="M3,3 L10,10 M10,3 L3,10"
+                                                                  Stroke="{StaticResource Brush.TextSecondary}"
+                                                                  StrokeThickness="1.7"
+                                                                  StrokeStartLineCap="Round"
+                                                                  StrokeEndLineCap="Round"
+                                                                  Stretch="Uniform" />
+                                                        </Button>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Grid>
+                        </Border>
+
+                        <Border Height="108"
+                                Margin="0,16,0,0"
+                                Padding="16,12,16,12"
+                                Background="{StaticResource Brush.SurfaceSoft}"
+                                BorderBrush="#E7EEF8"
+                                BorderThickness="1"
+                                CornerRadius="12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="20" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="16" />
+                                    <ColumnDefinition Width="104" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="开始日期" Style="{StaticResource DialogLabel}" />
+                                    <controls:ModernDatePicker Height="42"
+                                                               SelectedDate="{Binding StartDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                               Placeholder="选择日期" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="计划完成日期" Style="{StaticResource DialogLabel}" />
+                                    <controls:ModernDatePicker Height="42"
+                                                               SelectedDate="{Binding DueDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                               IsEnabled="{Binding IsDueDateEnabled}"
+                                                               Placeholder="选择日期" />
+                                </StackPanel>
+
+                                <CheckBox Grid.Column="4"
+                                          Width="104"
+                                          Height="42"
+                                          Margin="0,28,0,0"
+                                          HorizontalAlignment="Left"
+                                          Content="不限期"
+                                          FontSize="15"
+                                          IsChecked="{Binding IsNoDue}"
+                                          Style="{StaticResource CheckBox.Modern}" />
+                            </Grid>
+                        </Border>
+
                         <Border Height="104"
                                 Margin="0,16,0,0"
                                 Padding="16,12,16,12"
@@ -199,49 +431,6 @@
                                            Foreground="{StaticResource Brush.TextSecondary}"
                                            TextWrapping="Wrap"
                                            VerticalAlignment="Center" />
-                            </Grid>
-                        </Border>
-
-                        <Border Height="108"
-                                Margin="0,16,0,0"
-                                Padding="16,12,16,12"
-                                Background="{StaticResource Brush.SurfaceSoft}"
-                                BorderBrush="#E7EEF8"
-                                BorderThickness="1"
-                                CornerRadius="12">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="20" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="16" />
-                                    <ColumnDefinition Width="104" />
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="开始日期" Style="{StaticResource DialogLabel}" />
-                                    <controls:ModernDatePicker Height="42"
-                                                               SelectedDate="{Binding StartDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                               Placeholder="选择日期" />
-                                </StackPanel>
-
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="计划完成日期" Style="{StaticResource DialogLabel}" />
-                                    <controls:ModernDatePicker Height="42"
-                                                               SelectedDate="{Binding DueDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                               IsEnabled="{Binding IsDueDateEnabled}"
-                                                               Placeholder="选择日期" />
-                                </StackPanel>
-
-                                <CheckBox Grid.Column="4"
-                                          Width="104"
-                                          Height="42"
-                                          Margin="0,28,0,0"
-                                          HorizontalAlignment="Left"
-                                          Content="不限期"
-                                          FontSize="15"
-                                          IsChecked="{Binding IsNoDue}"
-                                          Style="{StaticResource CheckBox.Modern}" />
                             </Grid>
                         </Border>
 

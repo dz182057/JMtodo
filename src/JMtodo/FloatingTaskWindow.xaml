@@ -90,6 +90,27 @@
             </Style.Triggers>
         </Style>
 
+        <Style x:Key="FloatingAttachmentChip" TargetType="{x:Type Button}" BasedOn="{StaticResource Button.Base}">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="MinWidth" Value="40" />
+            <Setter Property="MaxWidth" Value="150" />
+            <Setter Property="Padding" Value="8,0,8,0" />
+            <Setter Property="Background" Value="#F3F7FF" />
+            <Setter Property="BorderBrush" Value="#DCE7F7" />
+            <Setter Property="Foreground" Value="{StaticResource Brush.Primary}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#EEF5FF" />
+                    <Setter Property="BorderBrush" Value="#CFE0FF" />
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#E3EDFF" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="FloatingTitleText" TargetType="{x:Type TextBlock}">
             <Setter Property="FontSize" Value="15" />
             <Setter Property="FontWeight" Value="SemiBold" />
@@ -220,8 +241,7 @@
                 BorderThickness="1"
                 CornerRadius="20"
                 Margin="18"
-                controls:RoundedClip.Enabled="True"
-                Effect="{StaticResource Shadow.Window}">
+                controls:RoundedClip.Enabled="True">
             <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="72" />
@@ -335,6 +355,7 @@
                                         <RowDefinition Height="22" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
 
                                     <CheckBox Grid.Row="0"
@@ -443,7 +464,57 @@
                                         </TextBlock.Style>
                                     </TextBlock>
 
-                                    <Grid Grid.Row="3"
+                                    <ItemsControl Grid.Row="3"
+                                                  Grid.Column="4"
+                                                  Grid.ColumnSpan="3"
+                                                  Margin="0,6,0,0"
+                                                  ItemsSource="{Binding MainTask.Attachments}">
+                                        <ItemsControl.Style>
+                                            <Style TargetType="{x:Type ItemsControl}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding MainTask.HasAttachments}" Value="False">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ItemsControl.Style>
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Margin="0,0,6,6"
+                                                        Style="{StaticResource FloatingAttachmentChip}"
+                                                        Tag="{Binding}"
+                                                        Click="FloatingAttachmentButton_Click"
+                                                        ToolTip="{Binding FullPath}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Border Width="30"
+                                                                Height="22"
+                                                                CornerRadius="7"
+                                                                Background="{Binding FileTypeBackground}">
+                                                            <TextBlock Text="{Binding FileTypeLabel}"
+                                                                       FontSize="7.5"
+                                                                       FontWeight="Bold"
+                                                                       Foreground="{Binding FileTypeForeground}"
+                                                                       HorizontalAlignment="Center"
+                                                                       VerticalAlignment="Center" />
+                                                        </Border>
+                                                        <TextBlock Text="{Binding DisplayFileName}"
+                                                                   Width="82"
+                                                                   Margin="6,0,0,0"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <Grid Grid.Row="4"
                                           Grid.Column="0"
                                           Grid.ColumnSpan="7"
                                           Margin="0,8,0,0">
@@ -477,10 +548,11 @@
                                                         <Grid.RowDefinitions>
                                                             <RowDefinition Height="36" />
                                                             <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="Auto" />
                                                         </Grid.RowDefinitions>
 
                                                         <Grid Grid.Column="0"
-                                                              Grid.RowSpan="2"
+                                                              Grid.RowSpan="3"
                                                               IsHitTestVisible="False">
                                                             <Grid.RowDefinitions>
                                                                 <RowDefinition Height="18" />
@@ -578,6 +650,56 @@
                                                                 </Style>
                                                             </TextBlock.Style>
                                                         </TextBlock>
+
+                                                        <ItemsControl Grid.Row="2"
+                                                                      Grid.Column="2"
+                                                                      Grid.ColumnSpan="3"
+                                                                      Margin="8,0,0,6"
+                                                                      ItemsSource="{Binding Attachments}">
+                                                            <ItemsControl.Style>
+                                                                <Style TargetType="{x:Type ItemsControl}">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding HasAttachments}" Value="False">
+                                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </ItemsControl.Style>
+                                                            <ItemsControl.ItemsPanel>
+                                                                <ItemsPanelTemplate>
+                                                                    <WrapPanel />
+                                                                </ItemsPanelTemplate>
+                                                            </ItemsControl.ItemsPanel>
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <Button Margin="0,0,6,6"
+                                                                            Style="{StaticResource FloatingAttachmentChip}"
+                                                                            Tag="{Binding}"
+                                                                            Click="FloatingAttachmentButton_Click"
+                                                                            ToolTip="{Binding FullPath}">
+                                                                        <StackPanel Orientation="Horizontal">
+                                                                            <Border Width="30"
+                                                                                    Height="22"
+                                                                                    CornerRadius="7"
+                                                                                    Background="{Binding FileTypeBackground}">
+                                                                                <TextBlock Text="{Binding FileTypeLabel}"
+                                                                                           FontSize="7.5"
+                                                                                           FontWeight="Bold"
+                                                                                           Foreground="{Binding FileTypeForeground}"
+                                                                                           HorizontalAlignment="Center"
+                                                                                           VerticalAlignment="Center" />
+                                                                            </Border>
+                                                                            <TextBlock Text="{Binding DisplayFileName}"
+                                                                                       Width="76"
+                                                                                       Margin="6,0,0,0"
+                                                                                       TextTrimming="CharacterEllipsis"
+                                                                                       VerticalAlignment="Center" />
+                                                                        </StackPanel>
+                                                                    </Button>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
                                                     </Grid>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
