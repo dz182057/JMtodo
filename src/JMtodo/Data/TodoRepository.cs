@@ -13,7 +13,7 @@ public sealed class TodoRepository
     public TodoRepository()
     {
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var dataDirectory = Path.Combine(appData, "TodoDesktopApp");
+        var dataDirectory = Path.Combine(appData, "JMtodo");
         Directory.CreateDirectory(dataDirectory);
 
         _databasePath = Path.Combine(dataDirectory, "todos.db");
