@@ -8,6 +8,10 @@
     <sys:String x:Key="Main.Add">Add</sys:String>
     <sys:String x:Key="Main.TaskGroups">Groups</sys:String>
     <sys:String x:Key="Main.Refresh">Refresh</sys:String>
+    <sys:String x:Key="Main.Import">Import</sys:String>
+    <sys:String x:Key="Main.Export">Export</sys:String>
+    <sys:String x:Key="Main.ImportExport">Import/Export</sys:String>
+    <sys:String x:Key="Main.ImportSample">Import sample</sys:String>
     <sys:String x:Key="Main.ShowFloating">Show panel</sys:String>
     <sys:String x:Key="Main.Keyword">Keyword</sys:String>
     <sys:String x:Key="Main.Status">Status</sys:String>
@@ -141,6 +145,23 @@
     <sys:String x:Key="Attachment.None">No files</sys:String>
     <sys:String x:Key="Attachment.MultipleLabel">ALL</sys:String>
 
+    <sys:String x:Key="Import.PreviewTitle">Import preview</sys:String>
+    <sys:String x:Key="Import.PreviewSummaryFormat">Will import {0} main tasks, {1} subtasks, and {2} linked files</sys:String>
+    <sys:String x:Key="Import.MissingAttachmentFormat">{0} linked files do not exist and will be skipped when importing.</sys:String>
+    <sys:String x:Key="Import.SkippedDuplicateFormat">Skipped {0} duplicate tasks.</sys:String>
+    <sys:String x:Key="Import.ConfirmImport">Import</sys:String>
+    <sys:String x:Key="Import.AttachmentReady">Ready</sys:String>
+    <sys:String x:Key="Import.AttachmentMissing">Missing</sys:String>
+    <sys:String x:Key="Import.NoNote">No notes</sys:String>
+    <sys:String x:Key="Import.UnknownFile">Unknown file</sys:String>
+    <sys:String x:Key="Import.InvalidFile">The import file is invalid.</sys:String>
+    <sys:String x:Key="Import.UnsupportedVersionFormat">Import file version {0} is not supported.</sys:String>
+    <sys:String x:Key="Import.StartDateFormat">Start: {0}</sys:String>
+    <sys:String x:Key="Import.DueDateFormat">Due: {0}</sys:String>
+    <sys:String x:Key="ImportSample.Title">Import sample</sys:String>
+    <sys:String x:Key="ImportSample.Subtitle">Users can ask their own AI or scripts to generate import files in this JSON format.</sys:String>
+    <sys:String x:Key="ImportSample.Copy">Copy</sys:String>
+
     <sys:String x:Key="Editor.InfoSubtaskFormat">The subtask will be added under "{0}". JMtodo currently supports two task levels.</sys:String>
     <sys:String x:Key="Editor.InfoNewTask">New tasks start as active and can be completed from the main list or floating panel.</sys:String>
     <sys:String x:Key="Editor.InvalidSubtaskParameter">Invalid subtask editor parameter.</sys:String>
@@ -198,6 +219,17 @@
     <sys:String x:Key="Dialog.AddFileFailed.Access">You do not have permission to read the selected file.</sys:String>
     <sys:String x:Key="Dialog.SelectTaskFiles.Title">Select task files</sys:String>
     <sys:String x:Key="Dialog.SelectTaskFiles.Filter">All files (*.*)|*.*</sys:String>
+    <sys:String x:Key="Dialog.JsonFile.Filter">JSON files (*.json)|*.json|All files (*.*)|*.*</sys:String>
+    <sys:String x:Key="Dialog.ImportTasks.Title">Select task import file</sys:String>
+    <sys:String x:Key="Dialog.ImportTasks.EmptyTitle">No tasks to import</sys:String>
+    <sys:String x:Key="Dialog.ImportTasks.EmptyMessage">This file does not contain importable main tasks. They may have been filtered as duplicate tasks.</sys:String>
+    <sys:String x:Key="Dialog.ImportTasks.DoneTitle">Import complete</sys:String>
+    <sys:String x:Key="Dialog.ImportTasks.DoneMessageFormat">Imported {0} tasks.</sys:String>
+    <sys:String x:Key="Dialog.ImportTasks.FailedTitle">Import failed</sys:String>
+    <sys:String x:Key="Dialog.ExportTasks.Title">Export tasks</sys:String>
+    <sys:String x:Key="Dialog.ExportTasks.DoneTitle">Export complete</sys:String>
+    <sys:String x:Key="Dialog.ExportTasks.DoneMessage">Tasks were exported as a JSON file.</sys:String>
+    <sys:String x:Key="Dialog.ExportTasks.FailedTitle">Export failed</sys:String>
     <sys:String x:Key="Dialog.GroupDelete.Title">Delete task group</sys:String>
     <sys:String x:Key="Dialog.GroupDelete.Message">Delete task group "{0}"?&#x0a;Tasks in the group will move to Ungrouped.</sys:String>
     <sys:String x:Key="Dialog.GroupDelete.Confirm">Delete</sys:String>

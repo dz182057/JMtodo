@@ -1,9 +1,11 @@
 using System.ComponentModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using TodoDesktopApp.Dialogs;
 using TodoDesktopApp.Models;
 using TodoDesktopApp.Services;
@@ -15,6 +17,7 @@ namespace TodoDesktopApp;
 public partial class MainWindow : Window
 {
     private readonly TodoService _todoService;
+    private readonly TaskExchangeService _taskExchangeService;
     private readonly FloatingTaskWindow _floatingWindow;
     private readonly WindowLevelService _windowLevelService;
     private readonly MainViewModel _viewModel;
@@ -35,6 +38,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         ApplyStartupBounds();
         _todoService = todoService;
+        _taskExchangeService = new TaskExchangeService(todoService);
         _floatingWindow = floatingWindow;
         _windowLevelService = windowLevelService;
         _viewModel = new MainViewModel(todoService);
@@ -104,6 +108,100 @@ public partial class MainWindow : Window
         var dialog = new TaskGroupManagerWindow(_todoService) { Owner = this };
         dialog.ShowDialog();
         _viewModel.Refresh();
+    }
+
+    private void ImportExportButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.Button button || button.ContextMenu is null)
+        {
+            return;
+        }
+
+        button.ContextMenu.PlacementTarget = button;
+        button.ContextMenu.Placement = PlacementMode.Bottom;
+        button.ContextMenu.IsOpen = true;
+    }
+
+    private void ImportTasksMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = T("Dialog.ImportTasks.Title"),
+            Filter = T("Dialog.JsonFile.Filter"),
+            Multiselect = false
+        };
+
+        if (dialog.ShowDialog(this) != true)
+        {
+            return;
+        }
+
+        try
+        {
+            var previewResult = _taskExchangeService.ReadImportPreview(dialog.FileName);
+            var previewTasks = previewResult.RootTasks;
+            if (previewTasks.Count == 0)
+            {
+                ConfirmDialogWindow.ShowInfo(this, T("Dialog.ImportTasks.EmptyTitle"), T("Dialog.ImportTasks.EmptyMessage"));
+                return;
+            }
+
+            var previewDialog = new ImportTasksPreviewWindow(previewTasks, previewResult.SkippedDuplicateCount) { Owner = this };
+            if (previewDialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            var importedCount = _taskExchangeService.ImportTasks(previewDialog.RootTasks);
+            RefreshAfterImport();
+            ConfirmDialogWindow.ShowInfo(
+                this,
+                T("Dialog.ImportTasks.DoneTitle"),
+                F("Dialog.ImportTasks.DoneMessageFormat", importedCount));
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        {
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.ImportTasks.FailedTitle"), ex.Message);
+        }
+    }
+
+    private void RefreshAfterImport()
+    {
+        _viewModel.Refresh();
+        Dispatcher.BeginInvoke(new Action(_viewModel.Refresh), DispatcherPriority.ApplicationIdle);
+    }
+
+    private void ExportTasksMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = T("Dialog.ExportTasks.Title"),
+            Filter = T("Dialog.JsonFile.Filter"),
+            FileName = $"JMtodo-tasks-{DateTime.Now:yyyyMMdd-HHmm}.json",
+            AddExtension = true,
+            DefaultExt = ".json"
+        };
+
+        if (dialog.ShowDialog(this) != true)
+        {
+            return;
+        }
+
+        try
+        {
+            _taskExchangeService.ExportAllTasks(dialog.FileName);
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.ExportTasks.DoneTitle"), T("Dialog.ExportTasks.DoneMessage"));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.ExportTasks.FailedTitle"), ex.Message);
+        }
+    }
+
+    private void ShowImportSampleMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ImportSampleWindow(_taskExchangeService.CreateImportSampleJson()) { Owner = this };
+        dialog.ShowDialog();
     }
 
     private void CompleteButton_Click(object sender, RoutedEventArgs e)

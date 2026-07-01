@@ -265,13 +265,12 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ContextMenu}">
-                        <Border Padding="8" Background="Transparent">
+                        <Border Padding="2" Background="Transparent">
                             <Border Padding="{TemplateBinding Padding}"
                                     Background="#FFFFFF"
                                     BorderBrush="{StaticResource Brush.Border}"
                                     BorderThickness="1"
                                     CornerRadius="14"
-                                    Effect="{StaticResource Shadow.Popup}"
                                     SnapsToDevicePixels="True">
                                 <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle" />
                             </Border>
@@ -501,7 +500,7 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Width="104" Style="{StaticResource Button.Secondary}" Click="AddButton_Click">
+                    <Button Width="92" Style="{StaticResource Button.Secondary}" Click="AddButton_Click">
                         <StackPanel Orientation="Horizontal">
                             <Path Width="16"
                                   Height="16"
@@ -514,7 +513,7 @@
                             <TextBlock Text="{DynamicResource Main.Add}" Margin="8,0,0,0" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Width="104" Margin="12,0,0,0" Style="{StaticResource Button.Secondary}" Click="ManageGroupsButton_Click">
+                    <Button Width="116" Margin="10,0,0,0" Style="{StaticResource Button.Secondary}" Click="ManageGroupsButton_Click">
                         <StackPanel Orientation="Horizontal">
                             <Path Width="16"
                                   Height="16"
@@ -528,7 +527,7 @@
                             <TextBlock Text="{DynamicResource Main.TaskGroups}" Margin="8,0,0,0" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Width="96" Margin="12,0,0,0" Style="{StaticResource Button.Secondary}" Command="{Binding RefreshCommand}">
+                    <Button Width="86" Margin="10,0,0,0" Style="{StaticResource Button.Secondary}" Command="{Binding RefreshCommand}">
                         <StackPanel Orientation="Horizontal">
                             <Path Width="16"
                                   Height="16"
@@ -541,7 +540,69 @@
                             <TextBlock Text="{DynamicResource Main.Refresh}" Margin="8,0,0,0" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button Width="128" Margin="12,0,0,0" Style="{StaticResource Button.Primary}" Click="ShowFloatingButton_Click">
+                    <Button Width="126" Margin="10,0,0,0" Style="{StaticResource Button.Secondary}" Click="ImportExportButton_Click">
+                        <Button.ContextMenu>
+                            <ContextMenu Style="{StaticResource TaskRowContextMenu}">
+                                <MenuItem Header="{DynamicResource Main.Import}"
+                                          Style="{StaticResource TaskRowContextMenuItem}"
+                                          Click="ImportTasksMenuItem_Click">
+                                    <MenuItem.Icon>
+                                        <Path Width="16"
+                                              Height="16"
+                                              Data="M8,2 L8,11 M5,8 L8,11 L11,8 M3,14 L13,14"
+                                              Stroke="{StaticResource Brush.TextSecondary}"
+                                              StrokeThickness="1.8"
+                                              StrokeStartLineCap="Round"
+                                              StrokeEndLineCap="Round"
+                                              StrokeLineJoin="Round"
+                                              Stretch="Uniform" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="{DynamicResource Main.Export}"
+                                          Style="{StaticResource TaskRowContextMenuItem}"
+                                          Click="ExportTasksMenuItem_Click">
+                                    <MenuItem.Icon>
+                                        <Path Width="16"
+                                              Height="16"
+                                              Data="M8,14 L8,5 M5,8 L8,5 L11,8 M3,14 L13,14"
+                                              Stroke="{StaticResource Brush.TextSecondary}"
+                                              StrokeThickness="1.8"
+                                              StrokeStartLineCap="Round"
+                                              StrokeEndLineCap="Round"
+                                              StrokeLineJoin="Round"
+                                              Stretch="Uniform" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <Separator Style="{StaticResource TaskRowContextMenuSeparator}" />
+                                <MenuItem Header="{DynamicResource Main.ImportSample}"
+                                          Style="{StaticResource TaskRowContextMenuItem}"
+                                          Click="ShowImportSampleMenuItem_Click">
+                                    <MenuItem.Icon>
+                                        <Path Width="16"
+                                              Height="16"
+                                              Data="M8,2 L9.6,6.4 L14,8 L9.6,9.6 L8,14 L6.4,9.6 L2,8 L6.4,6.4 Z"
+                                              Stroke="{StaticResource Brush.TextSecondary}"
+                                              StrokeThickness="1.6"
+                                              StrokeLineJoin="Round"
+                                              Stretch="Uniform" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                        <StackPanel Orientation="Horizontal">
+                            <Path Width="16"
+                                  Height="16"
+                                  Data="M3,4 L13,4 L13,7 L3,7 Z M3,10 L13,10 L13,13 L3,13 Z"
+                                  Stroke="{StaticResource Brush.TextPrimary}"
+                                  StrokeThickness="1.8"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  StrokeLineJoin="Round"
+                                  Stretch="Uniform" />
+                            <TextBlock Text="{DynamicResource Main.ImportExport}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Width="118" Margin="10,0,0,0" Style="{StaticResource Button.Primary}" Click="ShowFloatingButton_Click">
                         <StackPanel Orientation="Horizontal">
                             <Path Width="16"
                                   Height="16"

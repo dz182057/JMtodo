@@ -8,6 +8,10 @@
     <sys:String x:Key="Main.Add">新增</sys:String>
     <sys:String x:Key="Main.TaskGroups">任务组</sys:String>
     <sys:String x:Key="Main.Refresh">刷新</sys:String>
+    <sys:String x:Key="Main.Import">导入</sys:String>
+    <sys:String x:Key="Main.Export">导出</sys:String>
+    <sys:String x:Key="Main.ImportExport">导入/导出</sys:String>
+    <sys:String x:Key="Main.ImportSample">导入示例</sys:String>
     <sys:String x:Key="Main.ShowFloating">显示浮窗</sys:String>
     <sys:String x:Key="Main.Keyword">关键词</sys:String>
     <sys:String x:Key="Main.Status">状态</sys:String>
@@ -141,6 +145,23 @@
     <sys:String x:Key="Attachment.None">无文件</sys:String>
     <sys:String x:Key="Attachment.MultipleLabel">多</sys:String>
 
+    <sys:String x:Key="Import.PreviewTitle">导入预览</sys:String>
+    <sys:String x:Key="Import.PreviewSummaryFormat">将导入 {0} 个主任务、{1} 个子任务、{2} 个关联文件</sys:String>
+    <sys:String x:Key="Import.MissingAttachmentFormat">有 {0} 个关联文件不存在，确认导入时会跳过这些文件。</sys:String>
+    <sys:String x:Key="Import.SkippedDuplicateFormat">已过滤 {0} 个重复任务。</sys:String>
+    <sys:String x:Key="Import.ConfirmImport">确认导入</sys:String>
+    <sys:String x:Key="Import.AttachmentReady">可导入</sys:String>
+    <sys:String x:Key="Import.AttachmentMissing">不存在</sys:String>
+    <sys:String x:Key="Import.NoNote">无备注</sys:String>
+    <sys:String x:Key="Import.UnknownFile">未知文件</sys:String>
+    <sys:String x:Key="Import.InvalidFile">导入文件内容无效。</sys:String>
+    <sys:String x:Key="Import.UnsupportedVersionFormat">暂不支持版本 {0} 的导入文件。</sys:String>
+    <sys:String x:Key="Import.StartDateFormat">开始：{0}</sys:String>
+    <sys:String x:Key="Import.DueDateFormat">计划：{0}</sys:String>
+    <sys:String x:Key="ImportSample.Title">导入示例</sys:String>
+    <sys:String x:Key="ImportSample.Subtitle">用户可以让自己的 AI 或脚本按这个 JSON 格式生成导入文件。</sys:String>
+    <sys:String x:Key="ImportSample.Copy">复制</sys:String>
+
     <sys:String x:Key="Editor.InfoSubtaskFormat">子任务将添加到「{0}」下，暂时只支持二级子任务。</sys:String>
     <sys:String x:Key="Editor.InfoNewTask">新任务默认状态为未完成，可在主列表或悬浮窗中快速标记完成。</sys:String>
     <sys:String x:Key="Editor.InvalidSubtaskParameter">子任务编辑器参数无效。</sys:String>
@@ -198,6 +219,17 @@
     <sys:String x:Key="Dialog.AddFileFailed.Access">没有权限读取选择的文件。</sys:String>
     <sys:String x:Key="Dialog.SelectTaskFiles.Title">选择任务文件</sys:String>
     <sys:String x:Key="Dialog.SelectTaskFiles.Filter">所有文件 (*.*)|*.*</sys:String>
+    <sys:String x:Key="Dialog.JsonFile.Filter">JSON 文件 (*.json)|*.json|所有文件 (*.*)|*.*</sys:String>
+    <sys:String x:Key="Dialog.ImportTasks.Title">选择要导入的任务文件</sys:String>
+    <sys:String x:Key="Dialog.ImportTasks.EmptyTitle">没有可导入任务</sys:String>
+    <sys:String x:Key="Dialog.ImportTasks.EmptyMessage">这个文件里没有可导入的主任务，可能都已被重复任务过滤。</sys:String>
+    <sys:String x:Key="Dialog.ImportTasks.DoneTitle">导入完成</sys:String>
+    <sys:String x:Key="Dialog.ImportTasks.DoneMessageFormat">已导入 {0} 个任务。</sys:String>
+    <sys:String x:Key="Dialog.ImportTasks.FailedTitle">导入失败</sys:String>
+    <sys:String x:Key="Dialog.ExportTasks.Title">导出任务</sys:String>
+    <sys:String x:Key="Dialog.ExportTasks.DoneTitle">导出完成</sys:String>
+    <sys:String x:Key="Dialog.ExportTasks.DoneMessage">任务已导出为 JSON 文件。</sys:String>
+    <sys:String x:Key="Dialog.ExportTasks.FailedTitle">导出失败</sys:String>
     <sys:String x:Key="Dialog.GroupDelete.Title">删除任务组</sys:String>
     <sys:String x:Key="Dialog.GroupDelete.Message">删除任务组「{0}」？&#x0a;组内任务不会被删除，将自动移动到「未分组」。</sys:String>
     <sys:String x:Key="Dialog.GroupDelete.Confirm">删除</sys:String>
