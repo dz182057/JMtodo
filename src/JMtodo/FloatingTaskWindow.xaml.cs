@@ -2,7 +2,6 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -33,9 +32,10 @@ public partial class FloatingTaskWindow : Window
     private const double EdgeIconSize = 56;
     private const double EdgePeekSize = 18;
     private const double EdgePreviewGap = 10;
-    private const int CompletionBurstDurationMs = 360;
-    private const int CompletionExitDelayMs = 260;
+    private const int CompletionCelebrationDurationMs = 520;
+    private const int CompletionExitDelayMs = 330;
     private const int CompletionExitDurationMs = 220;
+    private const double CompletionParticleOverlaySize = 192;
     private readonly FloatingViewModel _viewModel;
     private readonly SettingsService _settingsService;
     private readonly WindowLevelService _windowLevelService;
@@ -52,6 +52,7 @@ public partial class FloatingTaskWindow : Window
     private System.Windows.Point? _taskDragStart;
     private FloatingTaskItemViewModel? _draggedTask;
     private readonly HashSet<string> _runningCompletionAnimations = new();
+    private readonly Dictionary<string, System.Windows.Point> _completionAnimationOrigins = new();
     private double _expandedHeight = DefaultFloatingHeight;
     private double _expandedWidth = DefaultFloatingWidth;
     private double _expandedLeft = 80;
@@ -157,12 +158,39 @@ public partial class FloatingTaskWindow : Window
 
         if (checkBox.IsChecked == true)
         {
-            _viewModel.Complete(todo, SystemParameters.ClientAreaAnimation);
+            var animateCompletion = SystemParameters.ClientAreaAnimation;
+            if (animateCompletion)
+            {
+                _completionAnimationOrigins[todo.TaskId] = GetCompletionClickOrigin(checkBox);
+            }
+
+            try
+            {
+                _viewModel.Complete(todo, animateCompletion);
+            }
+            catch
+            {
+                _completionAnimationOrigins.Remove(todo.TaskId);
+                throw;
+            }
         }
         else
         {
+            _completionAnimationOrigins.Remove(todo.TaskId);
             _viewModel.Reopen(todo);
         }
+    }
+
+    private System.Windows.Point GetCompletionClickOrigin(System.Windows.Controls.CheckBox checkBox)
+    {
+        if (checkBox.IsMouseOver)
+        {
+            return Mouse.GetPosition(Root);
+        }
+
+        return checkBox.TransformToVisual(Root).Transform(new System.Windows.Point(
+            Math.Max(0, checkBox.ActualWidth) / 2,
+            Math.Max(0, checkBox.ActualHeight) / 2));
     }
 
     private void FloatingTaskItem_Loaded(object sender, RoutedEventArgs e)
@@ -316,18 +344,36 @@ public partial class FloatingTaskWindow : Window
         }
 
         item.IsHitTestVisible = false;
-        item.ClipToBounds = true;
+        item.ClipToBounds = false;
         item.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
         item.RenderTransform = new TranslateTransform();
 
-        var adornerLayer = AdornerLayer.GetAdornerLayer(item);
-        CompletionBurstAdorner? burstAdorner = null;
-        if (adornerLayer is not null)
+        var origin = _completionAnimationOrigins.TryGetValue(todo.TaskId, out var clickOrigin)
+            ? clickOrigin
+            : item.TransformToVisual(Root).Transform(GetFallbackCompletionBurstOrigin(todo));
+        _completionAnimationOrigins.Remove(todo.TaskId);
+
+        var celebrationVisual = new CompletionParticleVisual(
+            new System.Windows.Point(CompletionParticleOverlaySize / 2, CompletionParticleOverlaySize / 2),
+            PickCompletionParticleKind())
         {
-            burstAdorner = new CompletionBurstAdorner(item, GetCompletionBurstOrigin(item, todo));
-            adornerLayer.Add(burstAdorner);
-            burstAdorner.Start();
-        }
+            Width = CompletionParticleOverlaySize,
+            Height = CompletionParticleOverlaySize
+        };
+        var celebrationPopup = new Popup
+        {
+            AllowsTransparency = true,
+            Child = celebrationVisual,
+            Focusable = false,
+            HorizontalOffset = origin.X - CompletionParticleOverlaySize / 2,
+            IsHitTestVisible = false,
+            Placement = PlacementMode.Relative,
+            PlacementTarget = Root,
+            StaysOpen = true,
+            VerticalOffset = origin.Y - CompletionParticleOverlaySize / 2
+        };
+        celebrationPopup.IsOpen = true;
+        celebrationVisual.Start();
 
         var storyboard = new Storyboard();
         var exitEase = new CubicEase { EasingMode = EasingMode.EaseIn };
@@ -352,10 +398,8 @@ public partial class FloatingTaskWindow : Window
 
         storyboard.Completed += (_, _) =>
         {
-            if (burstAdorner is not null)
-            {
-                adornerLayer?.Remove(burstAdorner);
-            }
+            celebrationPopup.IsOpen = false;
+            celebrationPopup.Child = null;
 
             _runningCompletionAnimations.Remove(todo.TaskId);
             _viewModel.FinishCompletionAnimation(todo.TaskId);
@@ -363,11 +407,16 @@ public partial class FloatingTaskWindow : Window
         storyboard.Begin();
     }
 
-    private static System.Windows.Point GetCompletionBurstOrigin(FrameworkElement item, FloatingTaskItemViewModel todo)
+    private static System.Windows.Point GetFallbackCompletionBurstOrigin(FloatingTaskItemViewModel todo)
     {
         return todo.IsSubTask
-            ? new System.Windows.Point(46, Math.Min(18, Math.Max(12, item.ActualHeight / 2)))
-            : new System.Windows.Point(12, 19);
+            ? new System.Windows.Point(45, 18)
+            : new System.Windows.Point(24, 26);
+    }
+
+    private static CompletionParticleKind PickCompletionParticleKind()
+    {
+        return (CompletionParticleKind)Random.Shared.Next(Enum.GetValues<CompletionParticleKind>().Length);
     }
 
     private void FloatingTaskCard_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -1262,40 +1311,33 @@ public partial class FloatingTaskWindow : Window
         return null;
     }
 
-    private sealed class CompletionBurstAdorner : Adorner
+    private sealed class CompletionParticleVisual : FrameworkElement
     {
         public static readonly DependencyProperty ProgressProperty = DependencyProperty.Register(
             nameof(Progress),
             typeof(double),
-            typeof(CompletionBurstAdorner),
+            typeof(CompletionParticleVisual),
             new FrameworkPropertyMetadata(0d, FrameworkPropertyMetadataOptions.AffectsRender));
 
-        private static readonly Vector[] ParticleOffsets =
-        {
-            new(-3, -24),
-            new(18, -19),
-            new(28, -1),
-            new(18, 17),
-            new(-2, 22),
-            new(-20, 12),
-            new(-25, -8),
-            new(-14, -20)
-        };
-
-        private static readonly System.Windows.Media.Brush[] ParticleBrushes =
-        {
-            CreateBrush("#36C275"),
-            CreateBrush("#5B8CFF"),
-            CreateBrush("#FFB84D"),
-            CreateBrush("#8A74FF")
-        };
+        private static readonly System.Windows.Media.Brush GreenBrush = CreateBrush("#36C275");
+        private static readonly System.Windows.Media.Brush SoftGreenBrush = CreateBrush("#DDF4E8");
+        private static readonly System.Windows.Media.Brush BlueBrush = CreateBrush("#5B8CFF");
+        private static readonly System.Windows.Media.Brush CyanBrush = CreateBrush("#35C6DF");
+        private static readonly System.Windows.Media.Brush AmberBrush = CreateBrush("#FFB84D");
+        private static readonly System.Windows.Media.Brush GoldBrush = CreateBrush("#FFD15C");
+        private static readonly System.Windows.Media.Brush VioletBrush = CreateBrush("#8A74FF");
+        private static readonly System.Windows.Media.Brush PinkBrush = CreateBrush("#EE6F9F");
+        private static readonly System.Windows.Media.Brush[] CoreBrushes = { GreenBrush, BlueBrush, AmberBrush, VioletBrush };
+        private static readonly System.Windows.Media.Brush[] NeonBrushes = { CyanBrush, VioletBrush, PinkBrush, BlueBrush };
+        private static readonly System.Windows.Media.Brush[] WarmBrushes = { GoldBrush, AmberBrush, PinkBrush, GreenBrush };
 
         private readonly System.Windows.Point _origin;
+        private readonly CompletionParticleKind _kind;
 
-        public CompletionBurstAdorner(UIElement adornedElement, System.Windows.Point origin)
-            : base(adornedElement)
+        public CompletionParticleVisual(System.Windows.Point origin, CompletionParticleKind kind)
         {
             _origin = origin;
+            _kind = kind;
             IsHitTestVisible = false;
         }
 
@@ -1307,7 +1349,7 @@ public partial class FloatingTaskWindow : Window
 
         public void Start()
         {
-            var animation = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(CompletionBurstDurationMs))
+            var animation = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(CompletionCelebrationDurationMs))
             {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };
@@ -1316,27 +1358,586 @@ public partial class FloatingTaskWindow : Window
 
         protected override void OnRender(DrawingContext drawingContext)
         {
-            var progress = Clamp(Progress, 0, 1);
+            var progress = Clamp01(Progress);
             if (progress <= 0)
             {
                 return;
             }
 
-            var travel = 1 - Math.Pow(1 - progress, 3);
-            var opacity = progress < 0.62 ? 1 : Math.Max(0, (1 - progress) / 0.38);
-            var radius = Math.Max(1.7, 3.2 - progress * 1.2);
-
-            drawingContext.PushOpacity(opacity);
-            for (var i = 0; i < ParticleOffsets.Length; i++)
+            switch (_kind)
             {
-                var offset = ParticleOffsets[i];
-                var point = new System.Windows.Point(
-                    _origin.X + offset.X * travel,
-                    _origin.Y + offset.Y * travel);
-                drawingContext.DrawEllipse(ParticleBrushes[i % ParticleBrushes.Length], null, point, radius, radius);
+                case CompletionParticleKind.LiftConfetti:
+                    DrawLiftConfetti(drawingContext, progress);
+                    break;
+                case CompletionParticleKind.SpiralFirework:
+                    DrawSpiralFirework(drawingContext, progress);
+                    break;
+                case CompletionParticleKind.StarCluster:
+                    DrawStarCluster(drawingContext, progress);
+                    break;
+                case CompletionParticleKind.NeonSpark:
+                    DrawNeonSpark(drawingContext, progress);
+                    break;
+                case CompletionParticleKind.OrbitNova:
+                    DrawOrbitNova(drawingContext, progress);
+                    break;
+                case CompletionParticleKind.PearlFirework:
+                    DrawPearlFirework(drawingContext, progress);
+                    break;
+                case CompletionParticleKind.PetalNova:
+                    DrawPetalNova(drawingContext, progress);
+                    break;
+                case CompletionParticleKind.SatellitePop:
+                    DrawSatellitePop(drawingContext, progress);
+                    break;
+                case CompletionParticleKind.GalaxySwirl:
+                    DrawGalaxySwirl(drawingContext, progress);
+                    break;
+                case CompletionParticleKind.CandyConfetti:
+                    DrawCandyConfetti(drawingContext, progress);
+                    break;
+                case CompletionParticleKind.TwinNova:
+                    DrawTwinNova(drawingContext, progress);
+                    break;
+                case CompletionParticleKind.HaloParticles:
+                    DrawHaloParticles(drawingContext, progress);
+                    break;
+                case CompletionParticleKind.NeonBloom:
+                    DrawNeonBloom(drawingContext, progress);
+                    break;
+                case CompletionParticleKind.FinaleParticles:
+                    DrawFinaleParticles(drawingContext, progress);
+                    break;
+                case CompletionParticleKind.StardustHalo:
+                    DrawStardustHalo(drawingContext, progress);
+                    break;
+                case CompletionParticleKind.ConfettiOrbit:
+                    DrawConfettiOrbit(drawingContext, progress);
+                    break;
+                case CompletionParticleKind.EmberBloom:
+                    DrawEmberBloom(drawingContext, progress);
+                    break;
+                case CompletionParticleKind.PetalSpiral:
+                    DrawPetalSpiral(drawingContext, progress);
+                    break;
+                case CompletionParticleKind.PrismNova:
+                    DrawPrismNova(drawingContext, progress);
+                    break;
+                default:
+                    DrawStarPop(drawingContext, progress);
+                    break;
+            }
+        }
+
+        private void DrawStarPop(DrawingContext drawingContext, double progress)
+        {
+            var travel = EaseOutCubic(progress);
+            var opacity = FadeOut(progress, 0.72);
+            var offsets = new[]
+            {
+                new Vector(-4, -28), new Vector(28, -18), new Vector(34, 8),
+                new Vector(7, 30), new Vector(-23, 15)
+            };
+
+            for (var i = 0; i < offsets.Length; i++)
+            {
+                var local = Clamp01((progress - i * 0.05) / 0.78);
+                var point = _origin + offsets[i] * travel;
+                DrawStar(drawingContext, point, 4 + 5 * Math.Sin(local * Math.PI), i % 2 == 0 ? AmberBrush : BlueBrush, opacity);
             }
 
+            DrawDot(drawingContext, _origin, 4, GreenBrush, opacity);
+        }
+
+        private void DrawLiftConfetti(DrawingContext drawingContext, double progress)
+        {
+            var travel = EaseOutCubic(progress);
+            var opacity = FadeOut(progress, 0.7);
+            var offsets = new[]
+            {
+                new Vector(8, -26), new Vector(30, -22), new Vector(48, -4), new Vector(26, 20),
+                new Vector(2, 25), new Vector(-14, 12), new Vector(56, -26), new Vector(68, 9)
+            };
+
+            for (var i = 0; i < offsets.Length; i++)
+            {
+                var point = _origin + offsets[i] * travel;
+                point.Y -= Math.Sin(progress * Math.PI) * 4;
+                DrawShard(drawingContext, point, i * 0.55 + progress * 3, CoreBrushes[i % CoreBrushes.Length], opacity);
+            }
+        }
+
+        private void DrawSpiralFirework(DrawingContext drawingContext, double progress)
+        {
+            var travel = EaseOutCubic(progress);
+            var opacity = FadeOut(progress, 0.72);
+            for (var i = 0; i < 22; i++)
+            {
+                var angle = i * 0.55 + travel * 2.35;
+                var radius = 5 + travel * (13 + i * 1.35);
+                var point = PointOnEllipse(_origin, angle, radius, 0.76);
+                var brush = CoreBrushes[i % CoreBrushes.Length];
+                if (i % 3 == 0)
+                {
+                    DrawStar(drawingContext, point, 2.4 + 2.8 * Math.Sin(progress * Math.PI), brush, opacity);
+                }
+                else
+                {
+                    DrawDot(drawingContext, point, 1.9 + i % 2 * 0.5, brush, opacity);
+                }
+            }
+        }
+
+        private void DrawStarCluster(DrawingContext drawingContext, double progress)
+        {
+            var travel = EaseOutCubic(progress);
+            var opacity = FadeOut(progress, 0.74);
+            for (var i = 0; i < 11; i++)
+            {
+                var angle = Math.PI * 2 * i / 11 + 0.4;
+                var radius = 5 + (12 + i % 4 * 5) * travel;
+                var point = PointOnEllipse(_origin, angle, radius, 0.82);
+                DrawStar(drawingContext, point, 2.4 + 3.2 * Math.Sin(progress * Math.PI), MixedBrush(i), opacity);
+            }
+        }
+
+        private void DrawNeonSpark(DrawingContext drawingContext, double progress)
+        {
+            var travel = EaseOutCubic(progress);
+            var opacity = FadeOut(progress, 0.72);
+            for (var i = 0; i < 12; i++)
+            {
+                var angle = -Math.PI * 0.9 + Math.PI * 1.8 * i / 11;
+                var point = PointOnEllipse(_origin, angle, 12 + 26 * travel, 0.78);
+                DrawStar(drawingContext, point, 2.5 + 4 * Math.Sin(progress * Math.PI), NeonBrushes[i % NeonBrushes.Length], opacity);
+            }
+        }
+
+        private void DrawOrbitNova(DrawingContext drawingContext, double progress)
+        {
+            var travel = EaseOutCubic(progress);
+            var opacity = FadeOut(progress, 0.74);
+            for (var i = 0; i < 18; i++)
+            {
+                var lane = i % 3;
+                var angle = i * 0.7 + travel * (1.7 + lane * 0.28);
+                var radius = 10 + travel * (18 + lane * 7);
+                var point = PointOnEllipse(_origin, angle, radius, 0.72 + lane * 0.08);
+                var brush = CoreBrushes[i % CoreBrushes.Length];
+                if (i % 4 == 0)
+                {
+                    DrawStar(drawingContext, point, 2.8 + Math.Sin(progress * Math.PI) * 2.6, brush, opacity);
+                }
+                else
+                {
+                    DrawDot(drawingContext, point, 2 + lane * 0.4, brush, opacity);
+                }
+            }
+        }
+
+        private void DrawPearlFirework(DrawingContext drawingContext, double progress)
+        {
+            DrawParticleBloom(drawingContext, progress, _origin + new Vector(4, -2), 24, 34, new[] { GoldBrush, GreenBrush, BlueBrush, AmberBrush }, ParticleShape.Dot, 0.1);
+            DrawDot(drawingContext, _origin + new Vector(4, -2), 7 * (1 - Clamp01(progress - 0.3)), SoftGreenBrush, FadeOut(progress, 0.62) * 0.75);
+        }
+
+        private void DrawPetalNova(DrawingContext drawingContext, double progress)
+        {
+            var travel = EaseOutCubic(progress);
+            var opacity = FadeOut(progress, 0.74);
+            for (var i = 0; i < 18; i++)
+            {
+                var angle = Math.PI * 2 * i / 18 + travel * 0.55;
+                var point = PointOnEllipse(_origin, angle, 11 + travel * (24 + i % 3 * 5), 0.82);
+                DrawPetal(drawingContext, point, angle + progress * 3, MixedBrush(i), opacity);
+            }
+        }
+
+        private void DrawSatellitePop(DrawingContext drawingContext, double progress)
+        {
+            var travel = EaseOutCubic(progress);
+            var opacity = FadeOut(progress, 0.76);
+            for (var i = 0; i < 14; i++)
+            {
+                var angle = -Math.PI * 0.9 + Math.PI * 1.8 * i / 13;
+                var orbit = PointOnEllipse(_origin, angle + travel * 1.2, 12 + travel * (17 + i % 4 * 5), 0.66);
+                DrawDot(drawingContext, orbit, 2.4, MixedBrush(i), opacity);
+                if (i % 3 == 0)
+                {
+                    var outer = PointOnEllipse(_origin, angle + travel * 1.2, 20 + travel * (17 + i % 4 * 5), 0.66);
+                    DrawStar(drawingContext, outer, 2.6, MixedBrush(i + 1), opacity);
+                }
+            }
+        }
+
+        private void DrawGalaxySwirl(DrawingContext drawingContext, double progress)
+        {
+            var travel = EaseOutCubic(progress);
+            var opacity = FadeOut(progress, 0.75);
+            for (var i = 0; i < 30; i++)
+            {
+                var arm = i % 3;
+                var step = i / 3;
+                var angle = arm * Math.PI * 2 / 3 + step * 0.42 + travel * 1.4;
+                var point = PointOnEllipse(_origin, angle, 4 + travel * (8 + step * 3.6), 0.76);
+                DrawDot(drawingContext, point, 1.6 + step % 3 * 0.28, NeonBrushes[i % NeonBrushes.Length], opacity);
+            }
+        }
+
+        private void DrawCandyConfetti(DrawingContext drawingContext, double progress)
+        {
+            var travel = EaseOutCubic(progress);
+            var opacity = FadeOut(progress, 0.74);
+            for (var i = 0; i < 20; i++)
+            {
+                var angle = Math.PI * 2 * i / 20 + (i % 2 == 0 ? -0.15 : 0.2);
+                var point = PointOnEllipse(_origin, angle, 10 + travel * (20 + i % 5 * 5), 0.78);
+                DrawRoundShard(drawingContext, point, i * 0.55 + progress * 4, MixedBrush(i), opacity);
+            }
+        }
+
+        private void DrawTwinNova(DrawingContext drawingContext, double progress)
+        {
+            DrawParticleBloom(drawingContext, Clamp01(progress / 0.86), _origin + new Vector(-10, 0), 16, 26, new[] { GreenBrush, GoldBrush, BlueBrush }, ParticleShape.Mixed, 0.25);
+            var second = Clamp01((progress - 0.18) / 0.78);
+            if (second > 0)
+            {
+                DrawParticleBloom(drawingContext, second, _origin + new Vector(30, -7), 14, 22, new[] { CyanBrush, VioletBrush, PinkBrush }, ParticleShape.Mixed, -0.18);
+            }
+        }
+
+        private void DrawHaloParticles(DrawingContext drawingContext, double progress)
+        {
+            var travel = EaseOutQuad(progress);
+            var opacity = FadeOut(progress, 0.78);
+            for (var ringIndex = 0; ringIndex < 2; ringIndex++)
+            {
+                var count = ringIndex == 0 ? 10 : 14;
+                var radius = (ringIndex == 0 ? 13 : 22) + travel * (ringIndex == 0 ? 9 : 12);
+                for (var i = 0; i < count; i++)
+                {
+                    var angle = Math.PI * 2 * i / count + travel * (ringIndex == 0 ? 1.2 : -1.1);
+                    var point = PointOnEllipse(_origin, angle, radius, 0.7);
+                    DrawDot(drawingContext, point, ringIndex == 0 ? 2.3 : 1.9, MixedBrush(i + ringIndex), opacity * (ringIndex == 0 ? 1 : 0.78));
+                }
+            }
+        }
+
+        private void DrawNeonBloom(DrawingContext drawingContext, double progress)
+        {
+            var travel = EaseOutCubic(progress);
+            var opacity = FadeOut(progress, 0.74);
+            for (var i = 0; i < 18; i++)
+            {
+                var angle = Math.PI * 2 * i / 18 + Math.Sin(travel * Math.PI) * 0.28;
+                var point = PointOnEllipse(_origin, angle, 11 + 28 * travel, 0.78);
+                if (i % 2 == 0)
+                {
+                    DrawStar(drawingContext, point, 3.2 + 2.2 * Math.Sin(progress * Math.PI), NeonBrushes[i % NeonBrushes.Length], opacity);
+                }
+                else
+                {
+                    DrawDot(drawingContext, point, 2.5, NeonBrushes[i % NeonBrushes.Length], opacity);
+                }
+            }
+        }
+
+        private void DrawFinaleParticles(DrawingContext drawingContext, double progress)
+        {
+            DrawParticleBloom(drawingContext, progress, _origin + new Vector(2, -1), 28, 38, new[] { GoldBrush, GreenBrush, BlueBrush, PinkBrush, VioletBrush }, ParticleShape.Mixed, 0.32);
+            var late = Clamp01((progress - 0.16) / 0.78);
+            if (late <= 0)
+            {
+                return;
+            }
+
+            var center = _origin + new Vector(18, -6);
+            for (var i = 0; i < 12; i++)
+            {
+                var angle = Math.PI * 2 * i / 12 - late * 0.8;
+                var point = PointOnEllipse(center, angle, 8 + 22 * EaseOutCubic(late), 0.72);
+                DrawShard(drawingContext, point, angle + late * 4, MixedBrush(i), FadeOut(late, 0.7));
+            }
+        }
+
+        private void DrawStardustHalo(DrawingContext drawingContext, double progress)
+        {
+            var travel = EaseOutCubic(progress);
+            var opacity = FadeOut(progress, 0.76);
+            for (var layer = 0; layer < 2; layer++)
+            {
+                var count = layer == 0 ? 14 : 18;
+                var baseRadius = layer == 0 ? 15 : 24;
+                var drift = layer == 0 ? 1.35 : -1.15;
+                for (var i = 0; i < count; i++)
+                {
+                    var angle = Math.PI * 2 * i / count + travel * drift;
+                    var radius = baseRadius + travel * (layer == 0 ? 9 : 13) + Math.Sin(i + travel * 4) * 2;
+                    var point = PointOnEllipse(_origin, angle, radius, 0.74);
+                    if ((i + layer) % 5 == 0)
+                    {
+                        DrawStar(drawingContext, point, 2.2 + 2.3 * Math.Sin(progress * Math.PI), MixedBrush(i + layer), opacity);
+                    }
+                    else
+                    {
+                        DrawDot(drawingContext, point, layer == 0 ? 2.2 : 1.7, MixedBrush(i + layer), opacity * (layer == 0 ? 1 : 0.72));
+                    }
+                }
+            }
+        }
+
+        private void DrawConfettiOrbit(DrawingContext drawingContext, double progress)
+        {
+            var travel = EaseOutCubic(progress);
+            var opacity = FadeOut(progress, 0.76);
+            for (var i = 0; i < 18; i++)
+            {
+                var angle = Math.PI * 2 * i / 18 + travel * 1.25;
+                var point = PointOnEllipse(_origin, angle, 13 + travel * (18 + i % 3 * 5), 0.66);
+                if (i % 2 == 0)
+                {
+                    DrawRoundShard(drawingContext, point, angle + travel * 4, MixedBrush(i), opacity);
+                }
+                else
+                {
+                    DrawShard(drawingContext, point, angle - travel * 3, MixedBrush(i), opacity);
+                }
+            }
+        }
+
+        private void DrawEmberBloom(DrawingContext drawingContext, double progress)
+        {
+            var travel = EaseOutCubic(progress);
+            var opacity = FadeOut(progress, 0.74);
+            for (var i = 0; i < 26; i++)
+            {
+                var angle = Math.PI * 2 * i / 26 + Math.Sin(travel * Math.PI) * 0.22;
+                var lane = i % 4;
+                var point = PointOnEllipse(_origin, angle, 7 + travel * (18 + lane * 5), 0.78);
+                DrawDot(drawingContext, point, 1.8 + lane * 0.35, WarmBrushes[i % WarmBrushes.Length], opacity);
+            }
+
+            for (var i = 0; i < 7; i++)
+            {
+                var angle = -Math.PI * 0.95 + i * Math.PI * 0.32;
+                var point = PointOnEllipse(_origin, angle, 15 + travel * 22, 0.72);
+                DrawStar(drawingContext, point, 2.4 + 2.6 * Math.Sin(progress * Math.PI), WarmBrushes[(i + 1) % WarmBrushes.Length], opacity);
+            }
+        }
+
+        private void DrawPetalSpiral(DrawingContext drawingContext, double progress)
+        {
+            var travel = EaseOutCubic(progress);
+            var opacity = FadeOut(progress, 0.76);
+            for (var i = 0; i < 20; i++)
+            {
+                var angle = i * 0.56 + travel * 1.55;
+                var point = PointOnEllipse(_origin, angle, 8 + travel * (12 + i * 1.35), 0.76);
+                DrawPetal(drawingContext, point, angle + progress * 3.5, MixedBrush(i), opacity);
+            }
+        }
+
+        private void DrawPrismNova(DrawingContext drawingContext, double progress)
+        {
+            var travel = EaseOutCubic(progress);
+            var opacity = FadeOut(progress, 0.74);
+            for (var i = 0; i < 22; i++)
+            {
+                var angle = Math.PI * 2 * i / 22 + (i % 2 == 0 ? -travel * 0.32 : travel * 0.45);
+                var point = PointOnEllipse(_origin, angle, 8 + travel * (20 + i % 5 * 4), 0.76);
+                var brush = PrismBrush(i);
+                if (i % 3 == 0)
+                {
+                    DrawDiamond(drawingContext, point, 3.5 + Math.Sin(progress * Math.PI) * 1.8, angle + travel * 2, brush, opacity);
+                }
+                else if (i % 3 == 1)
+                {
+                    DrawStar(drawingContext, point, 2.5 + Math.Sin(progress * Math.PI) * 2.2, brush, opacity);
+                }
+                else
+                {
+                    DrawDot(drawingContext, point, 2.1, brush, opacity);
+                }
+            }
+        }
+
+        private void DrawParticleBloom(
+            DrawingContext drawingContext,
+            double progress,
+            System.Windows.Point center,
+            int count,
+            double radius,
+            IReadOnlyList<System.Windows.Media.Brush> brushes,
+            ParticleShape shape,
+            double wobble)
+        {
+            var travel = EaseOutCubic(progress);
+            var opacity = FadeOut(progress, 0.72);
+            for (var i = 0; i < count; i++)
+            {
+                var angle = Math.PI * 2 * i / count + wobble * Math.Sin(travel * Math.PI);
+                var lane = i % 4;
+                var point = PointOnEllipse(center, angle, 8 + travel * (radius + lane * 3), 0.76);
+                var brush = brushes[i % brushes.Count];
+                if (shape == ParticleShape.Mixed && i % 3 == 0)
+                {
+                    DrawStar(drawingContext, point, 2.5 + Math.Sin(progress * Math.PI) * 2.2, brush, opacity);
+                }
+                else if (shape == ParticleShape.Mixed && i % 3 == 1)
+                {
+                    DrawShard(drawingContext, point, angle + progress * 4, brush, opacity);
+                }
+                else
+                {
+                    DrawDot(drawingContext, point, 1.9 + i % 2 * 0.5, brush, opacity);
+                }
+            }
+        }
+
+        private static void DrawDot(DrawingContext drawingContext, System.Windows.Point point, double radius, System.Windows.Media.Brush brush, double opacity)
+        {
+            drawingContext.PushOpacity(opacity);
+            drawingContext.DrawEllipse(brush, null, point, radius, radius);
             drawingContext.Pop();
+        }
+
+        private static void DrawStar(DrawingContext drawingContext, System.Windows.Point center, double size, System.Windows.Media.Brush brush, double opacity)
+        {
+            var geometry = new StreamGeometry();
+            using (var context = geometry.Open())
+            {
+                for (var i = 0; i < 8; i++)
+                {
+                    var radius = i % 2 == 0 ? size : size * 0.38;
+                    var angle = -Math.PI / 2 + i * Math.PI / 4;
+                    var point = PointOnEllipse(center, angle, radius);
+                    if (i == 0)
+                    {
+                        context.BeginFigure(point, true, true);
+                    }
+                    else
+                    {
+                        context.LineTo(point, true, false);
+                    }
+                }
+            }
+
+            geometry.Freeze();
+            drawingContext.PushOpacity(opacity);
+            drawingContext.DrawGeometry(brush, null, geometry);
+            drawingContext.Pop();
+        }
+
+        private static void DrawShard(DrawingContext drawingContext, System.Windows.Point point, double angle, System.Windows.Media.Brush brush, double opacity)
+        {
+            drawingContext.PushOpacity(opacity);
+            drawingContext.PushTransform(new TranslateTransform(point.X, point.Y));
+            drawingContext.PushTransform(new RotateTransform(ToDegrees(angle)));
+            drawingContext.DrawRectangle(brush, null, new Rect(-3.4, -1.6, 6.8, 3.2));
+            drawingContext.Pop();
+            drawingContext.Pop();
+            drawingContext.Pop();
+        }
+
+        private static void DrawRoundShard(DrawingContext drawingContext, System.Windows.Point point, double angle, System.Windows.Media.Brush brush, double opacity)
+        {
+            drawingContext.PushOpacity(opacity);
+            drawingContext.PushTransform(new TranslateTransform(point.X, point.Y));
+            drawingContext.PushTransform(new RotateTransform(ToDegrees(angle)));
+            drawingContext.DrawRoundedRectangle(brush, null, new Rect(-4, -2, 8, 4), 2, 2);
+            drawingContext.Pop();
+            drawingContext.Pop();
+            drawingContext.Pop();
+        }
+
+        private static void DrawPetal(DrawingContext drawingContext, System.Windows.Point point, double angle, System.Windows.Media.Brush brush, double opacity)
+        {
+            drawingContext.PushOpacity(opacity);
+            drawingContext.PushTransform(new TranslateTransform(point.X, point.Y));
+            drawingContext.PushTransform(new RotateTransform(ToDegrees(angle)));
+            drawingContext.DrawEllipse(brush, null, new System.Windows.Point(), 4.2, 2.5);
+            drawingContext.Pop();
+            drawingContext.Pop();
+            drawingContext.Pop();
+        }
+
+        private static void DrawDiamond(DrawingContext drawingContext, System.Windows.Point center, double size, double angle, System.Windows.Media.Brush brush, double opacity)
+        {
+            var geometry = new StreamGeometry();
+            using (var context = geometry.Open())
+            {
+                var points = new[]
+                {
+                    new System.Windows.Point(0, -size),
+                    new System.Windows.Point(size * 0.72, 0),
+                    new System.Windows.Point(0, size),
+                    new System.Windows.Point(-size * 0.72, 0)
+                };
+                context.BeginFigure(points[0], true, true);
+                for (var i = 1; i < points.Length; i++)
+                {
+                    context.LineTo(points[i], true, false);
+                }
+            }
+
+            geometry.Freeze();
+            drawingContext.PushOpacity(opacity);
+            drawingContext.PushTransform(new TranslateTransform(center.X, center.Y));
+            drawingContext.PushTransform(new RotateTransform(ToDegrees(angle)));
+            drawingContext.DrawGeometry(brush, null, geometry);
+            drawingContext.Pop();
+            drawingContext.Pop();
+            drawingContext.Pop();
+        }
+
+        private static System.Windows.Point PointOnEllipse(System.Windows.Point center, double angle, double radius, double scaleY = 1)
+        {
+            return new System.Windows.Point(
+                center.X + Math.Cos(angle) * radius,
+                center.Y + Math.Sin(angle) * radius * scaleY);
+        }
+
+        private static double EaseOutCubic(double value)
+        {
+            var progress = Clamp01(value);
+            return 1 - Math.Pow(1 - progress, 3);
+        }
+
+        private static double EaseOutQuad(double value)
+        {
+            var progress = Clamp01(value);
+            return 1 - Math.Pow(1 - progress, 2);
+        }
+
+        private static double FadeOut(double progress, double start)
+        {
+            if (progress <= start)
+            {
+                return 1;
+            }
+
+            return Math.Max(0, (1 - progress) / (1 - start));
+        }
+
+        private static double Clamp01(double value)
+        {
+            return Math.Min(Math.Max(value, 0), 1);
+        }
+
+        private static double ToDegrees(double radians)
+        {
+            return radians * 180 / Math.PI;
+        }
+
+        private static System.Windows.Media.Brush MixedBrush(int index)
+        {
+            return CoreBrushes[index % CoreBrushes.Length];
+        }
+
+        private static System.Windows.Media.Brush PrismBrush(int index)
+        {
+            var brushes = new[] { CyanBrush, VioletBrush, GoldBrush, GreenBrush, PinkBrush };
+            return brushes[index % brushes.Length];
         }
 
         private static System.Windows.Media.Brush CreateBrush(string color)
@@ -1345,6 +1946,36 @@ public partial class FloatingTaskWindow : Window
             brush.Freeze();
             return brush;
         }
+
+        private enum ParticleShape
+        {
+            Dot,
+            Mixed
+        }
+    }
+
+    private enum CompletionParticleKind
+    {
+        StarPop,
+        LiftConfetti,
+        SpiralFirework,
+        StarCluster,
+        NeonSpark,
+        OrbitNova,
+        PearlFirework,
+        PetalNova,
+        SatellitePop,
+        GalaxySwirl,
+        CandyConfetti,
+        TwinNova,
+        HaloParticles,
+        NeonBloom,
+        FinaleParticles,
+        StardustHalo,
+        ConfettiOrbit,
+        EmberBloom,
+        PetalSpiral,
+        PrismNova
     }
 
     private enum DockEdge
