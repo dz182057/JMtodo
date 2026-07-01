@@ -558,13 +558,28 @@
                                               Stretch="Uniform" />
                                     </MenuItem.Icon>
                                 </MenuItem>
-                                <MenuItem Header="{DynamicResource Main.Export}"
+                                <MenuItem Header="{DynamicResource Main.ExportAll}"
                                           Style="{StaticResource TaskRowContextMenuItem}"
-                                          Click="ExportTasksMenuItem_Click">
+                                          Click="ExportAllTasksMenuItem_Click">
                                     <MenuItem.Icon>
                                         <Path Width="16"
                                               Height="16"
                                               Data="M8,14 L8,5 M5,8 L8,5 L11,8 M3,14 L13,14"
+                                              Stroke="{StaticResource Brush.TextSecondary}"
+                                              StrokeThickness="1.8"
+                                              StrokeStartLineCap="Round"
+                                              StrokeEndLineCap="Round"
+                                              StrokeLineJoin="Round"
+                                              Stretch="Uniform" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="{DynamicResource Main.ExportSelected}"
+                                          Style="{StaticResource TaskRowContextMenuItem}"
+                                          Click="ExportSelectedTasksMenuItem_Click">
+                                    <MenuItem.Icon>
+                                        <Path Width="16"
+                                              Height="16"
+                                              Data="M4,3 L12,3 L12,13 L4,13 Z M6,6 L10,6 M6,9 L10,9"
                                               Stroke="{StaticResource Brush.TextSecondary}"
                                               StrokeThickness="1.8"
                                               StrokeStartLineCap="Round"

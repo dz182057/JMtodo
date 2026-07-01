@@ -10,6 +10,8 @@
     <sys:String x:Key="Main.Refresh">Refresh</sys:String>
     <sys:String x:Key="Main.Import">Import</sys:String>
     <sys:String x:Key="Main.Export">Export</sys:String>
+    <sys:String x:Key="Main.ExportAll">Export all</sys:String>
+    <sys:String x:Key="Main.ExportSelected">Export selected</sys:String>
     <sys:String x:Key="Main.ImportExport">Import/Export</sys:String>
     <sys:String x:Key="Main.ImportSample">Import sample</sys:String>
     <sys:String x:Key="Main.ShowFloating">Show panel</sys:String>
@@ -165,6 +167,15 @@
     <sys:String x:Key="Import.UnsupportedVersionFormat">Import file version {0} is not supported.</sys:String>
     <sys:String x:Key="Import.StartDateFormat">Start: {0}</sys:String>
     <sys:String x:Key="Import.DueDateFormat">Due: {0}</sys:String>
+    <sys:String x:Key="Import.FollowParentGroup">Follow parent task</sys:String>
+    <sys:String x:Key="Import.EditTitle">Edit import task</sys:String>
+    <sys:String x:Key="Import.EditDateHint">Use yyyy-MM-dd for dates. Leave due date blank for no due date.</sys:String>
+    <sys:String x:Key="Import.SelectTask">Choose whether to import this task</sys:String>
+    <sys:String x:Key="Import.PackageManifestMissing">No task JSON file was found in the package.</sys:String>
+    <sys:String x:Key="ExportOptions.Title">Export all</sys:String>
+    <sys:String x:Key="ExportOptions.Subtitle">Choose the export scope. If exported tasks include attachments, JMtodo will save a ZIP package.</sys:String>
+    <sys:String x:Key="ExportOptions.IncludeDeleted">Include deleted tasks</sys:String>
+    <sys:String x:Key="ExportOptions.Export">Export</sys:String>
     <sys:String x:Key="ImportSample.Title">Import sample</sys:String>
     <sys:String x:Key="ImportSample.Subtitle">Users can ask their own AI or scripts to generate import files in this JSON format.</sys:String>
     <sys:String x:Key="ImportSample.Copy">Copy</sys:String>
@@ -179,6 +190,9 @@
     <sys:String x:Key="Validation.NoteMax">Notes cannot exceed 500 characters</sys:String>
     <sys:String x:Key="Validation.StartDateRequired">Select a start date</sys:String>
     <sys:String x:Key="Validation.DueBeforeStart">Due date cannot be earlier than start date</sys:String>
+    <sys:String x:Key="Validation.ImportStartDateInvalid">Start date must use yyyy-MM-dd format.</sys:String>
+    <sys:String x:Key="Validation.ImportDueDateInvalid">Due date must use yyyy-MM-dd format, or be blank for no due date.</sys:String>
+    <sys:String x:Key="Validation.ImportSelectTask">Select at least one main task to import.</sys:String>
     <sys:String x:Key="Validation.GroupDeleteRequired">Select a task group that can be deleted.</sys:String>
     <sys:String x:Key="Validation.GroupEditRequired">Select a task group to edit.</sys:String>
     <sys:String x:Key="Validation.MoveNoGroups">No task groups are available. Create a new group first.</sys:String>
@@ -230,6 +244,8 @@
     <sys:String x:Key="Dialog.SelectTaskFiles.Title">Select task files</sys:String>
     <sys:String x:Key="Dialog.SelectTaskFiles.Filter">All files (*.*)|*.*</sys:String>
     <sys:String x:Key="Dialog.JsonFile.Filter">JSON files (*.json)|*.json|All files (*.*)|*.*</sys:String>
+    <sys:String x:Key="Dialog.ZipFile.Filter">ZIP packages (*.zip)|*.zip|All files (*.*)|*.*</sys:String>
+    <sys:String x:Key="Dialog.ImportFile.Filter">Task import files (*.json;*.zip)|*.json;*.zip|JSON files (*.json)|*.json|ZIP packages (*.zip)|*.zip|All files (*.*)|*.*</sys:String>
     <sys:String x:Key="Dialog.ImportTasks.Title">Select task import file</sys:String>
     <sys:String x:Key="Dialog.ImportTasks.EmptyTitle">No tasks to import</sys:String>
     <sys:String x:Key="Dialog.ImportTasks.EmptyMessage">This file does not contain importable main tasks. They may have been filtered as duplicate tasks.</sys:String>
@@ -237,8 +253,10 @@
     <sys:String x:Key="Dialog.ImportTasks.DoneMessageFormat">Imported {0} tasks.</sys:String>
     <sys:String x:Key="Dialog.ImportTasks.FailedTitle">Import failed</sys:String>
     <sys:String x:Key="Dialog.ExportTasks.Title">Export tasks</sys:String>
+    <sys:String x:Key="Dialog.ExportTasks.EmptyTitle">No tasks to export</sys:String>
+    <sys:String x:Key="Dialog.ExportTasks.EmptyMessage">There are no tasks that match this export scope.</sys:String>
     <sys:String x:Key="Dialog.ExportTasks.DoneTitle">Export complete</sys:String>
-    <sys:String x:Key="Dialog.ExportTasks.DoneMessage">Tasks were exported as a JSON file.</sys:String>
+    <sys:String x:Key="Dialog.ExportTasks.DoneMessage">Tasks were exported.</sys:String>
     <sys:String x:Key="Dialog.ExportTasks.FailedTitle">Export failed</sys:String>
     <sys:String x:Key="Dialog.GroupDelete.Title">Delete task group</sys:String>
     <sys:String x:Key="Dialog.GroupDelete.Message">Delete task group "{0}"?&#x0a;Tasks in the group will move to Ungrouped.</sys:String>

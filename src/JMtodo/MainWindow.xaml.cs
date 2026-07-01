@@ -127,7 +127,7 @@ public partial class MainWindow : Window
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Title = T("Dialog.ImportTasks.Title"),
-            Filter = T("Dialog.JsonFile.Filter"),
+            Filter = T("Dialog.ImportFile.Filter"),
             Multiselect = false
         };
 
@@ -138,28 +138,39 @@ public partial class MainWindow : Window
 
         try
         {
-            var previewResult = _taskExchangeService.ReadImportPreview(dialog.FileName);
-            var previewTasks = previewResult.RootTasks;
-            if (previewTasks.Count == 0)
+            ImportPreviewResult? previewResult = null;
+            try
             {
-                ConfirmDialogWindow.ShowInfo(this, T("Dialog.ImportTasks.EmptyTitle"), T("Dialog.ImportTasks.EmptyMessage"));
-                return;
-            }
+                previewResult = _taskExchangeService.ReadImportPreview(dialog.FileName);
+                var previewTasks = previewResult.RootTasks;
+                if (previewTasks.Count == 0)
+                {
+                    ConfirmDialogWindow.ShowInfo(this, T("Dialog.ImportTasks.EmptyTitle"), T("Dialog.ImportTasks.EmptyMessage"));
+                    return;
+                }
 
-            var previewDialog = new ImportTasksPreviewWindow(previewTasks, previewResult.SkippedDuplicateCount) { Owner = this };
-            if (previewDialog.ShowDialog() != true)
+                var previewDialog = new ImportTasksPreviewWindow(previewTasks, previewResult.SkippedDuplicateCount) { Owner = this };
+                if (previewDialog.ShowDialog() != true)
+                {
+                    return;
+                }
+
+                var importedCount = _taskExchangeService.ImportTasks(previewDialog.RootTasks);
+                RefreshAfterImport();
+                ConfirmDialogWindow.ShowInfo(
+                    this,
+                    T("Dialog.ImportTasks.DoneTitle"),
+                    F("Dialog.ImportTasks.DoneMessageFormat", importedCount));
+            }
+            finally
             {
-                return;
+                if (previewResult is not null)
+                {
+                    TaskExchangeService.CleanupTemporaryDirectories(previewResult.TemporaryDirectories);
+                }
             }
-
-            var importedCount = _taskExchangeService.ImportTasks(previewDialog.RootTasks);
-            RefreshAfterImport();
-            ConfirmDialogWindow.ShowInfo(
-                this,
-                T("Dialog.ImportTasks.DoneTitle"),
-                F("Dialog.ImportTasks.DoneMessageFormat", importedCount));
         }
-        catch (Exception ex) when (ex is InvalidOperationException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        catch (Exception ex) when (ex is InvalidOperationException or IOException or UnauthorizedAccessException or System.IO.InvalidDataException or System.Text.Json.JsonException)
         {
             ConfirmDialogWindow.ShowInfo(this, T("Dialog.ImportTasks.FailedTitle"), ex.Message);
         }
@@ -171,15 +182,46 @@ public partial class MainWindow : Window
         Dispatcher.BeginInvoke(new Action(_viewModel.Refresh), DispatcherPriority.ApplicationIdle);
     }
 
-    private void ExportTasksMenuItem_Click(object sender, RoutedEventArgs e)
+    private void ExportAllTasksMenuItem_Click(object sender, RoutedEventArgs e)
     {
+        var optionsDialog = new ExportTasksOptionsWindow { Owner = this };
+        if (optionsDialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        ExportTasks(_taskExchangeService.GetAllExportCandidates(optionsDialog.IncludeDeleted));
+    }
+
+    private void ExportSelectedTasksMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        var selectedTodos = GetSelectedTodos();
+        if (selectedTodos.Count == 0)
+        {
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.NoSelection.Title"), T("Dialog.NoSelection.Message"));
+            return;
+        }
+
+        ExportTasks(_taskExchangeService.GetSelectedExportCandidates(selectedTodos));
+    }
+
+    private void ExportTasks(IReadOnlyList<TodoItem> exportTodos)
+    {
+        if (exportTodos.Count == 0)
+        {
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.ExportTasks.EmptyTitle"), T("Dialog.ExportTasks.EmptyMessage"));
+            return;
+        }
+
+        var hasAttachments = _taskExchangeService.HasExportAttachments(exportTodos);
+        var extension = hasAttachments ? ".zip" : ".json";
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
             Title = T("Dialog.ExportTasks.Title"),
-            Filter = T("Dialog.JsonFile.Filter"),
-            FileName = $"JMtodo-tasks-{DateTime.Now:yyyyMMdd-HHmm}.json",
+            Filter = hasAttachments ? T("Dialog.ZipFile.Filter") : T("Dialog.JsonFile.Filter"),
+            FileName = $"JMtodo-tasks-{DateTime.Now:yyyyMMdd-HHmm}{extension}",
             AddExtension = true,
-            DefaultExt = ".json"
+            DefaultExt = extension
         };
 
         if (dialog.ShowDialog(this) != true)
@@ -189,10 +231,10 @@ public partial class MainWindow : Window
 
         try
         {
-            _taskExchangeService.ExportAllTasks(dialog.FileName);
+            _taskExchangeService.ExportTasks(EnsureFileExtension(dialog.FileName, extension), exportTodos);
             ConfirmDialogWindow.ShowInfo(this, T("Dialog.ExportTasks.DoneTitle"), T("Dialog.ExportTasks.DoneMessage"));
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
             ConfirmDialogWindow.ShowInfo(this, T("Dialog.ExportTasks.FailedTitle"), ex.Message);
         }
@@ -1184,4 +1226,11 @@ public partial class MainWindow : Window
     private static string T(string key) => LocalizationService.Text(key);
 
     private static string F(string key, params object?[] args) => LocalizationService.Format(key, args);
+
+    private static string EnsureFileExtension(string filePath, string extension)
+    {
+        return string.Equals(Path.GetExtension(filePath), extension, StringComparison.OrdinalIgnoreCase)
+            ? filePath
+            : Path.ChangeExtension(filePath, extension);
+    }
 }

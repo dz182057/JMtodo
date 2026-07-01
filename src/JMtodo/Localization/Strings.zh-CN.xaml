@@ -10,6 +10,8 @@
     <sys:String x:Key="Main.Refresh">刷新</sys:String>
     <sys:String x:Key="Main.Import">导入</sys:String>
     <sys:String x:Key="Main.Export">导出</sys:String>
+    <sys:String x:Key="Main.ExportAll">导出全部</sys:String>
+    <sys:String x:Key="Main.ExportSelected">导出所选</sys:String>
     <sys:String x:Key="Main.ImportExport">导入/导出</sys:String>
     <sys:String x:Key="Main.ImportSample">导入示例</sys:String>
     <sys:String x:Key="Main.ShowFloating">显示浮窗</sys:String>
@@ -165,6 +167,15 @@
     <sys:String x:Key="Import.UnsupportedVersionFormat">暂不支持版本 {0} 的导入文件。</sys:String>
     <sys:String x:Key="Import.StartDateFormat">开始：{0}</sys:String>
     <sys:String x:Key="Import.DueDateFormat">计划：{0}</sys:String>
+    <sys:String x:Key="Import.FollowParentGroup">跟随主任务</sys:String>
+    <sys:String x:Key="Import.EditTitle">编辑导入任务</sys:String>
+    <sys:String x:Key="Import.EditDateHint">日期使用 yyyy-MM-dd 格式；计划日期留空表示不限期。</sys:String>
+    <sys:String x:Key="Import.SelectTask">选择是否导入该任务</sys:String>
+    <sys:String x:Key="Import.PackageManifestMissing">压缩包中未找到任务 JSON 文件。</sys:String>
+    <sys:String x:Key="ExportOptions.Title">导出全部</sys:String>
+    <sys:String x:Key="ExportOptions.Subtitle">选择导出范围；如果导出的任务包含附件，将自动保存为压缩包。</sys:String>
+    <sys:String x:Key="ExportOptions.IncludeDeleted">包含已删除任务</sys:String>
+    <sys:String x:Key="ExportOptions.Export">导出</sys:String>
     <sys:String x:Key="ImportSample.Title">导入示例</sys:String>
     <sys:String x:Key="ImportSample.Subtitle">用户可以让自己的 AI 或脚本按这个 JSON 格式生成导入文件。</sys:String>
     <sys:String x:Key="ImportSample.Copy">复制</sys:String>
@@ -179,6 +190,9 @@
     <sys:String x:Key="Validation.NoteMax">备注不能超过 500 字</sys:String>
     <sys:String x:Key="Validation.StartDateRequired">请选择起始日期</sys:String>
     <sys:String x:Key="Validation.DueBeforeStart">计划完成日期不能早于开始日期</sys:String>
+    <sys:String x:Key="Validation.ImportStartDateInvalid">开始日期请使用 yyyy-MM-dd 格式。</sys:String>
+    <sys:String x:Key="Validation.ImportDueDateInvalid">计划日期请使用 yyyy-MM-dd 格式，或留空表示不限期。</sys:String>
+    <sys:String x:Key="Validation.ImportSelectTask">请至少选择一个要导入的主任务。</sys:String>
     <sys:String x:Key="Validation.GroupDeleteRequired">请选择可删除的任务组。</sys:String>
     <sys:String x:Key="Validation.GroupEditRequired">请选择要编辑的任务组。</sys:String>
     <sys:String x:Key="Validation.MoveNoGroups">还没有可选择的任务组，请先新建任务组。</sys:String>
@@ -230,6 +244,8 @@
     <sys:String x:Key="Dialog.SelectTaskFiles.Title">选择任务文件</sys:String>
     <sys:String x:Key="Dialog.SelectTaskFiles.Filter">所有文件 (*.*)|*.*</sys:String>
     <sys:String x:Key="Dialog.JsonFile.Filter">JSON 文件 (*.json)|*.json|所有文件 (*.*)|*.*</sys:String>
+    <sys:String x:Key="Dialog.ZipFile.Filter">压缩包 (*.zip)|*.zip|所有文件 (*.*)|*.*</sys:String>
+    <sys:String x:Key="Dialog.ImportFile.Filter">任务导入文件 (*.json;*.zip)|*.json;*.zip|JSON 文件 (*.json)|*.json|压缩包 (*.zip)|*.zip|所有文件 (*.*)|*.*</sys:String>
     <sys:String x:Key="Dialog.ImportTasks.Title">选择要导入的任务文件</sys:String>
     <sys:String x:Key="Dialog.ImportTasks.EmptyTitle">没有可导入任务</sys:String>
     <sys:String x:Key="Dialog.ImportTasks.EmptyMessage">这个文件里没有可导入的主任务，可能都已被重复任务过滤。</sys:String>
@@ -237,8 +253,10 @@
     <sys:String x:Key="Dialog.ImportTasks.DoneMessageFormat">已导入 {0} 个任务。</sys:String>
     <sys:String x:Key="Dialog.ImportTasks.FailedTitle">导入失败</sys:String>
     <sys:String x:Key="Dialog.ExportTasks.Title">导出任务</sys:String>
+    <sys:String x:Key="Dialog.ExportTasks.EmptyTitle">没有可导出任务</sys:String>
+    <sys:String x:Key="Dialog.ExportTasks.EmptyMessage">当前没有符合条件的任务可以导出。</sys:String>
     <sys:String x:Key="Dialog.ExportTasks.DoneTitle">导出完成</sys:String>
-    <sys:String x:Key="Dialog.ExportTasks.DoneMessage">任务已导出为 JSON 文件。</sys:String>
+    <sys:String x:Key="Dialog.ExportTasks.DoneMessage">任务已导出。</sys:String>
     <sys:String x:Key="Dialog.ExportTasks.FailedTitle">导出失败</sys:String>
     <sys:String x:Key="Dialog.GroupDelete.Title">删除任务组</sys:String>
     <sys:String x:Key="Dialog.GroupDelete.Message">删除任务组「{0}」？&#x0a;组内任务不会被删除，将自动移动到「未分组」。</sys:String>

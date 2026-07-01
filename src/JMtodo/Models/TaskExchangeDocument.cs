@@ -8,5 +8,7 @@ public sealed class TaskExchangeDocument
 
     public string? ExportedAt { get; set; }
 
+    public List<TaskExchangeGroup> Groups { get; set; } = new();
+
     public List<TaskExchangeTask> Tasks { get; set; } = new();
 }

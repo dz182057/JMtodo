@@ -6,5 +6,7 @@ public sealed class TaskExchangeAttachment
 
     public string? Path { get; set; }
 
+    public string? PackagePath { get; set; }
+
     public long? Size { get; set; }
 }
