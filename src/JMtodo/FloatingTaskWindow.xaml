@@ -523,7 +523,17 @@
                                                Margin="0,5,0,0"
                                                FontSize="13"
                                                Foreground="{StaticResource Brush.TextSecondary}"
-                                               TextTrimming="CharacterEllipsis">
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTipService.IsEnabled="{Binding HasNote}"
+                                               ToolTipService.InitialShowDelay="500"
+                                               ToolTipService.ShowDuration="30000">
+                                        <TextBlock.ToolTip>
+                                            <ToolTip Style="{StaticResource TaskNoteToolTip}"
+                                                     DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                                <TextBlock Text="{Binding Note}"
+                                                           Style="{StaticResource TaskNoteToolTipText}" />
+                                            </ToolTip>
+                                        </TextBlock.ToolTip>
                                         <TextBlock.Style>
                                             <Style TargetType="{x:Type TextBlock}">
                                                 <Setter Property="Visibility" Value="Visible" />
@@ -711,7 +721,17 @@
                                                                    Text="{Binding Note}"
                                                                    FontSize="12"
                                                                    Foreground="{StaticResource Brush.TextTertiary}"
-                                                                   TextTrimming="CharacterEllipsis">
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   ToolTipService.IsEnabled="{Binding HasNote}"
+                                                                   ToolTipService.InitialShowDelay="500"
+                                                                   ToolTipService.ShowDuration="30000">
+                                                            <TextBlock.ToolTip>
+                                                                <ToolTip Style="{StaticResource TaskNoteToolTip}"
+                                                                         DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                                                    <TextBlock Text="{Binding Note}"
+                                                                               Style="{StaticResource TaskNoteToolTipText}" />
+                                                                </ToolTip>
+                                                            </TextBlock.ToolTip>
                                                             <TextBlock.Style>
                                                                 <Style TargetType="{x:Type TextBlock}">
                                                                     <Setter Property="Visibility" Value="Visible" />

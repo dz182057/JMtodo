@@ -1398,7 +1398,25 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                     <DataGridTextColumn Header="{DynamicResource Main.TaskGroupColumn}" Binding="{Binding GroupDisplayText}" Width="112" MinWidth="88" SortMemberPath="GroupDisplayText" ElementStyle="{StaticResource CenteredTaskGridTextBlockStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource Main.NoteColumn}" Binding="{Binding Note}" Width="140" MinWidth="96" SortMemberPath="Note" ElementStyle="{StaticResource CenteredTaskGridTextBlockStyle}" />
+                    <DataGridTemplateColumn Header="{DynamicResource Main.NoteColumn}" Width="140" MinWidth="96" SortMemberPath="Note">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Note}"
+                                           Style="{StaticResource CenteredTaskGridTextBlockStyle}"
+                                           ToolTipService.IsEnabled="{Binding HasNote}"
+                                           ToolTipService.InitialShowDelay="500"
+                                           ToolTipService.ShowDuration="30000">
+                                    <TextBlock.ToolTip>
+                                        <ToolTip Style="{StaticResource TaskNoteToolTip}"
+                                                 DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                            <TextBlock Text="{Binding Note}"
+                                                       Style="{StaticResource TaskNoteToolTipText}" />
+                                        </ToolTip>
+                                    </TextBlock.ToolTip>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
 
                     <DataGridTemplateColumn Header="{DynamicResource Main.FilesColumn}" Width="150" MinWidth="120" SortMemberPath="AttachmentCount">
                         <DataGridTemplateColumn.CellTemplate>
