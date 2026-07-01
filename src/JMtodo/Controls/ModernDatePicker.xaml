@@ -17,8 +17,9 @@
              IsEnabledChanged="RootControl_IsEnabledChanged">
     <UserControl.Resources>
         <Style x:Key="CalendarNavButton" TargetType="{x:Type Button}" BasedOn="{StaticResource Button.Base}">
-            <Setter Property="Width" Value="32" />
-            <Setter Property="Height" Value="32" />
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="MinWidth" Value="40" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
@@ -27,6 +28,10 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type Button}">
                         <Border x:Name="Root"
+                                Width="34"
+                                Height="34"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
                                 Background="{TemplateBinding Background}"
                                 CornerRadius="8">
                             <ContentPresenter HorizontalAlignment="Center"
@@ -46,9 +51,10 @@
         </Style>
 
         <Style x:Key="CalendarDayButton" TargetType="{x:Type Button}" BasedOn="{StaticResource Button.Base}">
-            <Setter Property="Width" Value="34" />
-            <Setter Property="Height" Value="30" />
-            <Setter Property="Margin" Value="1,2,1,2" />
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="MinWidth" Value="40" />
+            <Setter Property="Margin" Value="0" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="Regular" />
@@ -59,6 +65,10 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type Button}">
                         <Border x:Name="Root"
+                                Width="34"
+                                Height="34"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
@@ -142,26 +152,26 @@
                StaysOpen="False"
                Closed="CalendarPopup_Closed">
             <Grid Margin="18">
-                <Border Width="292"
+                <Border Width="328"
                         Background="#FFFFFF"
                         BorderBrush="{StaticResource Brush.Border}"
                         BorderThickness="1"
                         CornerRadius="14"
-                        Padding="12"
+                        Padding="16"
                         controls:RoundedClip.Enabled="True"
                         Effect="{StaticResource Shadow.Popup}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="40" />
                             <RowDefinition Height="28" />
-                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="240" />
                         </Grid.RowDefinitions>
 
                     <Grid Grid.Row="0">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="32" />
+                            <ColumnDefinition Width="40" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="32" />
+                            <ColumnDefinition Width="40" />
                         </Grid.ColumnDefinitions>
                         <Button Grid.Column="0"
                                 Style="{StaticResource CalendarNavButton}"
@@ -196,7 +206,7 @@
                         </Button>
                     </Grid>
 
-                    <UniformGrid Grid.Row="1" Columns="7" Rows="1">
+                    <UniformGrid Grid.Row="1" Width="280" HorizontalAlignment="Center" Columns="7" Rows="1">
                         <TextBlock Text="{DynamicResource Week.Monday}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         <TextBlock Text="{DynamicResource Week.Tuesday}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         <TextBlock Text="{DynamicResource Week.Wednesday}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -206,7 +216,10 @@
                         <TextBlock Text="{DynamicResource Week.Sunday}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </UniformGrid>
 
-                        <ItemsControl Grid.Row="2" ItemsSource="{Binding Days, ElementName=RootControl}">
+                        <ItemsControl Grid.Row="2"
+                                      Width="280"
+                                      HorizontalAlignment="Center"
+                                      ItemsSource="{Binding Days, ElementName=RootControl}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <UniformGrid Rows="6" Columns="7" />
