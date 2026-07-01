@@ -42,6 +42,10 @@
     <sys:String x:Key="Main.MoveToGroup">Move to group</sys:String>
     <sys:String x:Key="Main.MarkComplete">Mark complete</sys:String>
     <sys:String x:Key="Main.MarkActive">Mark active</sys:String>
+    <sys:String x:Key="Main.AddSubtaskBatchTip">Requires one selected active main task.</sys:String>
+    <sys:String x:Key="Main.MoveToGroupBatchTip">Move selected main tasks to a task group.</sys:String>
+    <sys:String x:Key="Main.MarkCompleteBatchTip">Mark selected tasks as complete.</sys:String>
+    <sys:String x:Key="Main.MarkActiveBatchTip">Mark selected tasks as active.</sys:String>
 
     <sys:String x:Key="Placeholder.Search">Search title, notes, keywords...</sys:String>
     <sys:String x:Key="Placeholder.TaskTitle">Enter task title...</sys:String>

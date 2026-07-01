@@ -42,6 +42,10 @@
     <sys:String x:Key="Main.MoveToGroup">移动到任务组</sys:String>
     <sys:String x:Key="Main.MarkComplete">标记完成</sys:String>
     <sys:String x:Key="Main.MarkActive">标记未完成</sys:String>
+    <sys:String x:Key="Main.AddSubtaskBatchTip">仅支持选中 1 个未完成主任务。</sys:String>
+    <sys:String x:Key="Main.MoveToGroupBatchTip">将已选主任务批量移动到任务组。</sys:String>
+    <sys:String x:Key="Main.MarkCompleteBatchTip">将已选任务批量标记为完成。</sys:String>
+    <sys:String x:Key="Main.MarkActiveBatchTip">将已选任务批量标记为未完成。</sys:String>
 
     <sys:String x:Key="Placeholder.Search">搜索标题、备注、关键词...</sys:String>
     <sys:String x:Key="Placeholder.TaskTitle">请输入任务标题...</sys:String>

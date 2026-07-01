@@ -253,6 +253,198 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="TaskRowContextMenu" TargetType="{x:Type ContextMenu}">
+            <EventSetter Event="Opened" Handler="TaskRowContextMenu_Opened" />
+            <Setter Property="MinWidth" Value="236" />
+            <Setter Property="Padding" Value="6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="HasDropShadow" Value="False" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ContextMenu}">
+                        <Border Padding="8" Background="Transparent">
+                            <Border Padding="{TemplateBinding Padding}"
+                                    Background="#FFFFFF"
+                                    BorderBrush="{StaticResource Brush.Border}"
+                                    BorderThickness="1"
+                                    CornerRadius="14"
+                                    Effect="{StaticResource Shadow.Popup}"
+                                    SnapsToDevicePixels="True">
+                                <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle" />
+                            </Border>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TaskRowContextMenuItem" TargetType="{x:Type MenuItem}">
+            <Setter Property="Height" Value="40" />
+            <Setter Property="MinWidth" Value="224" />
+            <Setter Property="Padding" Value="10,0,12,0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}" />
+            <Setter Property="FontFamily" Value="Microsoft YaHei UI, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type MenuItem}">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="32" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Width="18"
+                                                  Height="18"
+                                                  HorizontalAlignment="Left"
+                                                  VerticalAlignment="Center"
+                                                  ContentSource="Icon"
+                                                  RecognizesAccessKey="True" />
+                                <ContentPresenter Grid.Column="1"
+                                                  HorizontalAlignment="Left"
+                                                  VerticalAlignment="Center"
+                                                  ContentSource="Header"
+                                                  RecognizesAccessKey="True" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#F3F7FF" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.45" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TaskRowAddSubtaskMenuItemStyle" TargetType="{x:Type MenuItem}" BasedOn="{StaticResource TaskRowContextMenuItem}">
+            <EventSetter Event="Click" Handler="TaskRowAddSubtaskMenuItem_Click" />
+        </Style>
+
+        <Style x:Key="TaskRowMoveToGroupMenuItemStyle" TargetType="{x:Type MenuItem}" BasedOn="{StaticResource TaskRowContextMenuItem}">
+            <EventSetter Event="Click" Handler="TaskRowMoveToGroupMenuItem_Click" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSubtask}" Value="True">
+                    <Setter Property="IsEnabled" Value="False" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="TaskRowCompleteMenuItemStyle" TargetType="{x:Type MenuItem}" BasedOn="{StaticResource TaskRowContextMenuItem}">
+            <EventSetter Event="Click" Handler="TaskRowCompleteMenuItem_Click" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Status}" Value="{x:Static models:TodoStatus.Completed}">
+                    <Setter Property="IsEnabled" Value="False" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="{x:Static models:TodoStatus.Deleted}">
+                    <Setter Property="IsEnabled" Value="False" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="TaskRowReopenMenuItemStyle" TargetType="{x:Type MenuItem}" BasedOn="{StaticResource TaskRowContextMenuItem}">
+            <EventSetter Event="Click" Handler="TaskRowReopenMenuItem_Click" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Status}" Value="{x:Static models:TodoStatus.Active}">
+                    <Setter Property="IsEnabled" Value="False" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="{x:Static models:TodoStatus.Deleted}">
+                    <Setter Property="IsEnabled" Value="False" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="TaskRowContextMenuSeparator" TargetType="{x:Type Separator}">
+            <Setter Property="Margin" Value="10,5,10,5" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Separator}">
+                        <Border Height="1" Background="{StaticResource Brush.BorderLight}" />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TaskGridRowWithContextMenuStyle" TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource ModernTaskDataGridRowStyle}">
+            <Setter Property="ContextMenu">
+                <Setter.Value>
+                    <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
+                                 Style="{StaticResource TaskRowContextMenu}">
+                        <MenuItem Header="{DynamicResource Main.AddSubtask}"
+                                  IsEnabled="{Binding CanCreateSubtask}"
+                                  Style="{StaticResource TaskRowAddSubtaskMenuItemStyle}">
+                            <MenuItem.Icon>
+                                <Path Width="16"
+                                      Height="16"
+                                      Data="M8,2 L8,14 M2,8 L14,8"
+                                      Stroke="{StaticResource Brush.TextSecondary}"
+                                      StrokeThickness="2"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      Stretch="Uniform" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="{DynamicResource Main.MoveToGroup}"
+                                  Style="{StaticResource TaskRowMoveToGroupMenuItemStyle}">
+                            <MenuItem.Icon>
+                                <Path Width="16"
+                                      Height="16"
+                                      Data="M3,4 L13,4 L13,7 L3,7 Z M3,10 L13,10 L13,13 L3,13 Z"
+                                      Stroke="{StaticResource Brush.Purple}"
+                                      StrokeThickness="1.8"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      StrokeLineJoin="Round"
+                                      Stretch="Uniform" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator Style="{StaticResource TaskRowContextMenuSeparator}" />
+                        <MenuItem Header="{DynamicResource Main.MarkComplete}"
+                                  Style="{StaticResource TaskRowCompleteMenuItemStyle}">
+                            <MenuItem.Icon>
+                                <Path Width="16"
+                                      Height="16"
+                                      Data="M3,8.5 L6.6,12 L13.5,4"
+                                      Stroke="{StaticResource Brush.Success}"
+                                      StrokeThickness="2"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      Stretch="Uniform" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="{DynamicResource Main.MarkActive}"
+                                  Style="{StaticResource TaskRowReopenMenuItemStyle}">
+                            <MenuItem.Icon>
+                                <Path Width="16"
+                                      Height="16"
+                                      Data="M12,5 A4.5,4.5 0 1 0 13,9 M12,5 L12,2 M12,5 L9,5"
+                                      Stroke="{StaticResource Brush.Warning}"
+                                      StrokeThickness="1.8"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      Stretch="Uniform" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </Setter.Value>
+            </Setter>
+        </Style>
         </ResourceDictionary>
     </Window.Resources>
 
@@ -734,7 +926,7 @@
                           SelectionMode="Single"
                           RowHeight="54"
                           ColumnHeaderHeight="48"
-                          RowStyle="{StaticResource ModernTaskDataGridRowStyle}"
+                          RowStyle="{StaticResource TaskGridRowWithContextMenuStyle}"
                           CellStyle="{StaticResource ModernTaskDataGridCellStyle}"
                           FocusVisualStyle="{x:Null}"
                           EnableRowVirtualization="True"
@@ -837,7 +1029,7 @@
                       SelectionMode="Single"
                       RowHeight="54"
                       ColumnHeaderHeight="48"
-                      RowStyle="{StaticResource ModernTaskDataGridRowStyle}"
+                      RowStyle="{StaticResource TaskGridRowWithContextMenuStyle}"
                       CellStyle="{StaticResource ModernTaskDataGridCellStyle}"
                       FocusVisualStyle="{x:Null}"
                       EnableRowVirtualization="True"
@@ -1319,47 +1511,32 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center">
                     <Button Width="116"
+                            Style="{StaticResource Button.Secondary}"
+                            IsEnabled="{Binding CanAddSubtask}"
                             Click="AddSubtaskButton_Click"
-                            Content="{DynamicResource Main.AddSubtask}">
-                        <Button.Style>
-                            <Style TargetType="{x:Type Button}" BasedOn="{StaticResource Button.Secondary}">
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding CanAddSubtask}" Value="False">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
+                            Content="{DynamicResource Main.AddSubtask}"
+                            ToolTip="{DynamicResource Main.AddSubtaskBatchTip}" />
                     <Button Width="132"
                             Margin="12,0,0,0"
+                            Style="{StaticResource Button.Purple}"
                             IsEnabled="{Binding CanMoveSelectedTodosToGroup}"
                             Click="MoveToGroupButton_Click"
-                            Content="{DynamicResource Main.MoveToGroup}">
-                        <Button.Style>
-                            <Style TargetType="{x:Type Button}" BasedOn="{StaticResource Button.Purple}">
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ShowMoveToGroupButton}" Value="False">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
+                            Content="{DynamicResource Main.MoveToGroup}"
+                            ToolTip="{DynamicResource Main.MoveToGroupBatchTip}" />
                     <Button Width="120"
                             Margin="12,0,0,0"
                             Style="{StaticResource Button.Success}"
                             IsEnabled="{Binding CanApplyBatchStatusAction}"
                             Click="CompleteButton_Click"
-                            Content="{DynamicResource Main.MarkComplete}" />
+                            Content="{DynamicResource Main.MarkComplete}"
+                            ToolTip="{DynamicResource Main.MarkCompleteBatchTip}" />
                     <Button Width="132"
                             Margin="12,0,0,0"
                             Style="{StaticResource Button.Warning}"
                             IsEnabled="{Binding CanApplyBatchStatusAction}"
                             Click="ReopenButton_Click"
-                            Content="{DynamicResource Main.MarkActive}" />
+                            Content="{DynamicResource Main.MarkActive}"
+                            ToolTip="{DynamicResource Main.MarkActiveBatchTip}" />
                 </StackPanel>
             </Grid>
         </Border>

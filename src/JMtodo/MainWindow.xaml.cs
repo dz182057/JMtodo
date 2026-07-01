@@ -91,6 +91,14 @@ public partial class MainWindow : Window
         AddSubtask(selected);
     }
 
+    private void TaskRowAddSubtaskMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (GetContextMenuTodo(sender) is TodoItem todo)
+        {
+            AddSubtask(todo);
+        }
+    }
+
     private void ManageGroupsButton_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new TaskGroupManagerWindow(_todoService) { Owner = this };
@@ -100,37 +108,45 @@ public partial class MainWindow : Window
 
     private void CompleteButton_Click(object sender, RoutedEventArgs e)
     {
-        var selectedTodos = GetSelectedTodos();
-        if (selectedTodos.Count == 0)
-        {
-            ConfirmDialogWindow.ShowInfo(this, T("Dialog.NoSelection.Title"), T("Dialog.NoSelection.Message"));
-            return;
-        }
-
-        foreach (var todo in selectedTodos)
-        {
-            _todoService.Complete(todo.Id);
-        }
+        ApplyStatusToTodos(GetSelectedTodos(), markCompleted: true);
     }
 
     private void ReopenButton_Click(object sender, RoutedEventArgs e)
     {
-        var selectedTodos = GetSelectedTodos();
-        if (selectedTodos.Count == 0)
-        {
-            ConfirmDialogWindow.ShowInfo(this, T("Dialog.NoSelection.Title"), T("Dialog.NoSelection.Message"));
-            return;
-        }
-
-        foreach (var todo in selectedTodos)
-        {
-            _todoService.Reopen(todo.Id);
-        }
+        ApplyStatusToTodos(GetSelectedTodos(), markCompleted: false);
     }
 
     private void MoveToGroupButton_Click(object sender, RoutedEventArgs e)
     {
-        var selectedTodos = GetSelectedTodos();
+        MoveTodosToGroup(GetSelectedTodos());
+    }
+
+    private void TaskRowMoveToGroupMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (GetContextMenuTodo(sender) is TodoItem todo)
+        {
+            MoveTodosToGroup(new[] { todo });
+        }
+    }
+
+    private void TaskRowCompleteMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (GetContextMenuTodo(sender) is TodoItem todo)
+        {
+            ApplyStatusToTodos(new[] { todo }, markCompleted: true);
+        }
+    }
+
+    private void TaskRowReopenMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (GetContextMenuTodo(sender) is TodoItem todo)
+        {
+            ApplyStatusToTodos(new[] { todo }, markCompleted: false);
+        }
+    }
+
+    private void MoveTodosToGroup(IReadOnlyCollection<TodoItem> selectedTodos)
+    {
         if (selectedTodos.Count == 0)
         {
             ConfirmDialogWindow.ShowInfo(this, T("Dialog.NoSelection.Title"), T("Dialog.NoSelection.RootMessage"));
@@ -176,6 +192,27 @@ public partial class MainWindow : Window
         catch (InvalidOperationException ex)
         {
             ConfirmDialogWindow.ShowInfo(this, T("Dialog.MoveFailed.Title"), ex.Message);
+        }
+    }
+
+    private void ApplyStatusToTodos(IReadOnlyCollection<TodoItem> selectedTodos, bool markCompleted)
+    {
+        if (selectedTodos.Count == 0)
+        {
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.NoSelection.Title"), T("Dialog.NoSelection.Message"));
+            return;
+        }
+
+        foreach (var todo in selectedTodos)
+        {
+            if (markCompleted)
+            {
+                _todoService.Complete(todo.Id);
+            }
+            else
+            {
+                _todoService.Reopen(todo.Id);
+            }
         }
     }
 
@@ -333,6 +370,14 @@ public partial class MainWindow : Window
 
         UpdateSelectionFromTaskGrid();
         SyncPinnedActionGridSelection();
+    }
+
+    private void TaskRowContextMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        if (sender is ContextMenu { PlacementTarget: DataGridRow row } && row.DataContext is TodoItem todo)
+        {
+            SelectSingleTodo(todo);
+        }
     }
 
     private void PinnedActionGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -540,6 +585,34 @@ public partial class MainWindow : Window
         }
 
         UpdateSelectionFromTaskGrid();
+    }
+
+    private void SelectSingleTodo(TodoItem todo)
+    {
+        try
+        {
+            _isSyncingGridSelection = true;
+            SelectSingleTodoInGrid(TaskGrid, todo);
+            SelectSingleTodoInGrid(PinnedActionGrid, todo);
+        }
+        finally
+        {
+            _isSyncingGridSelection = false;
+        }
+
+        UpdateSelectionFromTaskGrid();
+    }
+
+    private static void SelectSingleTodoInGrid(DataGrid grid, TodoItem todo)
+    {
+        if (grid.SelectionMode == DataGridSelectionMode.Single)
+        {
+            grid.SelectedItem = todo;
+            return;
+        }
+
+        grid.SelectedItems.Clear();
+        grid.SelectedItems.Add(todo);
     }
 
     private void TaskGrid_Sorting(object sender, DataGridSortingEventArgs e)
@@ -769,6 +842,11 @@ public partial class MainWindow : Window
     private List<TodoItem> GetSelectedTodos()
     {
         return TaskGrid.SelectedItems.Cast<TodoItem>().ToList();
+    }
+
+    private static TodoItem? GetContextMenuTodo(object sender)
+    {
+        return (sender as FrameworkElement)?.DataContext as TodoItem;
     }
 
     private void UpdateSelectionFromTaskGrid()
