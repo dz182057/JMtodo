@@ -581,6 +581,7 @@
                     </Grid.ColumnDefinitions>
 
                     <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                                  FocusVisualStyle="{x:Null}"
                                   VerticalScrollBarVisibility="Disabled">
                         <StackPanel Orientation="Horizontal">
                             <StackPanel Width="300" Height="58">
@@ -820,6 +821,7 @@
 
                 <ScrollViewer Grid.Row="2"
                               HorizontalScrollBarVisibility="Auto"
+                              FocusVisualStyle="{x:Null}"
                               VerticalScrollBarVisibility="Disabled">
                     <ItemsControl ItemsSource="{Binding GroupSummaries}">
                         <ItemsControl.ItemsPanel>

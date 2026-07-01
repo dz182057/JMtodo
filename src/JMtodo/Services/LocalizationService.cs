@@ -72,4 +72,7 @@ public static class LocalizationService
     }
 }
 
-public sealed record LanguageOption(string Key, string DisplayName);
+public sealed record LanguageOption(string Key, string DisplayName)
+{
+    public override string ToString() => DisplayName;
+}

@@ -359,7 +359,10 @@
                                             <ContentPresenter Margin="{Binding Padding, RelativeSource={RelativeSource AncestorType=ComboBox}}"
                                                               HorizontalAlignment="Left"
                                                               VerticalAlignment="Center"
-                                                              Content="{Binding SelectionBoxItem, RelativeSource={RelativeSource AncestorType=ComboBox}}" />
+                                                              Content="{Binding SelectionBoxItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                              ContentTemplate="{Binding SelectionBoxItemTemplate, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                              ContentTemplateSelector="{Binding ItemTemplateSelector, RelativeSource={RelativeSource AncestorType=ComboBox}}"
+                                                              ContentStringFormat="{Binding SelectionBoxItemStringFormat, RelativeSource={RelativeSource AncestorType=ComboBox}}" />
                                             <Path Width="10"
                                                   Height="6"
                                                   Margin="0,0,14,0"
@@ -803,6 +806,7 @@
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type DataGridColumnHeader}">
@@ -834,12 +838,14 @@
                                HorizontalAlignment="Left"
                                Background="Transparent"
                                Cursor="SizeWE"
+                               FocusVisualStyle="{x:Null}"
                                Opacity="0" />
                         <Thumb x:Name="PART_RightHeaderGripper"
                                Width="8"
                                HorizontalAlignment="Right"
                                Background="Transparent"
                                Cursor="SizeWE"
+                               FocusVisualStyle="{x:Null}"
                                Opacity="0" />
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -883,6 +889,7 @@
         <Setter Property="Foreground" Value="#1F2937" />
         <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderLight}" />
         <Setter Property="BorderThickness" Value="0,0,0,1" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type DataGridCell}">
@@ -909,6 +916,7 @@
         <Setter Property="SelectionUnit" Value="FullRow" />
         <Setter Property="Background" Value="#FFFFFF" />
         <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
         <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
         <Setter Property="RowStyle" Value="{StaticResource DataGrid.Row.Modern}" />

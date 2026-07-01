@@ -6,6 +6,7 @@
              Height="42"
              MinWidth="160"
              Focusable="True"
+             FocusVisualStyle="{x:Null}"
              FontFamily="Microsoft YaHei UI, Segoe UI"
              FontSize="14"
              TextOptions.TextFormattingMode="Display"

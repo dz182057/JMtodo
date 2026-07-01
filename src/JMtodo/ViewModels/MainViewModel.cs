@@ -711,4 +711,6 @@ public sealed class StatusFilterOption : ViewModelBase
     {
         OnPropertyChanged(nameof(DisplayName));
     }
+
+    public override string ToString() => DisplayName;
 }
