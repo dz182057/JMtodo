@@ -28,21 +28,59 @@
         LocationChanged="Window_PositionOrSizeChanged"
         SizeChanged="Window_PositionOrSizeChanged">
     <Window.Resources>
-        <Style x:Key="FloatingHeaderButton" TargetType="{x:Type Button}" BasedOn="{StaticResource Button.Base}">
-            <Setter Property="Height" Value="28" />
-            <Setter Property="MinWidth" Value="28" />
-            <Setter Property="Padding" Value="8,0,8,0" />
+        <Style x:Key="FloatingHeaderButton" TargetType="{x:Type Button}">
+            <Setter Property="Height" Value="40" />
+            <Setter Property="MinWidth" Value="40" />
+            <Setter Property="Padding" Value="0" />
             <Setter Property="Background" Value="#33FFFFFF" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="Foreground" Value="#FFFFFF" />
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#44FFFFFF" />
-                </Trigger>
-                <Trigger Property="IsPressed" Value="True">
-                    <Setter Property="Background" Value="#55FFFFFF" />
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid Background="Transparent" SnapsToDevicePixels="True">
+                            <Border x:Name="Root"
+                                    Width="28"
+                                    Height="28"
+                                    Background="{TemplateBinding Background}"
+                                    CornerRadius="12"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    RenderTransformOrigin="0.5,0.5">
+                                <Border.RenderTransform>
+                                    <ScaleTransform ScaleX="1" ScaleY="1" />
+                                </Border.RenderTransform>
+                                <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  RecognizesAccessKey="True" />
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#44FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#55FFFFFF" />
+                                <Setter TargetName="Root" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.96" ScaleY="0.96" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style x:Key="FloatingTaskCard" TargetType="{x:Type Border}">
@@ -276,7 +314,11 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Grid VerticalAlignment="Center" MinWidth="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
                             <Border Width="24"
                                     Height="24"
                                     Background="#E6FFFFFF"
@@ -287,26 +329,45 @@
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center" />
                             </Border>
-                            <TextBlock Text="{DynamicResource Floating.CurrentTasks}"
+                            <TextBlock Grid.Column="1"
+                                       Text="{DynamicResource Floating.CurrentTasks}"
                                        Margin="10,0,0,0"
                                        FontSize="17"
                                        FontWeight="SemiBold"
                                        Foreground="#FFFFFF"
+                                       TextTrimming="CharacterEllipsis"
                                        VerticalAlignment="Center" />
-                        </StackPanel>
+                        </Grid>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button x:Name="PinButton"
-                                    Width="28"
-                                    Height="28"
+                            <Button x:Name="AddTaskButton"
+                                    Width="40"
+                                    Height="40"
                                     Padding="0"
+                                    Style="{StaticResource FloatingHeaderButton}"
+                                    Click="AddTaskButton_Click"
+                                    ToolTip="{DynamicResource Tray.AddTask}">
+                                <Path Width="12"
+                                      Height="12"
+                                      Data="M6,1 L6,11 M1,6 L11,6"
+                                      Stroke="#FFFFFF"
+                                      StrokeThickness="2"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      Stretch="Fill" />
+                            </Button>
+                            <Button x:Name="PinButton"
+                                    Width="40"
+                                    Height="40"
+                                    Padding="0"
+                                    Margin="4,0,0,0"
                                     Style="{StaticResource FloatingHeaderButton}"
                                     Click="PinButton_Click"
                                     ToolTip="{DynamicResource Floating.PinToggle}"
                                     Content="●" />
-                            <Button Width="28"
-                                    Height="28"
+                            <Button Width="40"
+                                    Height="40"
                                     Padding="0"
-                                    Margin="8,0,0,0"
+                                    Margin="4,0,0,0"
                                     Style="{StaticResource FloatingHeaderButton}"
                                     Click="CloseButton_Click"
                                     Content="×" />
@@ -317,6 +378,7 @@
 
             <ScrollViewer Grid.Row="1"
                           Margin="12,10,12,0"
+                          FocusVisualStyle="{x:Null}"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled">
                 <ScrollViewer.Resources>
@@ -729,6 +791,7 @@
                               Grid.RowSpan="3"
                               Width="28"
                               Height="28"
+                              FocusVisualStyle="{x:Null}"
                               HorizontalAlignment="Right"
                               VerticalAlignment="Bottom"
                               Margin="0,0,2,2"

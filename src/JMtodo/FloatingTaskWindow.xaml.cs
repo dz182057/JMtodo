@@ -211,6 +211,24 @@ public partial class FloatingTaskWindow : Window
             editor.GetNewAttachmentPaths());
     }
 
+    private void AddTaskButton_Click(object sender, RoutedEventArgs e)
+    {
+        var editor = new TodoEditorViewModel(_viewModel.GetGroups());
+        var dialog = new TaskEditWindow(editor) { Owner = this, Title = T("Tray.AddTask") };
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        _viewModel.Create(
+            editor.Title,
+            editor.Note,
+            editor.GetStartDate(),
+            editor.GetDueDate(),
+            editor.SelectedGroupId,
+            editor.GetNewAttachmentPaths());
+    }
+
     private void EditTaskButton_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.Tag is not FloatingTaskItemViewModel todo)

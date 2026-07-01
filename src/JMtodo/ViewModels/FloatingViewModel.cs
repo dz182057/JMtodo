@@ -65,6 +65,17 @@ public sealed class FloatingViewModel : ViewModelBase
         _todoService.Reopen(todo.TaskId);
     }
 
+    public void Create(
+        string title,
+        string? note,
+        DateOnly startDate,
+        DateOnly? dueDate,
+        string? groupId,
+        IEnumerable<string>? attachmentFilePaths)
+    {
+        _todoService.Create(title, note, startDate, dueDate, groupId, attachmentFilePaths);
+    }
+
     public void CreateSubtask(
         FloatingTaskItemViewModel parent,
         string title,
