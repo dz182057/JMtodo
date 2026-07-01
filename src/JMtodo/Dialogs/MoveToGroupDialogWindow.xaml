@@ -110,7 +110,7 @@
                                   VerticalAlignment="Center" />
                         </Border>
                         <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                            <TextBlock Text="移动到任务组"
+                            <TextBlock Text="{DynamicResource MoveGroup.Title}"
                                        FontSize="21"
                                        FontWeight="SemiBold"
                                        Foreground="{StaticResource Brush.TextPrimary}" />
@@ -161,7 +161,7 @@
                         </Grid.ColumnDefinitions>
                         <Button Height="38"
                                 Click="UseExistingButton_Click"
-                                Content="选择已有任务组">
+                                Content="{DynamicResource MoveGroup.UseExisting}">
                             <Button.Style>
                                 <Style TargetType="{x:Type Button}" BasedOn="{StaticResource Button.Secondary}">
                                     <Setter Property="Height" Value="38" />
@@ -178,7 +178,7 @@
                         <Button Grid.Column="2"
                                 Height="38"
                                 Click="UseNewButton_Click"
-                                Content="新建任务组">
+                                Content="{DynamicResource MoveGroup.UseNew}">
                             <Button.Style>
                                 <Style TargetType="{x:Type Button}" BasedOn="{StaticResource Button.Secondary}">
                                     <Setter Property="Height" Value="38" />
@@ -281,7 +281,7 @@
 
                             <StackPanel>
                                 <Grid>
-                                    <TextBlock Text="任务组名称" Style="{StaticResource Text.Label}" />
+                                    <TextBlock Text="{DynamicResource MoveGroup.Name}" Style="{StaticResource Text.Label}" />
                                     <TextBlock Text="{Binding NewGroupNameCountText}"
                                                FontSize="12"
                                                Foreground="{StaticResource Brush.TextTertiary}"
@@ -290,13 +290,13 @@
                                 <TextBox x:Name="NewGroupNameTextBox"
                                          Height="42"
                                          MaxLength="20"
-                                         Tag="请输入任务组名称..."
+                                         Tag="{DynamicResource Placeholder.TaskGroupName}"
                                          Text="{Binding NewGroupName, UpdateSourceTrigger=PropertyChanged}"
                                          Style="{StaticResource TextBox.Modern}" />
                             </StackPanel>
 
                             <StackPanel Grid.Row="2">
-                                <TextBlock Text="任务组图标" Style="{StaticResource Text.Label}" />
+                                <TextBlock Text="{DynamicResource MoveGroup.Icon}" Style="{StaticResource Text.Label}" />
                                 <controls:TaskGroupIconPicker SelectedIconKey="{Binding NewGroupIconKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                               IconOptions="{Binding IconOptions}" />
                             </StackPanel>
@@ -321,14 +321,14 @@
                             Height="40"
                             Style="{StaticResource Button.Secondary}"
                             Click="CancelButton_Click"
-                            Content="取消" />
+                            Content="{DynamicResource MoveGroup.Cancel}" />
                     <Button Width="104"
                             Height="40"
                             Margin="12,0,0,0"
                             Style="{StaticResource Button.Primary}"
                             IsEnabled="{Binding CanMove}"
                             Click="MoveButton_Click"
-                            Content="移动" />
+                            Content="{DynamicResource MoveGroup.Move}" />
                 </StackPanel>
             </Border>
         </Grid>

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -6,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using MediaBrushes = System.Windows.Media.Brushes;
 using MediaColor = System.Windows.Media.Color;
+using TodoDesktopApp.Services;
 
 namespace TodoDesktopApp.Controls;
 
@@ -26,7 +28,7 @@ public partial class ModernDatePicker : System.Windows.Controls.UserControl
             nameof(Placeholder),
             typeof(string),
             typeof(ModernDatePicker),
-            new PropertyMetadata("选择日期"));
+            new PropertyMetadata(LocalizationService.Text("Date.SelectDate")));
 
     public static readonly DependencyProperty DisplayFormatProperty =
         DependencyProperty.Register(
@@ -55,6 +57,8 @@ public partial class ModernDatePicker : System.Windows.Controls.UserControl
     public ModernDatePicker()
     {
         InitializeComponent();
+        LocalizationService.LanguageChanged += LocalizationService_LanguageChanged;
+        Unloaded += (_, _) => LocalizationService.LanguageChanged -= LocalizationService_LanguageChanged;
         _displayMonth = FirstDayOfMonth(DateTime.Today);
         RebuildCalendar();
         UpdateDisplayText();
@@ -108,6 +112,12 @@ public partial class ModernDatePicker : System.Windows.Controls.UserControl
     private static void OnDisplayFormatChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         ((ModernDatePicker)d).UpdateDisplayText();
+    }
+
+    private void LocalizationService_LanguageChanged(object? sender, EventArgs e)
+    {
+        RebuildCalendar();
+        UpdateDisplayText();
     }
 
     private void InputBorder_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -226,7 +236,7 @@ public partial class ModernDatePicker : System.Windows.Controls.UserControl
 
     private void RebuildCalendar()
     {
-        HeaderText = $"{_displayMonth:yyyy年M月}";
+        HeaderText = _displayMonth.ToString(LocalizationService.Text("Date.MonthFormat"), CultureInfo.CurrentCulture);
         Days.Clear();
 
         var firstDay = FirstDayOfMonth(_displayMonth);

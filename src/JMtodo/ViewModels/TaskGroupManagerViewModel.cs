@@ -19,6 +19,7 @@ public sealed class TaskGroupManagerViewModel : ViewModelBase
     public TaskGroupManagerViewModel(TodoService todoService)
     {
         _todoService = todoService;
+        LocalizationService.LanguageChanged += (_, _) => RefreshLocalizedProperties();
         NewCommand = new RelayCommand(_ => BeginCreate());
         SaveCommand = new RelayCommand(_ => SaveGroup(), _ => CanSaveGroup);
         ClearCommand = new RelayCommand(_ => ClearEditor());
@@ -108,9 +109,13 @@ public sealed class TaskGroupManagerViewModel : ViewModelBase
         }
     }
 
-    public string EditorTitle => IsCreateMode ? "新建任务组" : "编辑任务组";
+    public string EditorTitle => IsCreateMode
+        ? LocalizationService.Text("TaskGroup.New")
+        : LocalizationService.Text("TaskGroup.Edit");
 
-    public string SaveButtonText => IsCreateMode ? "新增任务组" : "保存修改";
+    public string SaveButtonText => IsCreateMode
+        ? LocalizationService.Text("TaskGroup.SaveNew")
+        : LocalizationService.Text("TaskGroup.SaveChanges");
 
     public string NameCountText => $"{Math.Min(GroupName.Length, 20)}/20";
 
@@ -124,7 +129,7 @@ public sealed class TaskGroupManagerViewModel : ViewModelBase
     {
         if (SelectedGroup?.Group is null)
         {
-            ErrorMessage = "请选择可删除的任务组。";
+            ErrorMessage = LocalizationService.Text("Validation.GroupDeleteRequired");
             return;
         }
 
@@ -164,7 +169,7 @@ public sealed class TaskGroupManagerViewModel : ViewModelBase
 
             if (SelectedGroup?.Group is null)
             {
-                ErrorMessage = "请选择要编辑的任务组。";
+                ErrorMessage = LocalizationService.Text("Validation.GroupEditRequired");
                 return;
             }
 
@@ -237,6 +242,12 @@ public sealed class TaskGroupManagerViewModel : ViewModelBase
         SaveCommand.RaiseCanExecuteChanged();
         OnPropertyChanged(nameof(CanSaveGroup));
         OnPropertyChanged(nameof(CanDeleteSelected));
+    }
+
+    private void RefreshLocalizedProperties()
+    {
+        OnPropertyChanged(nameof(EditorTitle));
+        OnPropertyChanged(nameof(SaveButtonText));
     }
 }
 

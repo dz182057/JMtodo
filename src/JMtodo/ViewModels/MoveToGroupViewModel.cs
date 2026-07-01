@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Media;
 using TodoDesktopApp.Models;
+using TodoDesktopApp.Services;
 using Brush = System.Windows.Media.Brush;
 
 namespace TodoDesktopApp.ViewModels;
@@ -15,6 +16,7 @@ public sealed class MoveToGroupViewModel : ViewModelBase
 
     public MoveToGroupViewModel(IEnumerable<TodoGroup> groups, int selectedTaskCount)
     {
+        LocalizationService.LanguageChanged += (_, _) => RefreshLocalizedProperties();
         SelectedTaskCount = selectedTaskCount;
 
         foreach (var group in groups.OrderBy(group => group.Name, StringComparer.OrdinalIgnoreCase))
@@ -34,7 +36,7 @@ public sealed class MoveToGroupViewModel : ViewModelBase
 
     public int SelectedTaskCount { get; }
 
-    public string SelectedTaskCountText => $"已选 {SelectedTaskCount} 个主任务";
+    public string SelectedTaskCountText => LocalizationService.Format("MoveGroup.SelectedCountFormat", SelectedTaskCount);
 
     public MoveTaskGroupOption? SelectedGroup
     {
@@ -119,7 +121,7 @@ public sealed class MoveToGroupViewModel : ViewModelBase
         if (Groups.Count == 0)
         {
             IsCreatingNewGroup = true;
-            ErrorMessage = "还没有可选择的任务组，请先新建任务组。";
+            ErrorMessage = LocalizationService.Text("Validation.MoveNoGroups");
             return;
         }
 
@@ -138,19 +140,19 @@ public sealed class MoveToGroupViewModel : ViewModelBase
         {
             if (string.IsNullOrWhiteSpace(NewGroupName))
             {
-                ErrorMessage = "请输入任务组名称。";
+                ErrorMessage = LocalizationService.Text("Validation.GroupNameRequired");
                 return false;
             }
 
             if (NewGroupName.Trim().Length > 20)
             {
-                ErrorMessage = "任务组名称不能超过 20 字。";
+                ErrorMessage = LocalizationService.Text("Validation.GroupNameMax");
                 return false;
             }
 
             if (Groups.Any(group => string.Equals(group.Name, NewGroupName.Trim(), StringComparison.OrdinalIgnoreCase)))
             {
-                ErrorMessage = "已存在同名任务组。";
+                ErrorMessage = LocalizationService.Text("Validation.GroupNameDuplicate");
                 return false;
             }
 
@@ -159,11 +161,16 @@ public sealed class MoveToGroupViewModel : ViewModelBase
 
         if (SelectedGroup is null)
         {
-            ErrorMessage = "请选择一个任务组。";
+            ErrorMessage = LocalizationService.Text("Validation.MoveSelectGroup");
             return false;
         }
 
         return true;
+    }
+
+    private void RefreshLocalizedProperties()
+    {
+        OnPropertyChanged(nameof(SelectedTaskCountText));
     }
 }
 

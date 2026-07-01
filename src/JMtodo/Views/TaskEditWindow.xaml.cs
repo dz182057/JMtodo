@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
 using TodoDesktopApp.Dialogs;
+using TodoDesktopApp.Services;
 using TodoDesktopApp.ViewModels;
 
 namespace TodoDesktopApp.Views;
@@ -66,8 +67,8 @@ public partial class TaskEditWindow : Window
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Title = "选择任务文件",
-            Filter = "所有文件 (*.*)|*.*",
+            Title = T("Dialog.SelectTaskFiles.Title"),
+            Filter = T("Dialog.SelectTaskFiles.Filter"),
             Multiselect = true
         };
 
@@ -82,15 +83,15 @@ public partial class TaskEditWindow : Window
         }
         catch (InvalidOperationException ex)
         {
-            ConfirmDialogWindow.ShowInfo(this, "无法添加文件", ex.Message);
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.AddFileFailed.Title"), ex.Message);
         }
         catch (IOException)
         {
-            ConfirmDialogWindow.ShowInfo(this, "无法添加文件", "文件读取失败，请检查文件是否仍存在或是否有权限访问。");
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.AddFileFailed.Title"), T("Dialog.AddFileFailed.Read"));
         }
         catch (UnauthorizedAccessException)
         {
-            ConfirmDialogWindow.ShowInfo(this, "无法添加文件", "没有权限读取选择的文件。");
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.AddFileFailed.Title"), T("Dialog.AddFileFailed.Access"));
         }
     }
 
@@ -129,10 +130,10 @@ public partial class TaskEditWindow : Window
             var dialog = new ConfirmDialogWindow
             {
                 Owner = this,
-                TitleText = "确认关闭",
-                MessageText = "当前内容尚未保存，确定关闭吗？",
-                ConfirmText = "确认关闭",
-                CancelText = "继续编辑"
+                TitleText = T("Dialog.DefaultTitle"),
+                MessageText = T("Dialog.DefaultMessage"),
+                ConfirmText = T("Dialog.DefaultConfirm"),
+                CancelText = T("Dialog.DefaultCancel")
             };
 
             if (dialog.ShowDialog() != true)
@@ -159,7 +160,7 @@ public partial class TaskEditWindow : Window
     {
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
         {
-            ConfirmDialogWindow.ShowInfo(this, "无法打开文件", "文件不存在，可能已被移动或删除。");
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.OpenFileFailed.Title"), T("Dialog.OpenFileFailed.Missing"));
             return;
         }
 
@@ -169,7 +170,9 @@ public partial class TaskEditWindow : Window
         }
         catch (Exception)
         {
-            ConfirmDialogWindow.ShowInfo(this, "无法打开文件", "系统未能打开该文件，请确认文件类型有关联的默认程序。");
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.OpenFileFailed.Title"), T("Dialog.OpenFileFailed.System"));
         }
     }
+
+    private static string T(string key) => LocalizationService.Text(key);
 }

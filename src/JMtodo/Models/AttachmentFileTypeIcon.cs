@@ -31,7 +31,7 @@ public static class AttachmentFileTypeIconCatalog
     private static readonly AttachmentFileTypeIcon Database = Create("DB", "#0F766E", "#F0FDFA");
     private static readonly AttachmentFileTypeIcon App = Create("APP", "#4F46E5", "#EEF2FF");
     private static readonly AttachmentFileTypeIcon Default = Create("FILE", "#3F7BFF", "#EEF5FF");
-    private static readonly AttachmentFileTypeIcon Multiple = Create("多", "#3F7BFF", "#EEF5FF");
+    private static readonly AttachmentFileTypeIcon Multiple = Create("ALL", "#3F7BFF", "#EEF5FF");
 
     public static AttachmentFileTypeIcon Get(string fileName)
     {

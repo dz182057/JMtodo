@@ -12,6 +12,7 @@ public sealed class FloatingViewModel : ViewModelBase
     {
         _todoService = todoService;
         _todoService.Changed += (_, _) => Reload();
+        LocalizationService.LanguageChanged += (_, _) => Reload();
         Reload();
     }
 
@@ -21,9 +22,9 @@ public sealed class FloatingViewModel : ViewModelBase
 
     public ObservableCollection<FloatingTaskGroupViewModel> TaskGroups { get; } = new();
 
-    public string TotalCountText => $"共 {Todos.Count} 项任务";
+    public string TotalCountText => LocalizationService.Format("Count.TotalTasksFormat", Todos.Count);
 
-    public string CompletedCountText => $"完成 {Todos.Count(todo => todo.IsCompleted)} 项";
+    public string CompletedCountText => LocalizationService.Format("Count.CompletedTasksFormat", Todos.Count(todo => todo.IsCompleted));
 
     public IReadOnlyList<TodoGroup> GetGroups() => _todoService.GetGroups();
 

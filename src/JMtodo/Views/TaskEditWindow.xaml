@@ -131,10 +131,11 @@
                         <StackPanel>
                             <TextBlock Style="{StaticResource DialogLabel}">
                                 <Run Text="*" Foreground="{StaticResource Brush.Danger}" />
-                                <Run Text=" 标题" />
+                                <Run Text=" " />
+                                <Run Text="{DynamicResource TaskEdit.TitleLabel}" />
                             </TextBlock>
                             <TextBox x:Name="TitleTextBox"
-                                     Tag="请输入任务标题..."
+                                     Tag="{DynamicResource Placeholder.TaskTitle}"
                                      Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}"
                                      LostFocus="TitleTextBox_LostFocus"
                                      Style="{StaticResource RequiredTitleTextBox}" />
@@ -142,14 +143,14 @@
                         </StackPanel>
 
                         <StackPanel Margin="0,16,0,0">
-                            <TextBlock Text="备注" Style="{StaticResource DialogLabel}" />
+                            <TextBlock Text="{DynamicResource TaskEdit.Note}" Style="{StaticResource DialogLabel}" />
                             <TextBox Height="112"
                                      Padding="12,10,12,10"
                                      AcceptsReturn="True"
                                      TextWrapping="Wrap"
                                      VerticalContentAlignment="Top"
                                      VerticalScrollBarVisibility="Auto"
-                                     Tag="请输入备注信息（可选）"
+                                     Tag="{DynamicResource Placeholder.TaskNote}"
                                      Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource TextBox.Modern}" />
                         </StackPanel>
@@ -172,7 +173,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="文件"
+                                        <TextBlock Text="{DynamicResource TaskEdit.Files}"
                                                    Style="{StaticResource DialogLabel}"
                                                    Margin="0,0,8,0" />
                                         <Border Height="24"
@@ -209,7 +210,7 @@
                                                   StrokeStartLineCap="Round"
                                                   StrokeEndLineCap="Round"
                                                   Stretch="Uniform" />
-                                            <TextBlock Text="选择文件"
+                                            <TextBlock Text="{DynamicResource TaskEdit.SelectFiles}"
                                                        Margin="7,0,0,0"
                                                        VerticalAlignment="Center" />
                                         </StackPanel>
@@ -233,7 +234,7 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                    <TextBlock Text="暂无关联文件"
+                                    <TextBlock Text="{DynamicResource TaskEdit.NoFiles}"
                                                FontSize="13"
                                                Foreground="{StaticResource Brush.TextTertiary}"
                                                HorizontalAlignment="Center"
@@ -324,7 +325,7 @@
                                                                 Style="{StaticResource Button.Ghost}"
                                                                 Tag="{Binding}"
                                                                 Click="RemoveAttachmentButton_Click"
-                                                                ToolTip="移除文件">
+                                                                ToolTip="{DynamicResource TaskEdit.RemoveFile}">
                                                             <Path Width="13"
                                                                   Height="13"
                                                                   Data="M3,3 L10,10 M10,3 L3,10"
@@ -360,18 +361,18 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="开始日期" Style="{StaticResource DialogLabel}" />
+                                    <TextBlock Text="{DynamicResource TaskEdit.StartDate}" Style="{StaticResource DialogLabel}" />
                                     <controls:ModernDatePicker Height="42"
                                                                SelectedDate="{Binding StartDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                               Placeholder="选择日期" />
+                                                               Placeholder="{DynamicResource Date.SelectDate}" />
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="2">
-                                    <TextBlock Text="计划完成日期" Style="{StaticResource DialogLabel}" />
+                                    <TextBlock Text="{DynamicResource TaskEdit.DueDate}" Style="{StaticResource DialogLabel}" />
                                     <controls:ModernDatePicker Height="42"
                                                                SelectedDate="{Binding DueDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                                IsEnabled="{Binding IsDueDateEnabled}"
-                                                               Placeholder="选择日期" />
+                                                               Placeholder="{DynamicResource Date.SelectDate}" />
                                 </StackPanel>
 
                                 <CheckBox Grid.Column="4"
@@ -379,7 +380,7 @@
                                           Height="42"
                                           Margin="0,28,0,0"
                                           HorizontalAlignment="Left"
-                                          Content="不限期"
+                                          Content="{DynamicResource TaskEdit.NoDue}"
                                           FontSize="15"
                                           IsChecked="{Binding IsNoDue}"
                                           Style="{StaticResource CheckBox.Modern}" />
@@ -415,7 +416,7 @@
                                 </Grid.RowDefinitions>
 
                                 <TextBlock Grid.Column="0"
-                                           Text="任务组"
+                                           Text="{DynamicResource TaskEdit.TaskGroup}"
                                            Style="{StaticResource DialogLabel}" />
                                 <ComboBox Grid.Row="1"
                                           Grid.Column="0"
@@ -426,7 +427,7 @@
 
                                 <TextBlock Grid.Row="1"
                                            Grid.Column="2"
-                                           Text="任务组请先在主窗口的「任务组」中维护。"
+                                           Text="{DynamicResource TaskEdit.GroupHelp}"
                                            FontSize="13"
                                            Foreground="{StaticResource Brush.TextSecondary}"
                                            TextWrapping="Wrap"
@@ -471,7 +472,7 @@
                             FontSize="15"
                             Style="{StaticResource Button.Secondary}"
                             Click="CancelButton_Click"
-                            Content="取消" />
+                            Content="{DynamicResource TaskEdit.Cancel}" />
                     <Button Width="104"
                             Height="40"
                             Margin="12,0,0,0"
@@ -479,7 +480,7 @@
                             Style="{StaticResource Button.Primary}"
                             IsEnabled="{Binding CanSave}"
                             Click="SaveButton_Click"
-                            Content="保存" />
+                            Content="{DynamicResource TaskEdit.Save}" />
                 </StackPanel>
             </Grid>
         </Grid>

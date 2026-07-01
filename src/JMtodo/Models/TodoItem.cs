@@ -1,4 +1,5 @@
 using Brush = System.Windows.Media.Brush;
+using TodoDesktopApp.Services;
 
 namespace TodoDesktopApp.Models;
 
@@ -26,13 +27,13 @@ public sealed class TodoItem
 
     public string StatusText => Status switch
     {
-        TodoStatus.Active => "未完成",
-        TodoStatus.Completed => "已完成",
-        TodoStatus.Deleted => "已删除",
+        TodoStatus.Active => LocalizationService.Text("Status.Active"),
+        TodoStatus.Completed => LocalizationService.Text("Status.Completed"),
+        TodoStatus.Deleted => LocalizationService.Text("Status.Deleted"),
         _ => Status.ToString()
     };
 
-    public string DueDateText => DueDate?.ToString("yyyy-MM-dd") ?? "不限期";
+    public string DueDateText => DueDate?.ToString("yyyy-MM-dd") ?? LocalizationService.Text("Todo.NoDue");
 
     public string StartDateText => StartDate.ToString("yyyy-MM-dd");
 
@@ -42,23 +43,25 @@ public sealed class TodoItem
 
     public string ExpandButtonText => HasSubtasks ? IsExpanded ? "▾" : "▸" : string.Empty;
 
-    public string LevelText => IsSubtask ? "子任务" : "主任务";
+    public string LevelText => IsSubtask ? LocalizationService.Text("Todo.Subtask") : LocalizationService.Text("Todo.MainTask");
 
-    public string SubtaskCountText => SubtaskCount > 0 ? $"含 {SubtaskCount} 个子任务" : string.Empty;
+    public string SubtaskCountText => SubtaskCount > 0 ? LocalizationService.Format("Todo.SubtaskCountFormat", SubtaskCount) : string.Empty;
 
-    public string GroupDisplayText => string.IsNullOrWhiteSpace(GroupName) ? "未分组" : GroupName;
+    public string GroupDisplayText => string.IsNullOrWhiteSpace(GroupName) ? LocalizationService.Text("Group.NoGroup") : GroupName;
 
     public string ParentDisplayText =>
         IsSubtask
-            ? $"主任务：{(string.IsNullOrWhiteSpace(ParentTitle) ? "未找到主任务" : ParentTitle)}"
+            ? LocalizationService.Format(
+                "Todo.ParentDisplayFormat",
+                string.IsNullOrWhiteSpace(ParentTitle) ? LocalizationService.Text("Todo.ParentMissing") : ParentTitle)
             : string.Empty;
 
     public string FloatingRelationText =>
         IsSubtask
-            ? $"子任务 · {ParentTitle ?? "未找到主任务"}"
+            ? LocalizationService.Format("Todo.FloatingRelationFormat", ParentTitle ?? LocalizationService.Text("Todo.ParentMissing"))
             : GroupDisplayText;
 
-    public string FloatingDateText => DueDate?.ToString("yyyy-MM-dd") ?? "不限期";
+    public string FloatingDateText => DueDate?.ToString("yyyy-MM-dd") ?? LocalizationService.Text("Todo.NoDue");
 
     public bool IsCompleted => Status == TodoStatus.Completed;
 
@@ -68,18 +71,18 @@ public sealed class TodoItem
 
     public int AttachmentCount => Attachments.Count;
 
-    public string AttachmentCountText => HasAttachments ? $"{AttachmentCount} 个文件" : string.Empty;
+    public string AttachmentCountText => HasAttachments ? LocalizationService.Format("Attachment.CountFormat", AttachmentCount) : string.Empty;
 
     public string AttachmentSummaryText => AttachmentCount switch
     {
-        0 => "无文件",
+        0 => LocalizationService.Text("Attachment.None"),
         1 => Attachments[0].DisplayFileName,
-        _ => $"{AttachmentCount} 个文件"
+        _ => LocalizationService.Format("Attachment.CountFormat", AttachmentCount)
     };
 
     public string AttachmentIconLabel => AttachmentCount == 1
         ? Attachments[0].FileTypeLabel
-        : AttachmentFileTypeIconCatalog.GetMultiple().Label;
+        : LocalizationService.Text("Attachment.MultipleLabel");
 
     public Brush AttachmentIconForeground => AttachmentCount == 1
         ? Attachments[0].FileTypeForeground

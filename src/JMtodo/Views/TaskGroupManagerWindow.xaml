@@ -74,7 +74,7 @@
 
             <Border Grid.Row="0" Padding="28,0,22,0" MouseLeftButtonDown="Header_MouseLeftButtonDown">
                 <Grid>
-                    <TextBlock Text="任务组管理"
+                    <TextBlock Text="{DynamicResource TaskGroup.Manage}"
                                FontSize="28"
                                FontWeight="Bold"
                                Foreground="{StaticResource Brush.TextPrimary}"
@@ -117,7 +117,7 @@
                             <RowDefinition Height="58" />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Text="分组列表"
+                        <TextBlock Text="{DynamicResource TaskGroup.List}"
                                    FontSize="16"
                                    FontWeight="SemiBold"
                                    Foreground="{StaticResource Brush.TextPrimary}"
@@ -227,7 +227,7 @@
                                       StrokeStartLineCap="Round"
                                       StrokeEndLineCap="Round"
                                       Stretch="Uniform" />
-                                <TextBlock Text="新建任务组"
+                                <TextBlock Text="{DynamicResource TaskGroup.New}"
                                            Margin="10,0,0,0"
                                            Foreground="{StaticResource Brush.Primary}"
                                            VerticalAlignment="Center" />
@@ -259,7 +259,7 @@
 
                         <StackPanel Grid.Row="1">
                             <Grid>
-                                <TextBlock Text="分组名称" Style="{StaticResource Text.Label}" />
+                                <TextBlock Text="{DynamicResource TaskGroup.Name}" Style="{StaticResource Text.Label}" />
                                 <TextBlock Text="{Binding NameCountText}"
                                            FontSize="12"
                                            Foreground="{StaticResource Brush.TextTertiary}"
@@ -268,20 +268,20 @@
                             <TextBox x:Name="GroupNameTextBox"
                                      Height="42"
                                      MaxLength="20"
-                                     Tag="请输入分组名称..."
+                                     Tag="{DynamicResource Placeholder.GroupName}"
                                      Text="{Binding GroupName, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource TextBox.Modern}" />
                         </StackPanel>
 
                         <StackPanel Grid.Row="2">
-                            <TextBlock Text="分组图标" Style="{StaticResource Text.Label}" />
+                            <TextBlock Text="{DynamicResource TaskGroup.Icon}" Style="{StaticResource Text.Label}" />
                             <controls:TaskGroupIconPicker SelectedIconKey="{Binding EditingIconKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                           IconOptions="{Binding IconOptions}" />
                         </StackPanel>
 
                         <StackPanel Grid.Row="3">
                             <Grid>
-                                <TextBlock Text="分组描述（可选）" Style="{StaticResource Text.Label}" />
+                                <TextBlock Text="{DynamicResource TaskGroup.DescriptionOptional}" Style="{StaticResource Text.Label}" />
                                 <TextBlock Text="{Binding DescriptionCountText}"
                                            FontSize="12"
                                            Foreground="{StaticResource Brush.TextTertiary}"
@@ -294,7 +294,7 @@
                                      VerticalScrollBarVisibility="Disabled"
                                      VerticalContentAlignment="Top"
                                      Padding="12,10,12,10"
-                                     Tag="请输入分组描述..."
+                                     Tag="{DynamicResource Placeholder.GroupDescription}"
                                      Text="{Binding GroupDescription, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource TextBox.Modern}" />
                         </StackPanel>
@@ -312,14 +312,14 @@
                                     Margin="14,0,0,0"
                                     Style="{StaticResource Button.Secondary}"
                                     Command="{Binding ClearCommand}"
-                                    Content="清空" />
+                                    Content="{DynamicResource TaskGroup.Clear}" />
                             <Button Width="92"
                                     Height="42"
                                     Margin="14,0,0,0"
                                     Style="{StaticResource Button.Danger}"
                                     IsEnabled="{Binding CanDeleteSelected}"
                                     Click="DeleteButton_Click"
-                                    Content="删除" />
+                                    Content="{DynamicResource TaskGroup.Delete}" />
                         </StackPanel>
 
                         <TextBlock Grid.Row="5"
@@ -352,7 +352,7 @@
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center" />
                         </Border>
-                        <TextBlock Text="删除任务组不会删除任务，组内任务会自动移动到「未分组」。"
+                        <TextBlock Text="{DynamicResource TaskGroup.DeleteInfo}"
                                    Margin="10,0,0,0"
                                    Foreground="{StaticResource Brush.TextSecondary}"
                                    VerticalAlignment="Center" />
@@ -364,7 +364,7 @@
                         VerticalAlignment="Bottom"
                         Style="{StaticResource Button.Secondary}"
                         Click="CloseButton_Click"
-                        Content="关闭" />
+                        Content="{DynamicResource TaskGroup.Close}" />
             </Grid>
         </Grid>
     </Border>

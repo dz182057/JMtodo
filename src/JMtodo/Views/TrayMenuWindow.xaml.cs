@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using TodoDesktopApp.Services;
 using Forms = System.Windows.Forms;
 
 namespace TodoDesktopApp.Views;
@@ -38,7 +39,9 @@ public partial class TrayMenuWindow : Window
         };
         _outsideClickTimer.Tick += OutsideClickTimer_Tick;
 
-        ToggleFloatingText.Text = isFloatingVisible ? "隐藏浮窗" : "显示浮窗";
+        ToggleFloatingText.Text = isFloatingVisible
+            ? LocalizationService.Text("Tray.HideFloating")
+            : LocalizationService.Text("Tray.ShowFloating");
     }
 
     public void ShowNearCursor()

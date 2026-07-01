@@ -287,7 +287,7 @@
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center" />
                             </Border>
-                            <TextBlock Text="当前任务"
+                            <TextBlock Text="{DynamicResource Floating.CurrentTasks}"
                                        Margin="10,0,0,0"
                                        FontSize="17"
                                        FontWeight="SemiBold"
@@ -301,7 +301,7 @@
                                     Padding="0"
                                     Style="{StaticResource FloatingHeaderButton}"
                                     Click="PinButton_Click"
-                                    ToolTip="保持置顶 / 取消置顶"
+                                    ToolTip="{DynamicResource Floating.PinToggle}"
                                     Content="●" />
                             <Button Width="28"
                                     Height="28"
@@ -334,7 +334,7 @@
                                     Drop="FloatingTaskCard_Drop">
                                 <Border.ContextMenu>
                                     <ContextMenu Style="{StaticResource FloatingTaskContextMenu}">
-                                        <MenuItem Header="添加子任务"
+                                        <MenuItem Header="{DynamicResource Floating.AddSubtask}"
                                                   Style="{StaticResource FloatingAddSubtaskMenuItem}"
                                                   Click="AddSubtaskMenuItem_Click"
                                                   IsEnabled="{Binding PlacementTarget.Tag.CanCreateSubtask, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
@@ -417,7 +417,7 @@
                                             Style="{StaticResource Button.Ghost}"
                                             Tag="{Binding MainTask}"
                                             Click="EditTaskButton_Click"
-                                            ToolTip="编辑任务"
+                                            ToolTip="{DynamicResource Floating.EditTask}"
                                             Content="..." />
 
                                     <Grid Grid.Row="1"
@@ -628,7 +628,7 @@
                                                                 Style="{StaticResource Button.Ghost}"
                                                                 Tag="{Binding}"
                                                                 Click="EditTaskButton_Click"
-                                                                ToolTip="编辑任务"
+                                                                ToolTip="{DynamicResource Floating.EditTask}"
                                                                 Content="..." />
 
                                                         <TextBlock Grid.Row="1"

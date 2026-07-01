@@ -196,13 +196,13 @@
                     </Grid>
 
                     <UniformGrid Grid.Row="1" Columns="7" Rows="1">
-                        <TextBlock Text="一" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        <TextBlock Text="二" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        <TextBlock Text="三" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        <TextBlock Text="四" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        <TextBlock Text="五" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        <TextBlock Text="六" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        <TextBlock Text="日" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource Week.Monday}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource Week.Tuesday}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource Week.Wednesday}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource Week.Thursday}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource Week.Friday}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource Week.Saturday}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource Week.Sunday}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </UniformGrid>
 
                         <ItemsControl Grid.Row="2" ItemsSource="{Binding Days, ElementName=RootControl}">

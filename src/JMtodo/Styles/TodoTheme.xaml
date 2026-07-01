@@ -303,7 +303,7 @@
     <Style x:Key="TextBox.Search" TargetType="{x:Type TextBox}" BasedOn="{StaticResource TextBox.Modern}">
         <Setter Property="Height" Value="40" />
         <Setter Property="Padding" Value="46,0,12,0" />
-        <Setter Property="Tag" Value="搜索标题、备注、关键词..." />
+        <Setter Property="Tag" Value="{DynamicResource Placeholder.Search}" />
     </Style>
 
     <Style x:Key="ComboBox.Modern" TargetType="{x:Type ComboBox}">
@@ -675,7 +675,7 @@
                                        FontSize="{TemplateBinding FontSize}"
                                        VerticalAlignment="Center"
                                        IsHitTestVisible="False"
-                                       Text="选择日期"
+                                       Text="{DynamicResource Date.SelectDate}"
                                        Visibility="Collapsed" />
                             <Button x:Name="PART_Button"
                                     Grid.Column="1"

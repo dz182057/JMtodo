@@ -8,15 +8,21 @@ namespace TodoDesktopApp.ViewModels;
 public sealed class MainViewModel : ViewModelBase
 {
     public const string DefaultSortMemberPath = nameof(TodoItem.DueDate);
+    private const string StatusFilterAll = "All";
+    private const string StatusFilterActive = "Active";
+    private const string StatusFilterCompleted = "Completed";
+    private const string StatusFilterDeleted = "Deleted";
 
     private readonly TodoService _todoService;
+    private readonly SettingsService _settingsService;
     private readonly HashSet<string> _collapsedTodoIds = new();
     private readonly HashSet<string> _currentRootTodoIds = new();
     private TodoItem? _selectedTodo;
     private int _selectedCount;
     private int _selectedSubtaskCount;
     private string? _keyword;
-    private string _selectedStatusFilter = "未完成";
+    private string _selectedStatusFilter = StatusFilterActive;
+    private string _selectedLanguageKey;
     private string? _selectedGroupId;
     private bool _filterNoGroup;
     private bool _isUpdatingFilters;
@@ -37,10 +43,14 @@ public sealed class MainViewModel : ViewModelBase
     private string? _manualSortMemberPath;
     private ListSortDirection _manualSortDirection = ListSortDirection.Ascending;
 
-    public MainViewModel(TodoService todoService)
+    public MainViewModel(TodoService todoService, SettingsService settingsService)
     {
         _todoService = todoService;
+        _settingsService = settingsService;
+        _selectedLanguageKey = LocalizationService.CurrentLanguage;
         _todoService.Changed += (_, _) => Refresh();
+        LocalizationService.LanguageChanged += (_, _) => RefreshLocalizedProperties();
+        LoadStatusFilters();
         RefreshCommand = new RelayCommand(_ => Refresh());
         ClearFiltersCommand = new RelayCommand(_ => ClearFilters());
         Refresh();
@@ -50,7 +60,9 @@ public sealed class MainViewModel : ViewModelBase
 
     public ObservableCollection<TodoGroupSummary> GroupSummaries { get; } = new();
 
-    public string[] StatusFilters { get; } = ["全部", "未完成", "已完成", "已删除"];
+    public ObservableCollection<StatusFilterOption> StatusFilters { get; } = new();
+
+    public IReadOnlyList<LanguageOption> LanguageOptions => LocalizationService.Languages;
 
     public RelayCommand RefreshCommand { get; }
 
@@ -115,9 +127,9 @@ public sealed class MainViewModel : ViewModelBase
         }
     }
 
-    public string SelectedCountText => $"已选择 {SelectedCount} 项";
+    public string SelectedCountText => LocalizationService.Format("Count.SelectedFormat", SelectedCount);
 
-    public string TotalCountText => $"共 {Todos.Count} 项";
+    public string TotalCountText => LocalizationService.Format("Count.TotalFormat", Todos.Count);
 
     public bool HasSelection => SelectedCount > 0;
 
@@ -127,7 +139,7 @@ public sealed class MainViewModel : ViewModelBase
 
     public bool CanAddSubtask => SelectedCount == 1 && !HasSelectedSubtask && SelectedTodo is { IsSubtask: false, Status: TodoStatus.Active };
 
-    public bool CanApplyBatchStatusAction => HasSelection && SelectedStatusFilter != "已删除";
+    public bool CanApplyBatchStatusAction => HasSelection && SelectedStatusFilter != StatusFilterDeleted;
 
     public bool CanMoveSelectedTodosToGroup => HasSelection && !HasSelectedSubtask;
 
@@ -145,7 +157,27 @@ public sealed class MainViewModel : ViewModelBase
         }
     }
 
-    public string MultiSelectButtonText => IsMultiSelectMode ? "取消" : "多选";
+    public string MultiSelectButtonText => IsMultiSelectMode
+        ? LocalizationService.Text("Action.Cancel")
+        : LocalizationService.Text("Action.MultiSelect");
+
+    public string SelectedLanguageKey
+    {
+        get => _selectedLanguageKey;
+        set
+        {
+            var normalizedLanguage = LocalizationService.NormalizeLanguage(value);
+            if (!SetProperty(ref _selectedLanguageKey, normalizedLanguage))
+            {
+                return;
+            }
+
+            var settings = _settingsService.Load();
+            settings.Language = normalizedLanguage;
+            _settingsService.Save(settings);
+            LocalizationService.ApplyLanguage(normalizedLanguage);
+        }
+    }
 
     public string? Keyword
     {
@@ -158,7 +190,8 @@ public sealed class MainViewModel : ViewModelBase
         get => _selectedStatusFilter;
         set
         {
-            if (SetProperty(ref _selectedStatusFilter, value))
+            var nextFilter = NormalizeStatusFilter(value);
+            if (SetProperty(ref _selectedStatusFilter, nextFilter))
             {
                 OnPropertyChanged(nameof(CanApplyBatchStatusAction));
                 if (!_isUpdatingFilters)
@@ -252,7 +285,7 @@ public sealed class MainViewModel : ViewModelBase
         var criteria = BuildCriteria();
         var selectedId = SelectedTodo?.Id;
         var sortedResults = SortTodos(_todoService.Search(criteria))
-            .Where(todo => SelectedStatusFilter == "已删除" || todo.Status != TodoStatus.Deleted)
+            .Where(todo => SelectedStatusFilter == StatusFilterDeleted || todo.Status != TodoStatus.Deleted)
             .ToList();
         var searchResults = ArrangeByHierarchy(sortedResults);
         ApplyHierarchyState(searchResults);
@@ -301,7 +334,7 @@ public sealed class MainViewModel : ViewModelBase
         _isUpdatingFilters = true;
         try
         {
-            SelectedStatusFilter = "未完成";
+            SelectedStatusFilter = StatusFilterActive;
         }
         finally
         {
@@ -332,7 +365,7 @@ public sealed class MainViewModel : ViewModelBase
         try
         {
             Keyword = null;
-            SelectedStatusFilter = "全部";
+            SelectedStatusFilter = StatusFilterAll;
             _selectedGroupId = null;
             _filterNoGroup = false;
             IncludeNoDue = true;
@@ -360,9 +393,9 @@ public sealed class MainViewModel : ViewModelBase
             Keyword = Keyword,
             Status = SelectedStatusFilter switch
             {
-                "未完成" => TodoStatus.Active,
-                "已完成" => TodoStatus.Completed,
-                "已删除" => TodoStatus.Deleted,
+                StatusFilterActive => TodoStatus.Active,
+                StatusFilterCompleted => TodoStatus.Completed,
+                StatusFilterDeleted => TodoStatus.Deleted,
                 _ => null
             },
             GroupId = _selectedGroupId,
@@ -377,6 +410,41 @@ public sealed class MainViewModel : ViewModelBase
             UpdatedAtFrom = ShowUpdatedAtFilter ? UpdatedAtFrom : null,
             UpdatedAtTo = ShowUpdatedAtFilter ? UpdatedAtTo : null
         };
+    }
+
+    private void LoadStatusFilters()
+    {
+        if (StatusFilters.Count == 0)
+        {
+            StatusFilters.Add(new StatusFilterOption(StatusFilterAll, "Status.All"));
+            StatusFilters.Add(new StatusFilterOption(StatusFilterActive, "Status.Active"));
+            StatusFilters.Add(new StatusFilterOption(StatusFilterCompleted, "Status.Completed"));
+            StatusFilters.Add(new StatusFilterOption(StatusFilterDeleted, "Status.Deleted"));
+            return;
+        }
+
+        foreach (var option in StatusFilters)
+        {
+            option.RefreshDisplayName();
+        }
+    }
+
+    private static string NormalizeStatusFilter(string? statusFilter)
+    {
+        return statusFilter is StatusFilterAll or StatusFilterActive or StatusFilterCompleted or StatusFilterDeleted
+            ? statusFilter
+            : StatusFilterActive;
+    }
+
+    private void RefreshLocalizedProperties()
+    {
+        LoadStatusFilters();
+        OnPropertyChanged(nameof(LanguageOptions));
+        OnPropertyChanged(nameof(SelectedLanguageKey));
+        OnPropertyChanged(nameof(SelectedCountText));
+        OnPropertyChanged(nameof(TotalCountText));
+        OnPropertyChanged(nameof(MultiSelectButtonText));
+        Refresh();
     }
 
     private static DateOnly? ToDateOnly(DateTime? value)
@@ -596,7 +664,7 @@ public sealed class MainViewModel : ViewModelBase
         {
             GroupSummaries.Add(new TodoGroupSummary(
                 null,
-                "未分组",
+                LocalizationService.Text("Group.NoGroup"),
                 "inbox",
                 noGroupItems.Count,
                 noGroupItems.Count(todo => activeTaskIds.Contains(todo.Id)),
@@ -640,7 +708,7 @@ public sealed class TodoGroupSummary
 
     public bool IsNoGroup { get; }
 
-    public string CountText => $"未完成 {ActiveCount} / 共 {TotalCount}";
+    public string CountText => LocalizationService.Format("Count.GroupSummaryFormat", ActiveCount, TotalCount);
 
     public System.Windows.Media.Geometry IconGeometry => IconOption.Geometry;
 
@@ -649,4 +717,24 @@ public sealed class TodoGroupSummary
     public System.Windows.Media.Brush IconBackground => IconOption.Background;
 
     private TaskGroupIconOption IconOption => TaskGroupIconCatalog.Get(IconKey);
+}
+
+public sealed class StatusFilterOption : ViewModelBase
+{
+    public StatusFilterOption(string key, string resourceKey)
+    {
+        Key = key;
+        ResourceKey = resourceKey;
+    }
+
+    public string Key { get; }
+
+    public string ResourceKey { get; }
+
+    public string DisplayName => LocalizationService.Text(ResourceKey);
+
+    public void RefreshDisplayName()
+    {
+        OnPropertyChanged(nameof(DisplayName));
+    }
 }

@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using TodoDesktopApp.Models;
+using TodoDesktopApp.Services;
 using Button = System.Windows.Controls.Button;
 using Brushes = System.Windows.Media.Brushes;
 using Color = System.Windows.Media.Color;
@@ -30,6 +31,8 @@ public partial class TaskGroupIconPicker : System.Windows.Controls.UserControl
     public TaskGroupIconPicker()
     {
         InitializeComponent();
+        LocalizationService.LanguageChanged += LocalizationService_LanguageChanged;
+        Unloaded += (_, _) => LocalizationService.LanguageChanged -= LocalizationService_LanguageChanged;
         RenderOptions();
     }
 
@@ -53,6 +56,11 @@ public partial class TaskGroupIconPicker : System.Windows.Controls.UserControl
     private static void OnIconOptionsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         ((TaskGroupIconPicker)d).RenderOptions();
+    }
+
+    private void LocalizationService_LanguageChanged(object? sender, EventArgs e)
+    {
+        RenderOptions();
     }
 
     private void RenderOptions()

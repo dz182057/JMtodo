@@ -7,4 +7,5 @@ public sealed class AppSettings
     public double FloatingWindowWidth { get; set; } = 260;
     public double FloatingWindowHeight { get; set; } = 330;
     public string LastOpenedManagementWindowState { get; set; } = "Normal";
+    public string Language { get; set; } = LocalizationService.DefaultLanguage;
 }

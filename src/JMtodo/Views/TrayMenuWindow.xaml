@@ -45,7 +45,7 @@
                               Stroke="{StaticResource TrayItemPrimaryBrush}"
                               Style="{StaticResource TrayMenuIconPathStyle}" />
                         <TextBlock Grid.Column="2"
-                                   Text="打开管理界面"
+                                   Text="{DynamicResource Tray.OpenMain}"
                                    VerticalAlignment="Center" />
                     </Grid>
                 </Button>
@@ -65,7 +65,7 @@
                               Style="{StaticResource TrayMenuIconPathStyle}" />
                         <TextBlock x:Name="ToggleFloatingText"
                                    Grid.Column="2"
-                                   Text="显示浮窗"
+                                   Text="{DynamicResource Tray.ShowFloating}"
                                    VerticalAlignment="Center" />
                     </Grid>
                 </Button>
@@ -84,7 +84,7 @@
                               Stroke="{StaticResource TrayItemSuccessBrush}"
                               Style="{StaticResource TrayMenuIconPathStyle}" />
                         <TextBlock Grid.Column="2"
-                                   Text="新增任务"
+                                   Text="{DynamicResource Tray.AddTask}"
                                    VerticalAlignment="Center" />
                     </Grid>
                 </Button>
@@ -107,7 +107,7 @@
                               Stroke="{StaticResource TrayItemDangerBrush}"
                               Style="{StaticResource TrayMenuIconPathStyle}" />
                         <TextBlock Grid.Column="2"
-                                   Text="退出应用"
+                                   Text="{DynamicResource Tray.Exit}"
                                    VerticalAlignment="Center" />
                     </Grid>
                 </Button>

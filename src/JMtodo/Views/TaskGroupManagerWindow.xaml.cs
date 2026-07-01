@@ -36,10 +36,10 @@ public partial class TaskGroupManagerWindow : Window
         var dialog = new ConfirmDialogWindow
         {
             Owner = this,
-            TitleText = "删除任务组",
-            MessageText = $"删除任务组「{_viewModel.SelectedGroup.Name}」？\n组内任务不会被删除，将自动移动到「未分组」。",
-            ConfirmText = "删除",
-            CancelText = "取消"
+            TitleText = LocalizationService.Text("Dialog.GroupDelete.Title"),
+            MessageText = LocalizationService.Format("Dialog.GroupDelete.Message", _viewModel.SelectedGroup.Name),
+            ConfirmText = LocalizationService.Text("Dialog.GroupDelete.Confirm"),
+            CancelText = LocalizationService.Text("Dialog.Cancel")
         };
 
         if (dialog.ShowDialog() == true)

@@ -19,14 +19,17 @@ public partial class App : System.Windows.Application
         var repository = new TodoRepository();
         repository.Initialize();
 
-        var todoService = new TodoService(repository);
         var settingsService = new SettingsService();
+        var settings = settingsService.Load();
+        LocalizationService.ApplyLanguage(settings.Language);
+
+        var todoService = new TodoService(repository);
         var windowLevelService = new WindowLevelService();
 
         var floatingViewModel = new FloatingViewModel(todoService);
         _floatingWindow = new FloatingTaskWindow(floatingViewModel, settingsService, windowLevelService);
 
-        _mainWindow = new MainWindow(todoService, _floatingWindow, windowLevelService);
+        _mainWindow = new MainWindow(todoService, _floatingWindow, windowLevelService, settingsService);
         _trayService = new TrayService(
             openManager: () => Dispatcher.Invoke(() => _mainWindow.OpenFromUserRequest()),
             toggleFloating: () => Dispatcher.Invoke(() => _floatingWindow.ToggleFromUserRequest()),

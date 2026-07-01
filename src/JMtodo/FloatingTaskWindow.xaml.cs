@@ -108,7 +108,7 @@ public partial class FloatingTaskWindow : Window
 
         if (_viewModel.Todos.Count == 0)
         {
-            ConfirmDialogWindow.ShowInfo(this, "没有当前任务", "当前没有需要处理的任务。");
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.NoCurrentTask.Title"), T("Dialog.NoCurrentTask.Message"));
             return;
         }
 
@@ -185,18 +185,18 @@ public partial class FloatingTaskWindow : Window
 
         if (parent.SourceTask.IsSubtask)
         {
-            ConfirmDialogWindow.ShowInfo(this, "不能添加子任务", "暂时只支持二级子任务，不能继续添加下一级。");
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.CannotAddSubtask.Title"), T("Dialog.CannotAddSubtask.DepthMessage"));
             return;
         }
 
         if (parent.SourceTask.Status != TodoStatus.Active)
         {
-            ConfirmDialogWindow.ShowInfo(this, "不能添加子任务", "只有未完成的主任务可以添加子任务。");
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.CannotAddSubtask.Title"), T("Dialog.CannotAddSubtask.StatusMessage"));
             return;
         }
 
         var editor = new TodoEditorViewModel(parent.SourceTask, isNewSubtask: true);
-        var dialog = new TaskEditWindow(editor) { Owner = this, Title = "新增子任务" };
+        var dialog = new TaskEditWindow(editor) { Owner = this, Title = T("Main.AddSubtask") };
         if (dialog.ShowDialog() != true)
         {
             return;
@@ -219,7 +219,7 @@ public partial class FloatingTaskWindow : Window
         }
 
         var editor = new TodoEditorViewModel(todo.SourceTask.Clone());
-        var dialog = new TaskEditWindow(editor) { Owner = this, Title = "编辑任务" };
+        var dialog = new TaskEditWindow(editor) { Owner = this, Title = T("Floating.EditTask") };
         if (dialog.ShowDialog() != true)
         {
             return;
@@ -248,7 +248,7 @@ public partial class FloatingTaskWindow : Window
         }
         catch (InvalidOperationException ex)
         {
-            ConfirmDialogWindow.ShowInfo(this, "无法打开文件", ex.Message);
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.OpenFileFailed.Title"), ex.Message);
         }
     }
 
@@ -1075,6 +1075,8 @@ public partial class FloatingTaskWindow : Window
                FindAncestor<System.Windows.Controls.TextBox>(source) is not null ||
                FindAncestor<System.Windows.Controls.ComboBox>(source) is not null;
     }
+
+    private static string T(string key) => LocalizationService.Text(key);
 
     private static T? FindAncestor<T>(DependencyObject? source)
         where T : DependencyObject

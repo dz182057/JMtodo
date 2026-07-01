@@ -27,14 +27,18 @@ public partial class MainWindow : Window
     private bool _isSyncingHorizontalScroll;
     private bool _isSyncingGridSelection;
 
-    public MainWindow(TodoService todoService, FloatingTaskWindow floatingWindow, WindowLevelService windowLevelService)
+    public MainWindow(
+        TodoService todoService,
+        FloatingTaskWindow floatingWindow,
+        WindowLevelService windowLevelService,
+        SettingsService settingsService)
     {
         InitializeComponent();
         ApplyStartupBounds();
         _todoService = todoService;
         _floatingWindow = floatingWindow;
         _windowLevelService = windowLevelService;
-        _viewModel = new MainViewModel(todoService);
+        _viewModel = new MainViewModel(todoService, settingsService);
         DataContext = _viewModel;
         ClearSortIndicators();
     }
@@ -100,7 +104,7 @@ public partial class MainWindow : Window
         var selectedTodos = GetSelectedTodos();
         if (selectedTodos.Count == 0)
         {
-            ConfirmDialogWindow.ShowInfo(this, "没有选中任务", "请先选择任务。");
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.NoSelection.Title"), T("Dialog.NoSelection.Message"));
             return;
         }
 
@@ -115,7 +119,7 @@ public partial class MainWindow : Window
         var selectedTodos = GetSelectedTodos();
         if (selectedTodos.Count == 0)
         {
-            ConfirmDialogWindow.ShowInfo(this, "没有选中任务", "请先选择任务。");
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.NoSelection.Title"), T("Dialog.NoSelection.Message"));
             return;
         }
 
@@ -130,13 +134,13 @@ public partial class MainWindow : Window
         var selectedTodos = GetSelectedTodos();
         if (selectedTodos.Count == 0)
         {
-            ConfirmDialogWindow.ShowInfo(this, "没有选中任务", "请先选择一个或多个主任务。");
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.NoSelection.Title"), T("Dialog.NoSelection.RootMessage"));
             return;
         }
 
         if (selectedTodos.Any(todo => todo.IsSubtask))
         {
-            ConfirmDialogWindow.ShowInfo(this, "不能移动子任务", "移动到任务组只支持主任务，请取消勾选子任务后再操作。");
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.CannotMoveSubtask.Title"), T("Dialog.CannotMoveSubtask.Message"));
             return;
         }
 
@@ -149,10 +153,10 @@ public partial class MainWindow : Window
         var confirmDialog = new ConfirmDialogWindow
         {
             Owner = this,
-            TitleText = "确认移动",
-            MessageText = $"确定将 {selectedTodos.Count} 个主任务移动到「{dialog.TargetGroupName}」吗？\n这些主任务下的子任务会一起移动。",
-            ConfirmText = "确认移动",
-            CancelText = "取消"
+            TitleText = T("Dialog.MoveConfirm.Title"),
+            MessageText = F("Dialog.MoveConfirm.Message", selectedTodos.Count, dialog.TargetGroupName),
+            ConfirmText = T("Dialog.MoveConfirm.Confirm"),
+            CancelText = T("Dialog.Cancel")
         };
 
         if (confirmDialog.ShowDialog() != true)
@@ -172,7 +176,7 @@ public partial class MainWindow : Window
         }
         catch (InvalidOperationException ex)
         {
-            ConfirmDialogWindow.ShowInfo(this, "移动失败", ex.Message);
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.MoveFailed.Title"), ex.Message);
         }
     }
 
@@ -262,15 +266,15 @@ public partial class MainWindow : Window
     private void SoftDeleteTodo(TodoItem todo)
     {
         var messageText = todo.IsSubtask
-            ? "确定要删除这个任务吗？任务会移入已删除列表。"
-            : "确定要删除这个主任务吗？它对应的所有子任务也会一起移入已删除列表。";
+            ? T("Dialog.DeleteConfirm.SubtaskMessage")
+            : T("Dialog.DeleteConfirm.RootMessage");
         var dialog = new ConfirmDialogWindow
         {
             Owner = this,
-            TitleText = "确认删除",
+            TitleText = T("Dialog.DeleteConfirm.Title"),
             MessageText = messageText,
-            ConfirmText = "确认删除",
-            CancelText = "取消"
+            ConfirmText = T("Dialog.DeleteConfirm.Confirm"),
+            CancelText = T("Dialog.Cancel")
         };
 
         if (dialog.ShowDialog() == true)
@@ -284,10 +288,10 @@ public partial class MainWindow : Window
         var dialog = new ConfirmDialogWindow
         {
             Owner = this,
-            TitleText = "确认恢复",
-            MessageText = "确定要恢复这个任务吗？恢复后会回到未完成状态。",
-            ConfirmText = "确认恢复",
-            CancelText = "取消"
+            TitleText = T("Dialog.RestoreConfirm.Title"),
+            MessageText = T("Dialog.RestoreConfirm.Message"),
+            ConfirmText = T("Dialog.RestoreConfirm.Confirm"),
+            CancelText = T("Dialog.Cancel")
         };
 
         if (dialog.ShowDialog() == true)
@@ -299,15 +303,15 @@ public partial class MainWindow : Window
     private void PermanentDeleteTodo(TodoItem todo)
     {
         var messageText = todo.IsSubtask
-            ? "确定要彻底删除这个任务吗？此操作不可恢复。"
-            : "确定要彻底删除这个主任务吗？它对应的所有子任务也会一起彻底删除，此操作不可恢复。";
+            ? T("Dialog.PermanentDelete.SubtaskMessage")
+            : T("Dialog.PermanentDelete.RootMessage");
         var dialog = new ConfirmDialogWindow
         {
             Owner = this,
-            TitleText = "彻底删除",
+            TitleText = T("Dialog.PermanentDelete.Title"),
             MessageText = messageText,
-            ConfirmText = "确认删除",
-            CancelText = "取消"
+            ConfirmText = T("Dialog.DeleteConfirm.Confirm"),
+            CancelText = T("Dialog.Cancel")
         };
 
         if (dialog.ShowDialog() == true)
@@ -650,7 +654,7 @@ public partial class MainWindow : Window
     private void AddTodo()
     {
         var editor = new TodoEditorViewModel(_todoService.GetGroups());
-        var dialog = new TaskEditWindow(editor) { Owner = this, Title = "新增任务" };
+        var dialog = new TaskEditWindow(editor) { Owner = this, Title = T("Tray.AddTask") };
         if (dialog.ShowDialog() != true)
         {
             return;
@@ -668,7 +672,7 @@ public partial class MainWindow : Window
     private void EditTodo(TodoItem todo)
     {
         var editor = new TodoEditorViewModel(todo.Clone());
-        var dialog = new TaskEditWindow(editor) { Owner = this, Title = "编辑任务" };
+        var dialog = new TaskEditWindow(editor) { Owner = this, Title = T("Floating.EditTask") };
         if (dialog.ShowDialog() != true)
         {
             return;
@@ -685,18 +689,18 @@ public partial class MainWindow : Window
     {
         if (parent.IsSubtask)
         {
-            ConfirmDialogWindow.ShowInfo(this, "不能添加子任务", "暂时只支持二级子任务，不能继续添加下一级。");
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.CannotAddSubtask.Title"), T("Dialog.CannotAddSubtask.DepthMessage"));
             return;
         }
 
         if (parent.Status != TodoStatus.Active)
         {
-            ConfirmDialogWindow.ShowInfo(this, "不能添加子任务", "只有未完成的主任务可以添加子任务。");
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.CannotAddSubtask.Title"), T("Dialog.CannotAddSubtask.StatusMessage"));
             return;
         }
 
         var editor = new TodoEditorViewModel(parent, isNewSubtask: true);
-        var dialog = new TaskEditWindow(editor) { Owner = this, Title = "新增子任务" };
+        var dialog = new TaskEditWindow(editor) { Owner = this, Title = T("Main.AddSubtask") };
         if (dialog.ShowDialog() != true)
         {
             return;
@@ -748,7 +752,7 @@ public partial class MainWindow : Window
         }
         catch (InvalidOperationException ex)
         {
-            ConfirmDialogWindow.ShowInfo(this, "无法打开文件", ex.Message);
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.OpenFileFailed.Title"), ex.Message);
         }
     }
 
@@ -759,7 +763,7 @@ public partial class MainWindow : Window
             return _viewModel.SelectedTodo;
         }
 
-        ConfirmDialogWindow.ShowInfo(this, "没有选中任务", "请先选择一个任务。");
+        ConfirmDialogWindow.ShowInfo(this, T("Dialog.NoSelection.Title"), T("Dialog.NoSelection.OneMessage"));
         return null;
     }
 
@@ -890,4 +894,8 @@ public partial class MainWindow : Window
 
         return null;
     }
+
+    private static string T(string key) => LocalizationService.Text(key);
+
+    private static string F(string key, params object?[] args) => LocalizationService.Format(key, args);
 }

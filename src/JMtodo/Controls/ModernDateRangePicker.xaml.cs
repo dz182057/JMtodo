@@ -4,6 +4,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using MediaBrushes = System.Windows.Media.Brushes;
 using MediaColor = System.Windows.Media.Color;
+using TodoDesktopApp.Services;
 
 namespace TodoDesktopApp.Controls;
 
@@ -41,14 +42,14 @@ public partial class ModernDateRangePicker : System.Windows.Controls.UserControl
             nameof(StartLabel),
             typeof(string),
             typeof(ModernDateRangePicker),
-            new PropertyMetadata("开始"));
+            new PropertyMetadata(LocalizationService.Text("DateRange.Start")));
 
     public static readonly DependencyProperty EndLabelProperty =
         DependencyProperty.Register(
             nameof(EndLabel),
             typeof(string),
             typeof(ModernDateRangePicker),
-            new PropertyMetadata("结束"));
+            new PropertyMetadata(LocalizationService.Text("DateRange.End")));
 
     public static readonly DependencyProperty DisplayFormatProperty =
         DependencyProperty.Register(

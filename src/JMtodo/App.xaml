@@ -5,6 +5,7 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Localization/Strings.zh-CN.xaml" />
                 <ResourceDictionary Source="Styles/TodoTheme.xaml" />
                 <ResourceDictionary Source="Styles/TrayMenuStyles.xaml" />
                 <ResourceDictionary Source="Styles/ScrollBarStyles.xaml" />

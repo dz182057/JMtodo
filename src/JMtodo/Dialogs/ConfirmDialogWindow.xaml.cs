@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using TodoDesktopApp.Services;
 
 namespace TodoDesktopApp.Dialogs;
 
@@ -10,28 +11,28 @@ public partial class ConfirmDialogWindow : Window
             nameof(TitleText),
             typeof(string),
             typeof(ConfirmDialogWindow),
-            new PropertyMetadata("确认关闭"));
+            new PropertyMetadata(LocalizationService.Text("Dialog.DefaultTitle")));
 
     public static readonly DependencyProperty MessageTextProperty =
         DependencyProperty.Register(
             nameof(MessageText),
             typeof(string),
             typeof(ConfirmDialogWindow),
-            new PropertyMetadata("当前内容尚未保存，确定关闭吗？"));
+            new PropertyMetadata(LocalizationService.Text("Dialog.DefaultMessage")));
 
     public static readonly DependencyProperty ConfirmTextProperty =
         DependencyProperty.Register(
             nameof(ConfirmText),
             typeof(string),
             typeof(ConfirmDialogWindow),
-            new PropertyMetadata("确认关闭"));
+            new PropertyMetadata(LocalizationService.Text("Dialog.DefaultConfirm")));
 
     public static readonly DependencyProperty CancelTextProperty =
         DependencyProperty.Register(
             nameof(CancelText),
             typeof(string),
             typeof(ConfirmDialogWindow),
-            new PropertyMetadata("继续编辑"));
+            new PropertyMetadata(LocalizationService.Text("Dialog.DefaultCancel")));
 
     public static readonly DependencyProperty CancelButtonVisibilityProperty =
         DependencyProperty.Register(
@@ -45,14 +46,14 @@ public partial class ConfirmDialogWindow : Window
         InitializeComponent();
     }
 
-    public static void ShowInfo(Window owner, string title, string message, string confirmText = "知道了")
+    public static void ShowInfo(Window owner, string title, string message, string? confirmText = null)
     {
         var dialog = new ConfirmDialogWindow
         {
             Owner = owner,
             TitleText = title,
             MessageText = message,
-            ConfirmText = confirmText,
+            ConfirmText = confirmText ?? LocalizationService.Text("Dialog.OK"),
             CancelButtonVisibility = Visibility.Collapsed
         };
 

@@ -1,39 +1,53 @@
-# JMtodo
+# JMtodo - Windows Desktop Todo App / 桌面待办工具
 
-JMtodo 是一个基于 WPF 的 Windows 桌面待办工具，面向需要在桌面上持续跟踪当前任务的人。它提供完整的任务管理窗口、轻量桌面浮窗、系统托盘入口、任务分组、子任务、本地 SQLite 持久化和多条件筛选。
+JMtodo is a lightweight Windows desktop todo app built with WPF and .NET 8. It focuses on local-first task management, a floating task panel, system tray access, task groups, subtasks, attachments, SQLite storage, and fast filtering.
 
-项目不绑定某个单一 Windows 发行版。当前最低支持版本为 Windows 10 1809（build 17763）或更高版本；推荐使用仍处于 Microsoft 支持周期内的 Windows 版本。
+JMtodo 是一个基于 WPF 和 .NET 8 的 Windows 桌面待办工具，适合需要在桌面持续跟踪当前任务、快速处理待办事项、并希望数据保存在本机的用户。
 
-## 功能特性
+## Highlights / 功能特性
 
-- 任务管理：新增、编辑、完成、恢复未完成、软删除、查看已删除任务、恢复删除和彻底删除。
-- 子任务层级：主任务下可创建子任务，管理界面和浮窗都会按层级展示。
-- 任务分组：支持创建、编辑、删除任务组，并为任务组选择图标。
-- 桌面浮窗：只展示已经开始且仍未完成的当前任务，支持快速完成、重新打开、编辑、创建子任务和拖拽排序。
-- 系统托盘：左键打开管理界面，右键打开托盘菜单，可快速显示/隐藏浮窗、新增任务或退出应用。
-- 搜索筛选：支持关键字、任务状态、任务组、无分组、开始日期、计划完成日期、创建时间、更新时间和不限期任务筛选。
-- 本地存储：任务数据保存在 SQLite 数据库中，浮窗位置和尺寸等设置保存在 JSON 文件中。
-- 桌面体验：包含现代化日期选择器、任务组图标选择器、表格选中态、滚动条样式和浮窗贴边交互。
+- Internationalized UI: supports Simplified Chinese and English, with language preference saved locally.
+- Task management: create, edit, complete, reopen, soft delete, restore, and permanently delete tasks.
+- Subtasks: create one level of subtasks under a main task.
+- Task groups: create, edit, delete, and choose icons for task groups.
+- Floating task panel: shows current active tasks on the desktop, supports quick completion, editing, subtask creation, attachments, and drag sorting.
+- System tray menu: open manager, show or hide the floating panel, add a task, or exit.
+- Advanced filters: keyword, status, group, ungrouped tasks, start date, due date, created time, updated time, and no-due-date tasks.
+- Local storage: tasks are saved in SQLite; UI settings are saved in JSON.
+- Desktop polish: custom date pickers, group icon picker, modern DataGrid selection, scrollbars, and edge snapping for the floating panel.
 
-## 技术栈
+## Search Keywords / 多语言搜索关键词
+
+Windows todo app, desktop todo list, task manager app, productivity app, WPF todo, .NET 8 WPF app, local SQLite todo, floating task window, system tray todo, offline task manager, GTD desktop app, task groups, subtasks, todo attachments.
+
+中文：桌面待办、Windows 待办软件、任务管理工具、悬浮待办窗口、本地待办、SQLite 待办、任务分组、子任务、系统托盘待办。
+
+Español: lista de tareas, aplicación de tareas para Windows, gestor de tareas de escritorio, tareas locales.  
+Français: application de tâches Windows, liste de tâches bureau, gestionnaire de tâches local.  
+Deutsch: Aufgabenverwaltung Windows, Desktop To-do-App, lokale Aufgabenliste.  
+日本語: Windows タスク管理, デスクトップ ToDo アプリ, ローカル ToDo リスト.  
+한국어: Windows 할 일 앱, 데스크톱 작업 관리, 로컬 할 일 목록.  
+Português: aplicativo de tarefas Windows, lista de tarefas desktop, gerenciador de tarefas local.
+
+## Tech Stack / 技术栈
 
 - .NET 8
 - WPF
-- Windows Forms NotifyIcon（用于系统托盘）
+- Windows Forms NotifyIcon for the system tray
 - Microsoft.Data.Sqlite
-- MVVM 风格的 ViewModel 与命令绑定
+- MVVM-style ViewModels and command binding
 
-## 系统要求
+## Requirements / 系统要求
 
-运行源码或开发项目需要：
+For development:
 
-- Windows 10 1809（build 17763）或更高版本
+- Windows 10 1809, build 17763, or later
 - .NET 8 SDK
-- 可选：Visual Studio 2022，并安装“.NET 桌面开发”工作负载
+- Optional: Visual Studio 2022 with the ".NET desktop development" workload
 
-运行发布后的 self-contained 版本时，目标机器不需要预装 .NET Runtime；如果发布为 framework-dependent 版本，则目标机器需要安装 .NET 8 Desktop Runtime。
+For published self-contained builds, the target machine does not need a preinstalled .NET Runtime. Framework-dependent builds require the .NET 8 Desktop Runtime.
 
-## 快速开始
+## Quick Start / 快速开始
 
 ```powershell
 git clone git@github.com:dz182057/JMtodo.git
@@ -42,55 +56,51 @@ dotnet restore
 dotnet run --project .\src\JMtodo\JMtodo.csproj
 ```
 
-也可以直接用 Visual Studio 打开 `JMtodo.sln`，将 `JMtodo` 设为启动项目后运行。
+You can also open `JMtodo.sln` in Visual Studio, set `JMtodo` as the startup project, and run it.
 
-## 构建
+## Build / 构建
 
 ```powershell
 dotnet build .\JMtodo.sln -c Debug
-```
-
-Release 构建：
-
-```powershell
 dotnet build .\JMtodo.sln -c Release
 ```
 
-## 发布
+## Publish / 发布
 
-生成 win-x64 self-contained 发布目录：
+Self-contained win-x64 build:
 
 ```powershell
 dotnet publish .\src\JMtodo\JMtodo.csproj -c Release -r win-x64 --self-contained true -o .\artifacts\JMtodo-win-x64
 ```
 
-生成依赖本机 .NET 8 Desktop Runtime 的发布目录：
+Framework-dependent win-x64 build:
 
 ```powershell
 dotnet publish .\src\JMtodo\JMtodo.csproj -c Release -r win-x64 --self-contained false -o .\artifacts\JMtodo-win-x64-runtime
 ```
 
-## 数据位置
+## Data Location / 数据位置
 
-JMtodo 默认将本地数据写入当前用户目录：
+JMtodo stores data under the current user's local app data folder:
 
 ```text
 %LOCALAPPDATA%\JMtodo\todos.db
 %LOCALAPPDATA%\JMtodo\settings.json
+%LOCALAPPDATA%\JMtodo\attachments\
 ```
 
-其中 `todos.db` 保存任务、子任务和任务组；`settings.json` 保存浮窗位置、尺寸和置顶等界面设置。
+`todos.db` stores tasks, subtasks, groups, and attachment metadata. `settings.json` stores floating window size, position, and language preference.
 
-如果你曾运行过旧目录名版本，旧数据可能位于：
+If you used an older build with the previous app directory name, old data may be under:
 
 ```text
 %LOCALAPPDATA%\TodoDesktopApp\todos.db
 %LOCALAPPDATA%\TodoDesktopApp\settings.json
 ```
 
-当前版本不会自动迁移旧数据。如需保留旧数据，请先退出应用，再手动将旧目录中的文件复制到 `%LOCALAPPDATA%\JMtodo\`。
+JMtodo does not automatically migrate this legacy directory. To keep old data, exit the app first, then copy the old files into `%LOCALAPPDATA%\JMtodo\`.
 
-## 目录结构
+## Project Structure / 目录结构
 
 ```text
 JMtodo/
@@ -98,42 +108,43 @@ JMtodo/
 ├─ README.md
 └─ src/
    └─ JMtodo/
-      ├─ Assets/        应用图标资源
-      ├─ Controls/      自定义控件
-      ├─ Data/          SQLite 仓储
-      ├─ Dialogs/       对话框窗口
-      ├─ Models/        任务、分组和筛选模型
-      ├─ Services/      任务服务、设置服务、托盘服务
-      ├─ Styles/        WPF 样式资源
-      ├─ ViewModels/    主窗口、浮窗和编辑窗口 ViewModel
-      ├─ Views/         任务编辑、任务组管理和托盘菜单窗口
+      ├─ Assets/        app icons
+      ├─ Controls/      custom WPF controls
+      ├─ Data/          SQLite repository
+      ├─ Dialogs/       dialog windows
+      ├─ Localization/  UI string resources
+      ├─ Models/        task, group, filter, and attachment models
+      ├─ Services/      todo, settings, tray, window-level, and localization services
+      ├─ Styles/        WPF resource dictionaries
+      ├─ ViewModels/    main, floating, editor, and group ViewModels
+      ├─ Views/         editor, group manager, and tray menu windows
       ├─ App.xaml
       ├─ MainWindow.xaml
       ├─ FloatingTaskWindow.xaml
       └─ JMtodo.csproj
 ```
 
-## 常见问题
+## FAQ / 常见问题
 
-### 浮窗为什么没有显示？
+### Why is the floating panel hidden? / 浮窗为什么没有显示？
 
-浮窗只展示“开始日期不晚于今天”的未完成任务。如果没有符合条件的任务，浮窗会自动隐藏。
+The floating panel only shows active tasks whose start date is today or earlier. If there are no matching tasks, it hides automatically.
 
-### 删除任务后还能恢复吗？
+### Can deleted tasks be restored? / 删除任务后还能恢复吗？
 
-普通删除会把任务标记为已删除，可以在已删除视图中恢复；彻底删除会直接从 SQLite 数据库中移除。
+Yes. Normal deletion marks a task as deleted, and it can be restored from the deleted view. Permanent deletion removes it from the SQLite database.
 
-### 数据会上传到云端吗？
+### Is any data uploaded to the cloud? / 数据会上传到云端吗？
 
-不会。JMtodo 当前只使用本机 SQLite 和 JSON 文件保存数据。
+No. JMtodo stores data locally with SQLite, JSON, and the local attachments folder.
 
-## 贡献
+## Contributing / 贡献
 
-欢迎提交 issue 和 pull request。建议在提交前执行：
+Issues and pull requests are welcome. Before submitting changes, run:
 
 ```powershell
 dotnet restore
 dotnet build .\JMtodo.sln -c Release
 ```
 
-请保持改动聚焦，避免把功能修改、格式化和无关重构混在同一次提交中。
+Please keep changes focused and avoid mixing feature work, formatting-only changes, and unrelated refactors in one pull request.

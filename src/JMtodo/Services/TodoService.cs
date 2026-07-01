@@ -59,7 +59,7 @@ public sealed class TodoService
             .FirstOrDefault(group => string.Equals(group.Name, trimmedName, StringComparison.OrdinalIgnoreCase));
         if (existing is not null)
         {
-            throw new InvalidOperationException("已存在同名任务组。");
+            throw new InvalidOperationException(T("Service.GroupDuplicate"));
         }
 
         var group = new TodoGroup
@@ -79,7 +79,7 @@ public sealed class TodoService
     public void RenameGroup(string id, string name)
     {
         var group = _repository.GetGroups().FirstOrDefault(group => group.Id == id)
-            ?? throw new InvalidOperationException("找不到要修改的任务组。");
+            ?? throw new InvalidOperationException(T("Service.GroupNotFoundForUpdate"));
         UpdateGroup(id, name, group.IconKey, group.Description);
     }
 
@@ -88,10 +88,10 @@ public sealed class TodoService
         var trimmedName = ValidateGroupName(name);
         var trimmedDescription = NormalizeGroupDescription(description);
         var groups = _repository.GetGroups();
-        var group = groups.FirstOrDefault(group => group.Id == id) ?? throw new InvalidOperationException("找不到要修改的任务组。");
+        var group = groups.FirstOrDefault(group => group.Id == id) ?? throw new InvalidOperationException(T("Service.GroupNotFoundForUpdate"));
         if (groups.Any(item => item.Id != id && string.Equals(item.Name, trimmedName, StringComparison.OrdinalIgnoreCase)))
         {
-            throw new InvalidOperationException("已存在同名任务组。");
+            throw new InvalidOperationException(T("Service.GroupDuplicate"));
         }
 
         group.Name = trimmedName;
@@ -105,7 +105,7 @@ public sealed class TodoService
     {
         if (_repository.GetGroups().All(group => group.Id != id))
         {
-            throw new InvalidOperationException("找不到要删除的任务组。");
+            throw new InvalidOperationException(T("Service.GroupNotFoundForDelete"));
         }
 
         _repository.DeleteGroup(id);
@@ -131,20 +131,20 @@ public sealed class TodoService
         DateOnly? dueDate,
         IEnumerable<string>? attachmentFilePaths = null)
     {
-        var parent = _repository.GetById(parentId) ?? throw new InvalidOperationException("找不到主任务。");
+        var parent = _repository.GetById(parentId) ?? throw new InvalidOperationException(T("Service.ParentNotFound"));
         if (parent.IsSubtask)
         {
-            throw new InvalidOperationException("暂时只支持二级子任务。");
+            throw new InvalidOperationException(T("Service.SubtaskDepthOnly"));
         }
 
         if (parent.Status == TodoStatus.Deleted)
         {
-            throw new InvalidOperationException("已删除任务不能添加子任务。");
+            throw new InvalidOperationException(T("Service.DeletedCannotAddSubtask"));
         }
 
         if (parent.Status != TodoStatus.Active)
         {
-            throw new InvalidOperationException("只有未完成的主任务可以添加子任务。");
+            throw new InvalidOperationException(T("Service.OnlyActiveRootCanAddSubtask"));
         }
 
         return CreateTodo(title, note, startDate, dueDate, parent.Id, parent.GroupId, attachmentFilePaths);
@@ -161,12 +161,12 @@ public sealed class TodoService
     {
         if (string.IsNullOrWhiteSpace(title))
         {
-            throw new InvalidOperationException("任务标题不能为空。");
+            throw new InvalidOperationException(T("Service.TaskTitleRequired"));
         }
 
         if (!string.IsNullOrWhiteSpace(groupId) && _repository.GetGroups().All(group => group.Id != groupId))
         {
-            throw new InvalidOperationException("找不到选择的任务组。");
+            throw new InvalidOperationException(T("Service.SelectedGroupMissing"));
         }
 
         var newAttachmentPaths = NormalizeAttachmentPaths(attachmentFilePaths);
@@ -202,11 +202,11 @@ public sealed class TodoService
     {
         if (string.IsNullOrWhiteSpace(item.Title))
         {
-            throw new InvalidOperationException("任务标题不能为空。");
+            throw new InvalidOperationException(T("Service.TaskTitleRequired"));
         }
 
         var newAttachmentPaths = NormalizeAttachmentPaths(newAttachmentFilePaths);
-        var existing = _repository.GetById(item.Id) ?? throw new InvalidOperationException("找不到要更新的任务。");
+        var existing = _repository.GetById(item.Id) ?? throw new InvalidOperationException(T("Service.TaskNotFoundForUpdate"));
         existing.Title = item.Title.Trim();
         existing.Note = string.IsNullOrWhiteSpace(item.Note) ? null : item.Note.Trim();
         existing.StartDate = item.StartDate;
@@ -226,7 +226,7 @@ public sealed class TodoService
     {
         if (string.IsNullOrWhiteSpace(attachment.FullPath) || !File.Exists(attachment.FullPath))
         {
-            throw new InvalidOperationException("文件不存在，可能已被移动或删除。");
+            throw new InvalidOperationException(T("Service.FileMovedOrDeleted"));
         }
 
         Process.Start(new ProcessStartInfo(attachment.FullPath) { UseShellExecute = true });
@@ -236,7 +236,7 @@ public sealed class TodoService
     {
         if (string.IsNullOrWhiteSpace(groupId) || _repository.GetGroups().All(group => group.Id != groupId))
         {
-            throw new InvalidOperationException("找不到目标任务组。");
+            throw new InvalidOperationException(T("Service.TargetGroupMissing"));
         }
 
         var selectedIds = todoIds
@@ -245,14 +245,14 @@ public sealed class TodoService
             .ToList();
         if (selectedIds.Count == 0)
         {
-            throw new InvalidOperationException("请选择要移动的主任务。");
+            throw new InvalidOperationException(T("Service.MoveSelectRoot"));
         }
 
         var allTodos = _repository.Search(new TodoSearchCriteria { IncludeNoDue = true });
         var selectedRoots = allTodos.Where(todo => selectedIds.Contains(todo.Id)).ToList();
         if (selectedRoots.Count != selectedIds.Count || selectedRoots.Any(todo => todo.IsSubtask))
         {
-            throw new InvalidOperationException("只能移动主任务，不能包含子任务。");
+            throw new InvalidOperationException(T("Service.MoveRootOnly"));
         }
 
         var now = DateTime.Now;
@@ -271,7 +271,7 @@ public sealed class TodoService
 
     public void Complete(string id)
     {
-        var item = _repository.GetById(id) ?? throw new InvalidOperationException("找不到要完成的任务。");
+        var item = _repository.GetById(id) ?? throw new InvalidOperationException(T("Service.TaskNotFoundForComplete"));
         item.Status = TodoStatus.Completed;
         item.CompletedAt = DateTime.Now;
         item.DeletedAt = null;
@@ -282,7 +282,7 @@ public sealed class TodoService
 
     public void Reopen(string id)
     {
-        var item = _repository.GetById(id) ?? throw new InvalidOperationException("找不到要恢复为未完成的任务。");
+        var item = _repository.GetById(id) ?? throw new InvalidOperationException(T("Service.TaskNotFoundForReopen"));
         item.Status = TodoStatus.Active;
         item.CompletedAt = null;
         item.DeletedAt = null;
@@ -293,7 +293,7 @@ public sealed class TodoService
 
     public void SoftDelete(string id)
     {
-        var item = _repository.GetById(id) ?? throw new InvalidOperationException("找不到要删除的任务。");
+        var item = _repository.GetById(id) ?? throw new InvalidOperationException(T("Service.TaskNotFoundForDelete"));
         var now = DateTime.Now;
         SoftDeleteItem(item, now);
 
@@ -311,7 +311,7 @@ public sealed class TodoService
 
     public void Restore(string id)
     {
-        var item = _repository.GetById(id) ?? throw new InvalidOperationException("找不到要恢复的任务。");
+        var item = _repository.GetById(id) ?? throw new InvalidOperationException(T("Service.TaskNotFoundForRestore"));
         item.Status = TodoStatus.Active;
         item.DeletedAt = null;
         item.CompletedAt = null;
@@ -416,13 +416,13 @@ public sealed class TodoService
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new InvalidOperationException("任务组名称不能为空。");
+            throw new InvalidOperationException(T("Service.GroupNameRequired"));
         }
 
         var trimmedName = name.Trim();
         if (trimmedName.Length > 20)
         {
-            throw new InvalidOperationException("任务组名称不能超过 20 字。");
+            throw new InvalidOperationException(T("Service.GroupNameMax"));
         }
 
         return trimmedName;
@@ -456,7 +456,7 @@ public sealed class TodoService
 
         if (keptIds.Any(id => !existingIds.Contains(id)))
         {
-            throw new InvalidOperationException("附件数据已变化，请刷新后重试。");
+            throw new InvalidOperationException(T("Service.AttachmentsChanged"));
         }
 
         ValidateAttachmentLimit(keptIds.Count, newAttachmentPaths.Count);
@@ -576,7 +576,7 @@ public sealed class TodoService
     {
         if (existingCount + newCount > MaxAttachmentCount)
         {
-            throw new InvalidOperationException($"一个任务最多关联 {MaxAttachmentCount} 个文件。");
+            throw new InvalidOperationException(F("Editor.MaxAttachmentFormat", MaxAttachmentCount));
         }
     }
 
@@ -586,7 +586,7 @@ public sealed class TodoService
         {
             if (!File.Exists(sourcePath))
             {
-                throw new InvalidOperationException($"选择的文件不存在：{Path.GetFileName(sourcePath)}");
+                throw new InvalidOperationException(F("Editor.FileMissingFormat", Path.GetFileName(sourcePath)));
             }
         }
     }
@@ -684,7 +684,7 @@ public sealed class TodoService
         var trimmedDescription = description.Trim();
         if (trimmedDescription.Length > 100)
         {
-            throw new InvalidOperationException("任务组描述不能超过 100 字。");
+            throw new InvalidOperationException(T("Service.GroupDescriptionMax"));
         }
 
         return trimmedDescription;
@@ -696,4 +696,8 @@ public sealed class TodoService
     }
 
     private void NotifyChanged() => Changed?.Invoke(this, EventArgs.Empty);
+
+    private static string T(string key) => LocalizationService.Text(key);
+
+    private static string F(string key, params object?[] args) => LocalizationService.Format(key, args);
 }

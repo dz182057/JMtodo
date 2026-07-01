@@ -21,12 +21,14 @@ public sealed class TodoEditorViewModel : ViewModelBase
 
     public TodoEditorViewModel(IEnumerable<TodoGroup>? groups = null)
     {
+        LocalizationService.LanguageChanged += (_, _) => RefreshLocalizedProperties();
         LoadGroupOptions(groups, null);
         UpdateValidationState();
     }
 
     public TodoEditorViewModel(TodoItem item)
     {
+        LocalizationService.LanguageChanged += (_, _) => RefreshLocalizedProperties();
         Id = item.Id;
         ParentId = item.ParentId;
         ParentTitle = item.ParentTitle;
@@ -45,9 +47,10 @@ public sealed class TodoEditorViewModel : ViewModelBase
     {
         if (!isNewSubtask)
         {
-            throw new InvalidOperationException("子任务编辑器参数无效。");
+            throw new InvalidOperationException(LocalizationService.Text("Editor.InvalidSubtaskParameter"));
         }
 
+        LocalizationService.LanguageChanged += (_, _) => RefreshLocalizedProperties();
         ParentId = parent.Id;
         ParentTitle = parent.Title;
         IsSubtask = true;
@@ -177,8 +180,8 @@ public sealed class TodoEditorViewModel : ViewModelBase
     }
 
     public string InfoBarText => ErrorMessage ?? (IsSubtask
-        ? $"子任务将添加到「{ParentTitle}」下，暂时只支持二级子任务。"
-        : "新任务默认状态为未完成，可在主列表或悬浮窗中快速标记完成。");
+        ? LocalizationService.Format("Editor.InfoSubtaskFormat", ParentTitle ?? LocalizationService.Text("Todo.ParentMissing"))
+        : LocalizationService.Text("Editor.InfoNewTask"));
 
     public bool CanSave =>
         _isTitleValid &&
@@ -215,14 +218,14 @@ public sealed class TodoEditorViewModel : ViewModelBase
 
         if (Attachments.Count + paths.Count > TodoService.MaxAttachmentCount)
         {
-            throw new InvalidOperationException($"一个任务最多关联 {TodoService.MaxAttachmentCount} 个文件。");
+            throw new InvalidOperationException(LocalizationService.Format("Editor.MaxAttachmentFormat", TodoService.MaxAttachmentCount));
         }
 
         foreach (var path in paths)
         {
             if (!File.Exists(path))
             {
-                throw new InvalidOperationException($"选择的文件不存在：{Path.GetFileName(path)}");
+                throw new InvalidOperationException(LocalizationService.Format("Editor.FileMissingFormat", Path.GetFileName(path)));
             }
 
             Attachments.Add(TodoEditorAttachmentItem.FromFile(path));
@@ -264,7 +267,7 @@ public sealed class TodoEditorViewModel : ViewModelBase
     private void LoadGroupOptions(IEnumerable<TodoGroup>? groups, string? selectedGroupId)
     {
         GroupOptions.Clear();
-        var noGroup = new TodoGroupOption { Name = "不加入任务组" };
+        var noGroup = new TodoGroupOption { Name = LocalizationService.Text("Group.NoGroupOption") };
         GroupOptions.Add(noGroup);
 
         if (groups is not null)
@@ -297,11 +300,11 @@ public sealed class TodoEditorViewModel : ViewModelBase
 
     private void UpdateValidationState()
     {
-        var titleError = string.IsNullOrWhiteSpace(Title) ? "请输入任务标题" : null;
+        var titleError = string.IsNullOrWhiteSpace(Title) ? LocalizationService.Text("Validation.TaskTitleRequired") : null;
 
         if (Title?.Length > 80)
         {
-            titleError = "标题不能超过 80 字";
+            titleError = LocalizationService.Text("Validation.TaskTitleMax");
         }
 
         _isTitleValid = titleError is null;
@@ -309,15 +312,15 @@ public sealed class TodoEditorViewModel : ViewModelBase
 
         if (Note?.Length > 500)
         {
-            ErrorMessage = "备注不能超过 500 字";
+            ErrorMessage = LocalizationService.Text("Validation.NoteMax");
         }
         else if (!StartDate.HasValue)
         {
-            ErrorMessage = "请选择起始日期";
+            ErrorMessage = LocalizationService.Text("Validation.StartDateRequired");
         }
         else if (!IsNoDue && DueDate.HasValue && DueDate.Value.Date < StartDate.Value.Date)
         {
-            ErrorMessage = "计划完成日期不能早于开始日期";
+            ErrorMessage = LocalizationService.Text("Validation.DueBeforeStart");
         }
         else
         {
@@ -327,12 +330,31 @@ public sealed class TodoEditorViewModel : ViewModelBase
         OnPropertyChanged(nameof(CanSave));
         OnPropertyChanged(nameof(InfoBarText));
     }
+
+    private void RefreshLocalizedProperties()
+    {
+        var noGroup = GroupOptions.FirstOrDefault(group => group.Id is null);
+        if (noGroup is not null)
+        {
+            noGroup.Name = LocalizationService.Text("Group.NoGroupOption");
+        }
+
+        UpdateValidationState();
+        NotifyAttachmentStateChanged();
+    }
 }
 
-public sealed class TodoGroupOption
+public sealed class TodoGroupOption : ViewModelBase
 {
+    private string _name = string.Empty;
+
     public string? Id { get; init; }
-    public string Name { get; init; } = string.Empty;
+
+    public string Name
+    {
+        get => _name;
+        set => SetProperty(ref _name, value);
+    }
 
     public override string ToString() => Name;
 }
