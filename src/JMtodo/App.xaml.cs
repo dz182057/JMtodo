@@ -29,7 +29,7 @@ public partial class App : System.Windows.Application
         var floatingViewModel = new FloatingViewModel(todoService);
         _floatingWindow = new FloatingTaskWindow(floatingViewModel, settingsService, windowLevelService);
 
-        _mainWindow = new MainWindow(todoService, _floatingWindow, windowLevelService, settingsService);
+        _mainWindow = new MainWindow(todoService, _floatingWindow, windowLevelService);
         _trayService = new TrayService(
             openManager: () => Dispatcher.Invoke(() => _mainWindow.OpenFromUserRequest()),
             toggleFloating: () => Dispatcher.Invoke(() => _floatingWindow.ToggleFromUserRequest()),
@@ -40,6 +40,14 @@ public partial class App : System.Windows.Application
                 _mainWindow.AllowClose();
                 _floatingWindow.AllowClose();
                 Shutdown();
+            }),
+            changeLanguage: language => Dispatcher.Invoke(() =>
+            {
+                var normalizedLanguage = LocalizationService.NormalizeLanguage(language);
+                var currentSettings = settingsService.Load();
+                currentSettings.Language = normalizedLanguage;
+                settingsService.Save(currentSettings);
+                LocalizationService.ApplyLanguage(normalizedLanguage);
             }),
             isFloatingVisible: () => _floatingWindow.IsVisible);
 

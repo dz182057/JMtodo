@@ -16,6 +16,7 @@ public partial class TrayMenuWindow : Window
     private readonly Action _toggleFloating;
     private readonly Action _addTask;
     private readonly Action _exitApp;
+    private readonly Action<string> _changeLanguage;
     private readonly DispatcherTimer _outsideClickTimer;
     private bool _isClosing;
 
@@ -24,6 +25,7 @@ public partial class TrayMenuWindow : Window
         Action toggleFloating,
         Action addTask,
         Action exitApp,
+        Action<string> changeLanguage,
         bool isFloatingVisible)
     {
         InitializeComponent();
@@ -32,6 +34,7 @@ public partial class TrayMenuWindow : Window
         _toggleFloating = toggleFloating;
         _addTask = addTask;
         _exitApp = exitApp;
+        _changeLanguage = changeLanguage;
 
         _outsideClickTimer = new DispatcherTimer
         {
@@ -42,6 +45,7 @@ public partial class TrayMenuWindow : Window
         ToggleFloatingText.Text = isFloatingVisible
             ? LocalizationService.Text("Tray.HideFloating")
             : LocalizationService.Text("Tray.ShowFloating");
+        RefreshLanguageChecks();
     }
 
     public void ShowNearCursor()
@@ -164,6 +168,17 @@ public partial class TrayMenuWindow : Window
         _addTask();
     }
 
+    private void Language_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is not string language)
+        {
+            return;
+        }
+
+        CloseMenu();
+        _changeLanguage(language);
+    }
+
     private void Exit_Click(object sender, RoutedEventArgs e)
     {
         CloseMenu();
@@ -180,6 +195,13 @@ public partial class TrayMenuWindow : Window
         _isClosing = true;
         _outsideClickTimer.Stop();
         Close();
+    }
+
+    private void RefreshLanguageChecks()
+    {
+        var currentLanguage = LocalizationService.CurrentLanguage;
+        ChineseLanguageCheck.Visibility = currentLanguage == "zh-CN" ? Visibility.Visible : Visibility.Hidden;
+        EnglishLanguageCheck.Visibility = currentLanguage == "en-US" ? Visibility.Visible : Visibility.Hidden;
     }
 
     protected override void OnClosed(EventArgs e)

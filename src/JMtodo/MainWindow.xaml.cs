@@ -30,15 +30,14 @@ public partial class MainWindow : Window
     public MainWindow(
         TodoService todoService,
         FloatingTaskWindow floatingWindow,
-        WindowLevelService windowLevelService,
-        SettingsService settingsService)
+        WindowLevelService windowLevelService)
     {
         InitializeComponent();
         ApplyStartupBounds();
         _todoService = todoService;
         _floatingWindow = floatingWindow;
         _windowLevelService = windowLevelService;
-        _viewModel = new MainViewModel(todoService, settingsService);
+        _viewModel = new MainViewModel(todoService);
         DataContext = _viewModel;
         ClearSortIndicators();
     }

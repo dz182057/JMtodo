@@ -14,7 +14,6 @@ public sealed class MainViewModel : ViewModelBase
     private const string StatusFilterDeleted = "Deleted";
 
     private readonly TodoService _todoService;
-    private readonly SettingsService _settingsService;
     private readonly HashSet<string> _collapsedTodoIds = new();
     private readonly HashSet<string> _currentRootTodoIds = new();
     private TodoItem? _selectedTodo;
@@ -22,7 +21,6 @@ public sealed class MainViewModel : ViewModelBase
     private int _selectedSubtaskCount;
     private string? _keyword;
     private string _selectedStatusFilter = StatusFilterActive;
-    private string _selectedLanguageKey;
     private string? _selectedGroupId;
     private bool _filterNoGroup;
     private bool _isUpdatingFilters;
@@ -43,11 +41,9 @@ public sealed class MainViewModel : ViewModelBase
     private string? _manualSortMemberPath;
     private ListSortDirection _manualSortDirection = ListSortDirection.Ascending;
 
-    public MainViewModel(TodoService todoService, SettingsService settingsService)
+    public MainViewModel(TodoService todoService)
     {
         _todoService = todoService;
-        _settingsService = settingsService;
-        _selectedLanguageKey = LocalizationService.CurrentLanguage;
         _todoService.Changed += (_, _) => Refresh();
         LocalizationService.LanguageChanged += (_, _) => RefreshLocalizedProperties();
         LoadStatusFilters();
@@ -61,8 +57,6 @@ public sealed class MainViewModel : ViewModelBase
     public ObservableCollection<TodoGroupSummary> GroupSummaries { get; } = new();
 
     public ObservableCollection<StatusFilterOption> StatusFilters { get; } = new();
-
-    public IReadOnlyList<LanguageOption> LanguageOptions => LocalizationService.Languages;
 
     public RelayCommand RefreshCommand { get; }
 
@@ -160,24 +154,6 @@ public sealed class MainViewModel : ViewModelBase
     public string MultiSelectButtonText => IsMultiSelectMode
         ? LocalizationService.Text("Action.Cancel")
         : LocalizationService.Text("Action.MultiSelect");
-
-    public string SelectedLanguageKey
-    {
-        get => _selectedLanguageKey;
-        set
-        {
-            var normalizedLanguage = LocalizationService.NormalizeLanguage(value);
-            if (!SetProperty(ref _selectedLanguageKey, normalizedLanguage))
-            {
-                return;
-            }
-
-            var settings = _settingsService.Load();
-            settings.Language = normalizedLanguage;
-            _settingsService.Save(settings);
-            LocalizationService.ApplyLanguage(normalizedLanguage);
-        }
-    }
 
     public string? Keyword
     {
@@ -439,8 +415,6 @@ public sealed class MainViewModel : ViewModelBase
     private void RefreshLocalizedProperties()
     {
         LoadStatusFilters();
-        OnPropertyChanged(nameof(LanguageOptions));
-        OnPropertyChanged(nameof(SelectedLanguageKey));
         OnPropertyChanged(nameof(SelectedCountText));
         OnPropertyChanged(nameof(TotalCountText));
         OnPropertyChanged(nameof(MultiSelectButtonText));

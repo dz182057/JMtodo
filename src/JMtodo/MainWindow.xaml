@@ -309,22 +309,6 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
-                        <TextBlock Text="{DynamicResource Language.Label}"
-                                   Margin="0,0,8,0"
-                                   FontSize="13"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource Brush.TextSecondary}"
-                                   VerticalAlignment="Center" />
-                        <ComboBox Width="128"
-                                  Height="36"
-                                  FontSize="13"
-                                  ItemsSource="{Binding LanguageOptions}"
-                                  SelectedValue="{Binding SelectedLanguageKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                  SelectedValuePath="Key"
-                                  DisplayMemberPath="DisplayName"
-                                  Style="{StaticResource ComboBox.Modern}" />
-                    </StackPanel>
                     <Button Width="104" Style="{StaticResource Button.Secondary}" Click="AddButton_Click">
                         <StackPanel Orientation="Horizontal">
                             <Path Width="16"
