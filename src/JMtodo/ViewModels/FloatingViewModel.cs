@@ -7,6 +7,7 @@ namespace TodoDesktopApp.ViewModels;
 public sealed class FloatingViewModel : ViewModelBase
 {
     private readonly TodoService _todoService;
+    private readonly Dictionary<string, FloatingTaskItemViewModel> _completingTodos = new();
 
     public FloatingViewModel(TodoService todoService)
     {
@@ -32,10 +33,12 @@ public sealed class FloatingViewModel : ViewModelBase
 
     public void Reload()
     {
+        var previousTodos = Todos.ToList();
         var groupsById = _todoService.GetGroups().ToDictionary(group => group.Id);
         var floatingTodos = _todoService.GetFloatingTodos()
             .Select(todo => new FloatingTaskItemViewModel(todo, ResolveIconKey(todo, groupsById)))
             .ToList();
+        floatingTodos = KeepCompletingTodos(previousTodos, floatingTodos);
 
         Todos.Clear();
         TaskGroups.Clear();
@@ -55,9 +58,32 @@ public sealed class FloatingViewModel : ViewModelBase
         VisibleTasksChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public void Complete(FloatingTaskItemViewModel todo)
+    public void Complete(FloatingTaskItemViewModel todo, bool keepVisibleForAnimation = false)
     {
-        _todoService.Complete(todo.TaskId);
+        if (!keepVisibleForAnimation)
+        {
+            _todoService.Complete(todo.TaskId);
+            return;
+        }
+
+        todo.IsCompleting = true;
+        _completingTodos[todo.TaskId] = todo;
+        try
+        {
+            _todoService.Complete(todo.TaskId);
+        }
+        catch
+        {
+            _completingTodos.Remove(todo.TaskId);
+            todo.IsCompleting = false;
+            throw;
+        }
+    }
+
+    public void FinishCompletionAnimation(string taskId)
+    {
+        _completingTodos.Remove(taskId);
+        Reload();
     }
 
     public void Reopen(FloatingTaskItemViewModel todo)
@@ -148,6 +174,35 @@ public sealed class FloatingViewModel : ViewModelBase
         return result;
     }
 
+    private List<FloatingTaskItemViewModel> KeepCompletingTodos(
+        IReadOnlyList<FloatingTaskItemViewModel> previousTodos,
+        List<FloatingTaskItemViewModel> currentTodos)
+    {
+        if (_completingTodos.Count == 0)
+        {
+            return currentTodos;
+        }
+
+        var currentIds = currentTodos.Select(todo => todo.TaskId).ToHashSet();
+        var previousIndex = previousTodos
+            .Select((todo, index) => new { todo.TaskId, Index = index })
+            .ToDictionary(item => item.TaskId, item => item.Index);
+        var currentIndex = currentTodos
+            .Select((todo, index) => new { todo.TaskId, Index = index })
+            .ToDictionary(item => item.TaskId, item => item.Index);
+
+        foreach (var todo in previousTodos.Where(todo => _completingTodos.ContainsKey(todo.TaskId) && !currentIds.Contains(todo.TaskId)))
+        {
+            todo.IsCompleting = true;
+            currentTodos.Add(todo);
+        }
+
+        return currentTodos
+            .OrderBy(todo => previousIndex.TryGetValue(todo.TaskId, out var index) ? index : int.MaxValue)
+            .ThenBy(todo => currentIndex.TryGetValue(todo.TaskId, out var index) ? index : int.MaxValue)
+            .ToList();
+    }
+
     private static string ResolveIconKey(TodoItem todo, IReadOnlyDictionary<string, TodoGroup> groupsById)
     {
         if (!string.IsNullOrWhiteSpace(todo.GroupId) &&
@@ -181,8 +236,10 @@ public sealed class FloatingTaskGroupViewModel
     public string ProgressText => HasSubtasks ? $"{CompletedSubtaskCount}/{TotalSubtaskCount}" : string.Empty;
 }
 
-public sealed class FloatingTaskItemViewModel
+public sealed class FloatingTaskItemViewModel : ViewModelBase
 {
+    private bool _isCompleting;
+
     public FloatingTaskItemViewModel(TodoItem sourceTask, string iconKey)
     {
         SourceTask = sourceTask;
@@ -219,11 +276,25 @@ public sealed class FloatingTaskItemViewModel
 
     public DateOnly? DueDate => SourceTask.DueDate;
 
-    public bool IsCompleted => SourceTask.IsCompleted;
+    public bool IsCompleted => SourceTask.IsCompleted || IsCompleting;
 
-    public bool CanCreateSubtask => SourceTask.CanCreateSubtask;
+    public bool CanCreateSubtask => !IsCompleting && SourceTask.CanCreateSubtask;
 
-    public TodoStatus Status => SourceTask.Status;
+    public TodoStatus Status => IsCompleting ? TodoStatus.Completed : SourceTask.Status;
+
+    public bool IsCompleting
+    {
+        get => _isCompleting;
+        internal set
+        {
+            if (SetProperty(ref _isCompleting, value))
+            {
+                OnPropertyChanged(nameof(IsCompleted));
+                OnPropertyChanged(nameof(CanCreateSubtask));
+                OnPropertyChanged(nameof(Status));
+            }
+        }
+    }
 
     public string FloatingRelationText => SourceTask.FloatingRelationText;
 

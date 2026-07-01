@@ -99,6 +99,11 @@
                 <DataTrigger Binding="{Binding MainTask.IsCompleted}" Value="True">
                     <Setter Property="Opacity" Value="0.68" />
                 </DataTrigger>
+                <DataTrigger Binding="{Binding MainTask.IsCompleting}" Value="True">
+                    <Setter Property="IsHitTestVisible" Value="False" />
+                    <Setter Property="Background" Value="#F4FBF7" />
+                    <Setter Property="BorderBrush" Value="#BDEBCF" />
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 
@@ -125,6 +130,10 @@
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="#F8FBFF" />
                 </Trigger>
+                <DataTrigger Binding="{Binding IsCompleting}" Value="True">
+                    <Setter Property="IsHitTestVisible" Value="False" />
+                    <Setter Property="Background" Value="#F4FBF7" />
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 
@@ -390,6 +399,7 @@
                             <Border Style="{StaticResource FloatingTaskCard}"
                                     Tag="{Binding MainTask}"
                                     AllowDrop="True"
+                                    Loaded="FloatingTaskItem_Loaded"
                                     PreviewMouseLeftButtonDown="FloatingTaskCard_PreviewMouseLeftButtonDown"
                                     MouseMove="FloatingTaskCard_MouseMove"
                                     DragOver="FloatingTaskCard_DragOver"
@@ -596,6 +606,7 @@
                                                     <Grid Style="{StaticResource FloatingSubtaskRow}"
                                                           Tag="{Binding}"
                                                           AllowDrop="True"
+                                                          Loaded="FloatingTaskItem_Loaded"
                                                           PreviewMouseLeftButtonDown="FloatingTaskCard_PreviewMouseLeftButtonDown"
                                                           MouseMove="FloatingTaskCard_MouseMove"
                                                           DragOver="FloatingTaskCard_DragOver"

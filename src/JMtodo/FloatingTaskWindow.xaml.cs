@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -32,6 +33,9 @@ public partial class FloatingTaskWindow : Window
     private const double EdgeIconSize = 56;
     private const double EdgePeekSize = 18;
     private const double EdgePreviewGap = 10;
+    private const int CompletionBurstDurationMs = 360;
+    private const int CompletionExitDelayMs = 260;
+    private const int CompletionExitDurationMs = 220;
     private readonly FloatingViewModel _viewModel;
     private readonly SettingsService _settingsService;
     private readonly WindowLevelService _windowLevelService;
@@ -47,6 +51,7 @@ public partial class FloatingTaskWindow : Window
     private System.Windows.Point _edgeDragStartMouse;
     private System.Windows.Point? _taskDragStart;
     private FloatingTaskItemViewModel? _draggedTask;
+    private readonly HashSet<string> _runningCompletionAnimations = new();
     private double _expandedHeight = DefaultFloatingHeight;
     private double _expandedWidth = DefaultFloatingWidth;
     private double _expandedLeft = 80;
@@ -152,12 +157,30 @@ public partial class FloatingTaskWindow : Window
 
         if (checkBox.IsChecked == true)
         {
-            _viewModel.Complete(todo);
+            _viewModel.Complete(todo, SystemParameters.ClientAreaAnimation);
         }
         else
         {
             _viewModel.Reopen(todo);
         }
+    }
+
+    private void FloatingTaskItem_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: FloatingTaskItemViewModel todo } item || !todo.IsCompleting)
+        {
+            return;
+        }
+
+        if (!SystemParameters.ClientAreaAnimation)
+        {
+            _viewModel.FinishCompletionAnimation(todo.TaskId);
+            return;
+        }
+
+        Dispatcher.BeginInvoke(
+            new Action(() => BeginCompletionAnimation(item, todo)),
+            System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
     private void Header_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -268,6 +291,68 @@ public partial class FloatingTaskWindow : Window
         {
             ConfirmDialogWindow.ShowInfo(this, T("Dialog.OpenFileFailed.Title"), ex.Message);
         }
+    }
+
+    private void BeginCompletionAnimation(FrameworkElement item, FloatingTaskItemViewModel todo)
+    {
+        if (!todo.IsCompleting || !_runningCompletionAnimations.Add(todo.TaskId))
+        {
+            return;
+        }
+
+        item.IsHitTestVisible = false;
+        item.ClipToBounds = true;
+        item.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
+        item.RenderTransform = new TranslateTransform();
+
+        var adornerLayer = AdornerLayer.GetAdornerLayer(item);
+        CompletionBurstAdorner? burstAdorner = null;
+        if (adornerLayer is not null)
+        {
+            burstAdorner = new CompletionBurstAdorner(item, GetCompletionBurstOrigin(item, todo));
+            adornerLayer.Add(burstAdorner);
+            burstAdorner.Start();
+        }
+
+        var storyboard = new Storyboard();
+        var exitEase = new CubicEase { EasingMode = EasingMode.EaseIn };
+
+        var fade = new DoubleAnimation(item.Opacity, 0, TimeSpan.FromMilliseconds(CompletionExitDurationMs))
+        {
+            BeginTime = TimeSpan.FromMilliseconds(CompletionExitDelayMs),
+            EasingFunction = exitEase
+        };
+        Storyboard.SetTarget(fade, item);
+        Storyboard.SetTargetProperty(fade, new PropertyPath(UIElement.OpacityProperty));
+        storyboard.Children.Add(fade);
+
+        var move = new DoubleAnimation(0, -10, TimeSpan.FromMilliseconds(CompletionExitDurationMs))
+        {
+            BeginTime = TimeSpan.FromMilliseconds(CompletionExitDelayMs),
+            EasingFunction = exitEase
+        };
+        Storyboard.SetTarget(move, item);
+        Storyboard.SetTargetProperty(move, new PropertyPath("(UIElement.RenderTransform).(TranslateTransform.Y)"));
+        storyboard.Children.Add(move);
+
+        storyboard.Completed += (_, _) =>
+        {
+            if (burstAdorner is not null)
+            {
+                adornerLayer?.Remove(burstAdorner);
+            }
+
+            _runningCompletionAnimations.Remove(todo.TaskId);
+            _viewModel.FinishCompletionAnimation(todo.TaskId);
+        };
+        storyboard.Begin();
+    }
+
+    private static System.Windows.Point GetCompletionBurstOrigin(FrameworkElement item, FloatingTaskItemViewModel todo)
+    {
+        return todo.IsSubTask
+            ? new System.Windows.Point(46, Math.Min(18, Math.Max(12, item.ActualHeight / 2)))
+            : new System.Windows.Point(12, 19);
     }
 
     private void FloatingTaskCard_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -1037,6 +1122,28 @@ public partial class FloatingTaskWindow : Window
         return new Rect(topLeft, bottomRight);
     }
 
+    private System.Windows.Point GetWindowCenter()
+    {
+        return new System.Windows.Point(Left + Width / 2, Top + Height / 2);
+    }
+
+    private System.Windows.Point GetExpandedWindowCenter()
+    {
+        return new System.Windows.Point(_expandedLeft + Width / 2, _expandedTop + Height / 2);
+    }
+
+    private System.Drawing.Point ToDevicePoint(System.Windows.Point screenPoint)
+    {
+        var devicePoint = screenPoint;
+        var source = PresentationSource.FromVisual(this);
+        if (source?.CompositionTarget is not null)
+        {
+            devicePoint = source.CompositionTarget.TransformToDevice.Transform(devicePoint);
+        }
+
+        return new System.Drawing.Point((int)Math.Round(devicePoint.X), (int)Math.Round(devicePoint.Y));
+    }
+
     private static double Clamp(double value, double min, double max)
     {
         if (max < min)
@@ -1110,6 +1217,91 @@ public partial class FloatingTaskWindow : Window
         }
 
         return null;
+    }
+
+    private sealed class CompletionBurstAdorner : Adorner
+    {
+        public static readonly DependencyProperty ProgressProperty = DependencyProperty.Register(
+            nameof(Progress),
+            typeof(double),
+            typeof(CompletionBurstAdorner),
+            new FrameworkPropertyMetadata(0d, FrameworkPropertyMetadataOptions.AffectsRender));
+
+        private static readonly Vector[] ParticleOffsets =
+        {
+            new(-3, -24),
+            new(18, -19),
+            new(28, -1),
+            new(18, 17),
+            new(-2, 22),
+            new(-20, 12),
+            new(-25, -8),
+            new(-14, -20)
+        };
+
+        private static readonly System.Windows.Media.Brush[] ParticleBrushes =
+        {
+            CreateBrush("#36C275"),
+            CreateBrush("#5B8CFF"),
+            CreateBrush("#FFB84D"),
+            CreateBrush("#8A74FF")
+        };
+
+        private readonly System.Windows.Point _origin;
+
+        public CompletionBurstAdorner(UIElement adornedElement, System.Windows.Point origin)
+            : base(adornedElement)
+        {
+            _origin = origin;
+            IsHitTestVisible = false;
+        }
+
+        public double Progress
+        {
+            get => (double)GetValue(ProgressProperty);
+            set => SetValue(ProgressProperty, value);
+        }
+
+        public void Start()
+        {
+            var animation = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(CompletionBurstDurationMs))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            BeginAnimation(ProgressProperty, animation);
+        }
+
+        protected override void OnRender(DrawingContext drawingContext)
+        {
+            var progress = Clamp(Progress, 0, 1);
+            if (progress <= 0)
+            {
+                return;
+            }
+
+            var travel = 1 - Math.Pow(1 - progress, 3);
+            var opacity = progress < 0.62 ? 1 : Math.Max(0, (1 - progress) / 0.38);
+            var radius = Math.Max(1.7, 3.2 - progress * 1.2);
+
+            drawingContext.PushOpacity(opacity);
+            for (var i = 0; i < ParticleOffsets.Length; i++)
+            {
+                var offset = ParticleOffsets[i];
+                var point = new System.Windows.Point(
+                    _origin.X + offset.X * travel,
+                    _origin.Y + offset.Y * travel);
+                drawingContext.DrawEllipse(ParticleBrushes[i % ParticleBrushes.Length], null, point, radius, radius);
+            }
+
+            drawingContext.Pop();
+        }
+
+        private static System.Windows.Media.Brush CreateBrush(string color)
+        {
+            var brush = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(color));
+            brush.Freeze();
+            return brush;
+        }
     }
 
     private enum DockEdge
