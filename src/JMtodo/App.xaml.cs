@@ -8,12 +8,21 @@ namespace TodoDesktopApp;
 
 public partial class App : System.Windows.Application
 {
+    private SingleInstanceService? _singleInstanceService;
     private TrayService? _trayService;
     private MainWindow? _mainWindow;
     private FloatingTaskWindow? _floatingWindow;
+    private bool _isShuttingDown;
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        _singleInstanceService = SingleInstanceService.Start(ShutdownFromReplacementRequest);
+        if (_singleInstanceService is null)
+        {
+            Shutdown();
+            return;
+        }
+
         base.OnStartup(e);
 
         var repository = new TodoRepository();
@@ -34,13 +43,7 @@ public partial class App : System.Windows.Application
             openManager: () => Dispatcher.Invoke(() => _mainWindow.OpenFromUserRequest()),
             toggleFloating: () => Dispatcher.Invoke(() => _floatingWindow.ToggleFromUserRequest()),
             addTodo: () => Dispatcher.Invoke(() => _mainWindow.AddTodoFromUserRequest()),
-            exit: () => Dispatcher.Invoke(() =>
-            {
-                _trayService?.Dispose();
-                _mainWindow.AllowClose();
-                _floatingWindow.AllowClose();
-                Shutdown();
-            }),
+            exit: () => Dispatcher.Invoke(ShutdownApplication),
             changeLanguage: language => Dispatcher.Invoke(() =>
             {
                 var normalizedLanguage = LocalizationService.NormalizeLanguage(language);
@@ -52,12 +55,33 @@ public partial class App : System.Windows.Application
             isFloatingVisible: () => _floatingWindow.IsVisible);
 
         _mainWindow.Show();
+        _singleInstanceService.StartListening();
         Dispatcher.BeginInvoke(new Action(_mainWindow.OpenFromUserRequest), DispatcherPriority.ApplicationIdle);
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
         _trayService?.Dispose();
+        _singleInstanceService?.Dispose();
         base.OnExit(e);
+    }
+
+    private void ShutdownFromReplacementRequest()
+    {
+        Dispatcher.BeginInvoke(new Action(ShutdownApplication), DispatcherPriority.Send);
+    }
+
+    private void ShutdownApplication()
+    {
+        if (_isShuttingDown)
+        {
+            return;
+        }
+
+        _isShuttingDown = true;
+        _trayService?.Dispose();
+        _mainWindow?.AllowClose();
+        _floatingWindow?.AllowClose();
+        Shutdown();
     }
 }
