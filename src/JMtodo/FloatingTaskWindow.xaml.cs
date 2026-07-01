@@ -26,10 +26,10 @@ public partial class FloatingTaskWindow : Window
     private const double MaxFloatingHeight = 560;
     private const double FloatingShadowMargin = 18;
     private const double FloatingShadowInset = FloatingShadowMargin * 2;
-    private const double EdgeSnapThreshold = 24;
-    private const double EdgeDetachInset = EdgeSnapThreshold + 12;
-    private const double EdgeDetachDragDistance = 56;
-    private const double EdgeDetachDirectionRatio = 1.2;
+    private const double EdgeSnapThreshold = 48;
+    private const double EdgeDetachInset = 36;
+    private const double EdgeDetachDragDistance = 40;
+    private const double EdgeDetachDirectionRatio = 1.0;
     private const double EdgeIconSize = 56;
     private const double EdgePeekSize = 18;
     private const double EdgePreviewGap = 10;
@@ -187,8 +187,23 @@ public partial class FloatingTaskWindow : Window
     {
         if (e.ButtonState == MouseButtonState.Pressed)
         {
+            if (_isEdgeDocked)
+            {
+                BeginEdgeIconDrag(e);
+                return;
+            }
+
             _dockEdge = DockEdge.None;
-            DragMove();
+            _suppressSettingsSave = true;
+            try
+            {
+                DragMove();
+            }
+            finally
+            {
+                _suppressSettingsSave = false;
+            }
+
             TryDockToNearestEdge();
             if (!_isEdgeDocked)
             {
@@ -470,6 +485,13 @@ public partial class FloatingTaskWindow : Window
             return;
         }
 
+        BeginEdgeIconDrag(e);
+    }
+
+    private void BeginEdgeIconDrag(MouseButtonEventArgs e)
+    {
+        var mouseScreenPoint = GetMouseScreenPoint(e.GetPosition(this));
+
         if (_isEdgePreviewOpen)
         {
             ReturnToEdgeIcon();
@@ -477,11 +499,11 @@ public partial class FloatingTaskWindow : Window
 
         _isDraggingEdgeIcon = true;
         _edgeIconDetachedDuringDrag = false;
-        _edgeDragStartMouse = GetMouseScreenPoint(e.GetPosition(this));
-        _edgeDragStartLeft = Left;
-        _edgeDragStartTop = Top;
-        _edgeDragOffsetX = _edgeDragStartMouse.X - Left;
-        _edgeDragOffsetY = _edgeDragStartMouse.Y - Top;
+        _edgeDragStartMouse = mouseScreenPoint;
+        _edgeDragStartLeft = _edgeIconLeft;
+        _edgeDragStartTop = _edgeIconTop;
+        _edgeDragOffsetX = _edgeDragStartMouse.X - _edgeIconLeft;
+        _edgeDragOffsetY = _edgeDragStartMouse.Y - _edgeIconTop;
         Root.CaptureMouse();
         e.Handled = true;
     }
@@ -596,26 +618,38 @@ public partial class FloatingTaskWindow : Window
 
     private void TryDockToNearestEdge()
     {
-        var workArea = GetWorkingArea();
-        var distanceLeft = Math.Abs(Left - workArea.Left);
-        var distanceRight = Math.Abs(workArea.Right - (Left + Width));
-        var distanceTop = Math.Abs(Top - workArea.Top);
-        var distanceBottom = Math.Abs(workArea.Bottom - (Top + Height));
+        var workArea = GetWorkingArea(GetWindowCenter());
+        var distanceLeft = Left - workArea.Left;
+        var distanceRight = workArea.Right - (Left + Width);
+        var distanceTop = Top - workArea.Top;
+        var distanceBottom = workArea.Bottom - (Top + Height);
 
-        var isNearLeft = distanceLeft <= EdgeSnapThreshold;
-        var isNearRight = distanceRight <= EdgeSnapThreshold;
-        var isNearTop = distanceTop <= EdgeSnapThreshold;
-        var isNearBottom = distanceBottom <= EdgeSnapThreshold;
-        if (!isNearLeft && !isNearRight && !isNearTop && !isNearBottom)
+        var nearestEdge = DockEdge.Left;
+        var nearestDistance = distanceLeft;
+        if (distanceRight < nearestDistance)
+        {
+            nearestEdge = DockEdge.Right;
+            nearestDistance = distanceRight;
+        }
+
+        if (distanceTop < nearestDistance)
+        {
+            nearestEdge = DockEdge.Top;
+            nearestDistance = distanceTop;
+        }
+
+        if (distanceBottom < nearestDistance)
+        {
+            nearestEdge = DockEdge.Bottom;
+            nearestDistance = distanceBottom;
+        }
+
+        if (nearestDistance > EdgeSnapThreshold)
         {
             return;
         }
 
-        var edge = isNearLeft || isNearRight
-            ? distanceLeft <= distanceRight ? DockEdge.Left : DockEdge.Right
-            : distanceTop <= distanceBottom ? DockEdge.Top : DockEdge.Bottom;
-
-        DockToEdge(edge);
+        DockToEdge(nearestEdge);
     }
 
     private void DockToEdge(DockEdge edge)
@@ -645,7 +679,7 @@ public partial class FloatingTaskWindow : Window
         EdgeIconHost.Visibility = Visibility.Visible;
         ResetEdgeIconLayout();
 
-        var workArea = GetWorkingArea();
+        var workArea = GetWorkingArea(new System.Windows.Point(iconLeft + EdgeIconSize / 2, iconTop + EdgeIconSize / 2));
         switch (edge)
         {
             case DockEdge.Left:
@@ -718,7 +752,7 @@ public partial class FloatingTaskWindow : Window
             Width = ToWindowWidth(SanitizeFloatingWidth(_expandedWidth));
             Height = ToWindowHeight(SanitizeFloatingHeight(_expandedHeight));
 
-            var workArea = GetWorkingArea();
+            var workArea = GetWorkingArea(GetExpandedWindowCenter());
             Left = Clamp(_expandedLeft, workArea.Left, workArea.Right - Width);
             Top = Clamp(_expandedTop, workArea.Top, workArea.Bottom - Height);
         }
@@ -736,7 +770,11 @@ public partial class FloatingTaskWindow : Window
 
         if (_edgeIconDetachedDuringDrag)
         {
-            SaveSettings();
+            TryDockToNearestEdge();
+            if (!_isEdgeDocked)
+            {
+                SaveSettings();
+            }
         }
         else
         {
@@ -770,7 +808,7 @@ public partial class FloatingTaskWindow : Window
 
     private void MoveEdgeIconWithMouse(System.Windows.Point mouseScreenPoint)
     {
-        var workArea = GetWorkingArea();
+        var workArea = GetWorkingArea(mouseScreenPoint);
         switch (_dockEdge)
         {
             case DockEdge.Left:
@@ -798,7 +836,7 @@ public partial class FloatingTaskWindow : Window
 
     private void MoveFloatingWithMouse(System.Windows.Point mouseScreenPoint)
     {
-        var workArea = GetWorkingArea();
+        var workArea = GetWorkingArea(mouseScreenPoint);
         var nextLeft = mouseScreenPoint.X - _floatingDragOffsetX;
         var nextTop = mouseScreenPoint.Y - _floatingDragOffsetY;
         Left = Clamp(nextLeft, workArea.Left, workArea.Right - Width);
@@ -807,7 +845,7 @@ public partial class FloatingTaskWindow : Window
 
     private void DockIconAtCurrentPosition()
     {
-        var workArea = GetWorkingArea();
+        var workArea = GetWorkingArea(GetWindowCenter());
         var edge = _dockEdge == DockEdge.None ? GetNearestEdge(workArea) : _dockEdge;
 
         _dockEdge = edge;
@@ -1075,7 +1113,7 @@ public partial class FloatingTaskWindow : Window
 
     private void PositionFloatingNearMouse(System.Windows.Point mouseScreenPoint)
     {
-        var workArea = GetWorkingArea();
+        var workArea = GetWorkingArea(mouseScreenPoint);
         var desiredLeft = mouseScreenPoint.X - Width / 2;
         var desiredTop = mouseScreenPoint.Y - FloatingShadowMargin - 34;
         Left = Clamp(desiredLeft, workArea.Left + EdgeDetachInset, workArea.Right - Width - EdgeDetachInset);
@@ -1106,10 +1144,15 @@ public partial class FloatingTaskWindow : Window
 
     private Rect GetWorkingArea()
     {
+        return GetWorkingArea(GetWindowCenter());
+    }
+
+    private Rect GetWorkingArea(System.Windows.Point screenPoint)
+    {
         var handle = new WindowInteropHelper(this).Handle;
         var area = handle == IntPtr.Zero
             ? Forms.Screen.PrimaryScreen?.WorkingArea ?? Forms.Screen.AllScreens[0].WorkingArea
-            : Forms.Screen.FromHandle(handle).WorkingArea;
+            : Forms.Screen.FromPoint(ToDevicePoint(screenPoint)).WorkingArea;
         var topLeft = new System.Windows.Point(area.Left, area.Top);
         var bottomRight = new System.Windows.Point(area.Right, area.Bottom);
         var source = PresentationSource.FromVisual(this);
