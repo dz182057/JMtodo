@@ -12,7 +12,7 @@ public sealed class TodoEditorViewModel : ViewModelBase
     private string? _note;
     private DateTime? _startDate = DateTime.Today;
     private DateTime? _dueDate;
-    private bool _isNoDue = true;
+    private bool _isNoDue;
     private string? _titleError;
     private string? _errorMessage;
     private TodoGroupOption? _selectedGroup;
@@ -190,6 +190,11 @@ public sealed class TodoEditorViewModel : ViewModelBase
     public bool Validate()
     {
         _showTitleError = true;
+        if (!DueDate.HasValue)
+        {
+            IsNoDue = true;
+        }
+
         UpdateValidationState();
 
         return CanSave;
