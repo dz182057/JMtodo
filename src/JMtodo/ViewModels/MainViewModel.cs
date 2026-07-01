@@ -84,6 +84,8 @@ public sealed class MainViewModel : ViewModelBase
             OnPropertyChanged(nameof(CanAddSubtask));
             OnPropertyChanged(nameof(CanApplyBatchStatusAction));
             OnPropertyChanged(nameof(CanMoveSelectedTodosToGroup));
+            OnPropertyChanged(nameof(CanDeleteSelectedTodos));
+            OnPropertyChanged(nameof(CanRestoreSelectedTodos));
             OnPropertyChanged(nameof(ShowMoveToGroupButton));
         }
     }
@@ -101,6 +103,8 @@ public sealed class MainViewModel : ViewModelBase
                 OnPropertyChanged(nameof(CanAddSubtask));
                 OnPropertyChanged(nameof(CanApplyBatchStatusAction));
                 OnPropertyChanged(nameof(CanMoveSelectedTodosToGroup));
+                OnPropertyChanged(nameof(CanDeleteSelectedTodos));
+                OnPropertyChanged(nameof(CanRestoreSelectedTodos));
                 OnPropertyChanged(nameof(ShowMoveToGroupButton));
             }
         }
@@ -137,6 +141,14 @@ public sealed class MainViewModel : ViewModelBase
 
     public bool CanMoveSelectedTodosToGroup => HasSelection && !HasSelectedSubtask;
 
+    public bool CanSelectAllTodos => IsMultiSelectMode && Todos.Count > 0;
+
+    public bool CanDeleteSelectedTodos => IsMultiSelectMode && HasSelection;
+
+    public bool CanRestoreSelectedTodos => IsMultiSelectMode && IsDeletedStatusFilter && HasSelection;
+
+    public bool IsDeletedStatusFilter => SelectedStatusFilter == StatusFilterDeleted;
+
     public bool ShowMoveToGroupButton => !HasSelectedSubtask;
 
     public bool IsMultiSelectMode
@@ -147,6 +159,9 @@ public sealed class MainViewModel : ViewModelBase
             if (SetProperty(ref _isMultiSelectMode, value))
             {
                 OnPropertyChanged(nameof(MultiSelectButtonText));
+                OnPropertyChanged(nameof(CanSelectAllTodos));
+                OnPropertyChanged(nameof(CanDeleteSelectedTodos));
+                OnPropertyChanged(nameof(CanRestoreSelectedTodos));
             }
         }
     }
@@ -154,6 +169,10 @@ public sealed class MainViewModel : ViewModelBase
     public string MultiSelectButtonText => IsMultiSelectMode
         ? LocalizationService.Text("Action.Cancel")
         : LocalizationService.Text("Action.MultiSelect");
+
+    public string BatchDeleteButtonText => IsDeletedStatusFilter
+        ? LocalizationService.Text("Main.DeletePermanentAll")
+        : LocalizationService.Text("Main.DeleteAll");
 
     public string? Keyword
     {
@@ -170,6 +189,9 @@ public sealed class MainViewModel : ViewModelBase
             if (SetProperty(ref _selectedStatusFilter, nextFilter))
             {
                 OnPropertyChanged(nameof(CanApplyBatchStatusAction));
+                OnPropertyChanged(nameof(CanRestoreSelectedTodos));
+                OnPropertyChanged(nameof(IsDeletedStatusFilter));
+                OnPropertyChanged(nameof(BatchDeleteButtonText));
                 if (!_isUpdatingFilters)
                 {
                     Refresh();
@@ -277,6 +299,7 @@ public sealed class MainViewModel : ViewModelBase
         SelectedSubtaskCount = SelectedTodo?.IsSubtask == true ? 1 : 0;
         RefreshGroupSummaries();
         OnPropertyChanged(nameof(TotalCountText));
+        OnPropertyChanged(nameof(CanSelectAllTodos));
     }
 
     public void ApplyManualSort(string memberPath, ListSortDirection direction)
@@ -418,6 +441,7 @@ public sealed class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(SelectedCountText));
         OnPropertyChanged(nameof(TotalCountText));
         OnPropertyChanged(nameof(MultiSelectButtonText));
+        OnPropertyChanged(nameof(BatchDeleteButtonText));
         Refresh();
     }
 
@@ -439,6 +463,12 @@ public sealed class MainViewModel : ViewModelBase
             .GroupBy(todo => todo.ParentId!)
             .ToDictionary(group => group.Key, group => group.Count());
         var rootIdsWithSubtasks = subtaskCountsByParentId.Keys.ToHashSet();
+        var subtasksByVisibleParentId = todos
+            .Where(todo => todo.IsSubtask &&
+                           !string.IsNullOrWhiteSpace(todo.ParentId) &&
+                           _currentRootTodoIds.Contains(todo.ParentId))
+            .GroupBy(todo => todo.ParentId!)
+            .ToDictionary(group => group.Key, group => group.ToList());
 
         _collapsedTodoIds.RemoveWhere(id => !rootIdsWithSubtasks.Contains(id));
 
@@ -447,6 +477,11 @@ public sealed class MainViewModel : ViewModelBase
             todo.HasSubtasks = !todo.IsSubtask && rootIdsWithSubtasks.Contains(todo.Id);
             todo.SubtaskCount = !todo.IsSubtask && subtaskCountsByParentId.TryGetValue(todo.Id, out var subtaskCount) ? subtaskCount : 0;
             todo.IsExpanded = !todo.HasSubtasks || !_collapsedTodoIds.Contains(todo.Id);
+            todo.ShowHierarchyConnector = todo.IsSubtask &&
+                                          !string.IsNullOrWhiteSpace(todo.ParentId) &&
+                                          subtasksByVisibleParentId.ContainsKey(todo.ParentId);
+            todo.ShowHierarchyConnectorTail = todo.ShowHierarchyConnector &&
+                                              subtasksByVisibleParentId[todo.ParentId!].Last().Id != todo.Id;
         }
     }
 

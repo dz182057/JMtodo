@@ -1211,7 +1211,7 @@
 
                                     <Grid Grid.Column="2"
                                           Width="34"
-                                          Height="44"
+                                          Height="58"
                                           HorizontalAlignment="Left"
                                           VerticalAlignment="Center">
                                         <Border Width="26"
@@ -1255,13 +1255,42 @@
                                                     </Style.Triggers>
                                                 </Style>
                                             </Grid.Style>
-                                            <Path Data="M5,-4 L5,22 L14,22"
+                                            <Path Data="M5,0 L5,29 L14,29"
                                                   Stroke="#B9CDFC"
                                                   StrokeThickness="1.5"
                                                   StrokeDashArray="2 2"
                                                   StrokeStartLineCap="Round"
                                                   StrokeEndLineCap="Round"
-                                                  Stretch="None" />
+                                                  Stretch="None">
+                                                <Path.Style>
+                                                    <Style TargetType="{x:Type Path}">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding ShowHierarchyConnector}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Path.Style>
+                                            </Path>
+                                            <Path Data="M5,29 L5,58"
+                                                  Stroke="#B9CDFC"
+                                                  StrokeThickness="1.5"
+                                                  StrokeDashArray="2 2"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  Stretch="None">
+                                                <Path.Style>
+                                                    <Style TargetType="{x:Type Path}">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding ShowHierarchyConnectorTail}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Path.Style>
+                                            </Path>
                                             <Border Width="20"
                                                     Height="20"
                                                     Margin="12,0,0,0"
@@ -1573,29 +1602,91 @@
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center">
-                    <Button Width="116"
+                    <Button Width="84"
+                            IsEnabled="{Binding CanSelectAllTodos}"
+                            Click="SelectAllButton_Click"
+                            Content="{DynamicResource Main.SelectAll}"
+                            ToolTip="{DynamicResource Main.SelectAllTip}">
+                        <Button.Style>
+                            <Style TargetType="{x:Type Button}" BasedOn="{StaticResource Button.Secondary}">
+                                <Setter Property="Padding" Value="12,0,12,0" />
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsMultiSelectMode}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Width="108"
+                            Margin="8,0,0,0"
+                            IsEnabled="{Binding CanRestoreSelectedTodos}"
+                            Click="BatchRestoreButton_Click"
+                            Content="{DynamicResource Main.RestoreAll}"
+                            ToolTip="{DynamicResource Main.RestoreAllTip}">
+                        <Button.Style>
+                            <Style TargetType="{x:Type Button}" BasedOn="{StaticResource Button.Purple}">
+                                <Setter Property="Padding" Value="12,0,12,0" />
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding IsMultiSelectMode}" Value="True" />
+                                            <Condition Binding="{Binding IsDeletedStatusFilter}" Value="True" />
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Width="132"
+                            Margin="8,0,0,0"
+                            IsEnabled="{Binding CanDeleteSelectedTodos}"
+                            Click="BatchDeleteButton_Click"
+                            Content="{Binding BatchDeleteButtonText}"
+                            ToolTip="{DynamicResource Main.DeleteAllTip}">
+                        <Button.Style>
+                            <Style TargetType="{x:Type Button}" BasedOn="{StaticResource Button.Danger}">
+                                <Setter Property="Padding" Value="12,0,12,0" />
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsMultiSelectMode}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Width="112"
+                            Margin="8,0,0,0"
                             Style="{StaticResource Button.Secondary}"
+                            Padding="12,0,12,0"
                             IsEnabled="{Binding CanAddSubtask}"
                             Click="AddSubtaskButton_Click"
                             Content="{DynamicResource Main.AddSubtask}"
                             ToolTip="{DynamicResource Main.AddSubtaskBatchTip}" />
-                    <Button Width="132"
-                            Margin="12,0,0,0"
+                    <Button Width="128"
+                            Margin="8,0,0,0"
                             Style="{StaticResource Button.Purple}"
+                            Padding="12,0,12,0"
                             IsEnabled="{Binding CanMoveSelectedTodosToGroup}"
                             Click="MoveToGroupButton_Click"
                             Content="{DynamicResource Main.MoveToGroup}"
                             ToolTip="{DynamicResource Main.MoveToGroupBatchTip}" />
-                    <Button Width="120"
-                            Margin="12,0,0,0"
+                    <Button Width="116"
+                            Margin="8,0,0,0"
                             Style="{StaticResource Button.Success}"
+                            Padding="12,0,12,0"
                             IsEnabled="{Binding CanApplyBatchStatusAction}"
                             Click="CompleteButton_Click"
                             Content="{DynamicResource Main.MarkComplete}"
                             ToolTip="{DynamicResource Main.MarkCompleteBatchTip}" />
-                    <Button Width="132"
-                            Margin="12,0,0,0"
+                    <Button Width="124"
+                            Margin="8,0,0,0"
                             Style="{StaticResource Button.Warning}"
+                            Padding="12,0,12,0"
                             IsEnabled="{Binding CanApplyBatchStatusAction}"
                             Click="ReopenButton_Click"
                             Content="{DynamicResource Main.MarkActive}"

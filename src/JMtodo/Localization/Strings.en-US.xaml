@@ -46,10 +46,17 @@
     <sys:String x:Key="Main.MoveToGroup">Move to group</sys:String>
     <sys:String x:Key="Main.MarkComplete">Mark complete</sys:String>
     <sys:String x:Key="Main.MarkActive">Mark active</sys:String>
+    <sys:String x:Key="Main.SelectAll">Select all</sys:String>
+    <sys:String x:Key="Main.DeleteAll">Delete all</sys:String>
+    <sys:String x:Key="Main.DeletePermanentAll">Delete all forever</sys:String>
+    <sys:String x:Key="Main.RestoreAll">Restore all</sys:String>
     <sys:String x:Key="Main.AddSubtaskBatchTip">Requires one selected active main task.</sys:String>
     <sys:String x:Key="Main.MoveToGroupBatchTip">Move selected main tasks to a task group.</sys:String>
     <sys:String x:Key="Main.MarkCompleteBatchTip">Mark selected tasks as complete.</sys:String>
     <sys:String x:Key="Main.MarkActiveBatchTip">Mark selected tasks as active.</sys:String>
+    <sys:String x:Key="Main.SelectAllTip">Select every task in the current list.</sys:String>
+    <sys:String x:Key="Main.DeleteAllTip">Delete selected tasks.</sys:String>
+    <sys:String x:Key="Main.RestoreAllTip">Restore selected tasks.</sys:String>
 
     <sys:String x:Key="Placeholder.Search">Search title, notes, keywords...</sys:String>
     <sys:String x:Key="Placeholder.TaskTitle">Enter task title...</sys:String>
@@ -200,12 +207,15 @@
     <sys:String x:Key="Dialog.DeleteConfirm.SubtaskMessage">Delete this task? It will move to the deleted list.</sys:String>
     <sys:String x:Key="Dialog.DeleteConfirm.RootMessage">Delete this main task? Its subtasks will move to the deleted list too.</sys:String>
     <sys:String x:Key="Dialog.DeleteConfirm.Confirm">Delete</sys:String>
+    <sys:String x:Key="Dialog.BatchDeleteConfirm.Message">Delete the {0} selected tasks? Subtasks under selected main tasks will move to the deleted list too.</sys:String>
     <sys:String x:Key="Dialog.RestoreConfirm.Title">Confirm restore</sys:String>
     <sys:String x:Key="Dialog.RestoreConfirm.Message">Restore this task? It will return to active status.</sys:String>
     <sys:String x:Key="Dialog.RestoreConfirm.Confirm">Restore</sys:String>
+    <sys:String x:Key="Dialog.BatchRestoreConfirm.Message">Restore the {0} selected tasks? They will return to active status.</sys:String>
     <sys:String x:Key="Dialog.PermanentDelete.Title">Delete forever</sys:String>
     <sys:String x:Key="Dialog.PermanentDelete.SubtaskMessage">Permanently delete this task? This cannot be undone.</sys:String>
     <sys:String x:Key="Dialog.PermanentDelete.RootMessage">Permanently delete this main task and all its subtasks? This cannot be undone.</sys:String>
+    <sys:String x:Key="Dialog.BatchPermanentDelete.Message">Permanently delete the {0} selected tasks? Subtasks under selected main tasks will be deleted too. This cannot be undone.</sys:String>
     <sys:String x:Key="Dialog.CannotAddSubtask.Title">Cannot add subtask</sys:String>
     <sys:String x:Key="Dialog.CannotAddSubtask.DepthMessage">JMtodo currently supports only two task levels.</sys:String>
     <sys:String x:Key="Dialog.CannotAddSubtask.StatusMessage">Only active main tasks can have subtasks.</sys:String>

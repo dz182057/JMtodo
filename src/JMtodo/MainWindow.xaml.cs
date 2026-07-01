@@ -219,6 +219,43 @@ public partial class MainWindow : Window
         MoveTodosToGroup(GetSelectedTodos());
     }
 
+    private void SelectAllButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_viewModel.IsMultiSelectMode)
+        {
+            _viewModel.IsMultiSelectMode = true;
+            TaskGrid.SelectionMode = DataGridSelectionMode.Extended;
+            PinnedActionGrid.SelectionMode = DataGridSelectionMode.Extended;
+        }
+
+        _isSyncingGridSelection = true;
+        try
+        {
+            TaskGrid.SelectedItems.Clear();
+            foreach (var todo in TaskGrid.Items.OfType<TodoItem>())
+            {
+                TaskGrid.SelectedItems.Add(todo);
+            }
+        }
+        finally
+        {
+            _isSyncingGridSelection = false;
+        }
+
+        UpdateSelectionFromTaskGrid();
+        SyncPinnedActionGridSelection();
+    }
+
+    private void BatchDeleteButton_Click(object sender, RoutedEventArgs e)
+    {
+        DeleteTodos(GetSelectedTodos());
+    }
+
+    private void BatchRestoreButton_Click(object sender, RoutedEventArgs e)
+    {
+        RestoreTodos(GetSelectedTodos());
+    }
+
     private void TaskRowMoveToGroupMenuItem_Click(object sender, RoutedEventArgs e)
     {
         if (GetContextMenuTodo(sender) is TodoItem todo)
@@ -452,6 +489,80 @@ public partial class MainWindow : Window
         {
             _todoService.DeletePermanent(todo.Id);
         }
+    }
+
+    private void DeleteTodos(IReadOnlyCollection<TodoItem> selectedTodos)
+    {
+        if (selectedTodos.Count == 0)
+        {
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.NoSelection.Title"), T("Dialog.NoSelection.Message"));
+            return;
+        }
+
+        var isPermanentDelete = _viewModel.IsDeletedStatusFilter;
+        var dialog = new ConfirmDialogWindow
+        {
+            Owner = this,
+            TitleText = isPermanentDelete ? T("Dialog.PermanentDelete.Title") : T("Dialog.DeleteConfirm.Title"),
+            MessageText = isPermanentDelete
+                ? F("Dialog.BatchPermanentDelete.Message", selectedTodos.Count)
+                : F("Dialog.BatchDeleteConfirm.Message", selectedTodos.Count),
+            ConfirmText = T("Dialog.DeleteConfirm.Confirm"),
+            CancelText = T("Dialog.Cancel")
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        foreach (var todo in GetRootAwareDeleteTargets(selectedTodos))
+        {
+            if (isPermanentDelete)
+            {
+                _todoService.DeletePermanent(todo.Id);
+            }
+            else
+            {
+                _todoService.SoftDelete(todo.Id);
+            }
+        }
+    }
+
+    private void RestoreTodos(IReadOnlyCollection<TodoItem> selectedTodos)
+    {
+        if (selectedTodos.Count == 0)
+        {
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.NoSelection.Title"), T("Dialog.NoSelection.Message"));
+            return;
+        }
+
+        var dialog = new ConfirmDialogWindow
+        {
+            Owner = this,
+            TitleText = T("Dialog.RestoreConfirm.Title"),
+            MessageText = F("Dialog.BatchRestoreConfirm.Message", selectedTodos.Count),
+            ConfirmText = T("Dialog.RestoreConfirm.Confirm"),
+            CancelText = T("Dialog.Cancel")
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        foreach (var todo in selectedTodos)
+        {
+            _todoService.Restore(todo.Id);
+        }
+    }
+
+    private static IReadOnlyList<TodoItem> GetRootAwareDeleteTargets(IReadOnlyCollection<TodoItem> selectedTodos)
+    {
+        var selectedIds = selectedTodos.Select(todo => todo.Id).ToHashSet();
+        return selectedTodos
+            .Where(todo => !todo.IsSubtask || string.IsNullOrWhiteSpace(todo.ParentId) || !selectedIds.Contains(todo.ParentId))
+            .ToList();
     }
 
     private void ShowFloatingButton_Click(object sender, RoutedEventArgs e)

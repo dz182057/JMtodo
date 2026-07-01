@@ -23,6 +23,8 @@ public sealed class TodoItem
     public bool HasSubtasks { get; set; }
     public int SubtaskCount { get; set; }
     public bool IsExpanded { get; set; } = true;
+    public bool ShowHierarchyConnector { get; set; }
+    public bool ShowHierarchyConnectorTail { get; set; }
     public List<TodoAttachment> Attachments { get; set; } = new();
 
     public string StatusText => Status switch
@@ -119,6 +121,8 @@ public sealed class TodoItem
             HasSubtasks = HasSubtasks,
             SubtaskCount = SubtaskCount,
             IsExpanded = IsExpanded,
+            ShowHierarchyConnector = ShowHierarchyConnector,
+            ShowHierarchyConnectorTail = ShowHierarchyConnectorTail,
             Attachments = Attachments.Select(attachment => attachment.Clone()).ToList()
         };
     }

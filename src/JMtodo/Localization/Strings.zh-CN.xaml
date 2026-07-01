@@ -46,10 +46,17 @@
     <sys:String x:Key="Main.MoveToGroup">移动到任务组</sys:String>
     <sys:String x:Key="Main.MarkComplete">标记完成</sys:String>
     <sys:String x:Key="Main.MarkActive">标记未完成</sys:String>
+    <sys:String x:Key="Main.SelectAll">全选</sys:String>
+    <sys:String x:Key="Main.DeleteAll">全部删除</sys:String>
+    <sys:String x:Key="Main.DeletePermanentAll">全部彻底删除</sys:String>
+    <sys:String x:Key="Main.RestoreAll">全部恢复</sys:String>
     <sys:String x:Key="Main.AddSubtaskBatchTip">仅支持选中 1 个未完成主任务。</sys:String>
     <sys:String x:Key="Main.MoveToGroupBatchTip">将已选主任务批量移动到任务组。</sys:String>
     <sys:String x:Key="Main.MarkCompleteBatchTip">将已选任务批量标记为完成。</sys:String>
     <sys:String x:Key="Main.MarkActiveBatchTip">将已选任务批量标记为未完成。</sys:String>
+    <sys:String x:Key="Main.SelectAllTip">选中当前列表中的全部任务。</sys:String>
+    <sys:String x:Key="Main.DeleteAllTip">删除已选任务。</sys:String>
+    <sys:String x:Key="Main.RestoreAllTip">恢复已选任务。</sys:String>
 
     <sys:String x:Key="Placeholder.Search">搜索标题、备注、关键词...</sys:String>
     <sys:String x:Key="Placeholder.TaskTitle">请输入任务标题...</sys:String>
@@ -200,12 +207,15 @@
     <sys:String x:Key="Dialog.DeleteConfirm.SubtaskMessage">确定要删除这个任务吗？任务会移入已删除列表。</sys:String>
     <sys:String x:Key="Dialog.DeleteConfirm.RootMessage">确定要删除这个主任务吗？它对应的所有子任务也会一起移入已删除列表。</sys:String>
     <sys:String x:Key="Dialog.DeleteConfirm.Confirm">确认删除</sys:String>
+    <sys:String x:Key="Dialog.BatchDeleteConfirm.Message">确定要删除已选的 {0} 个任务吗？主任务对应的子任务也会一起移入已删除列表。</sys:String>
     <sys:String x:Key="Dialog.RestoreConfirm.Title">确认恢复</sys:String>
     <sys:String x:Key="Dialog.RestoreConfirm.Message">确定要恢复这个任务吗？恢复后会回到未完成状态。</sys:String>
     <sys:String x:Key="Dialog.RestoreConfirm.Confirm">确认恢复</sys:String>
+    <sys:String x:Key="Dialog.BatchRestoreConfirm.Message">确定要恢复已选的 {0} 个任务吗？恢复后会回到未完成状态。</sys:String>
     <sys:String x:Key="Dialog.PermanentDelete.Title">彻底删除</sys:String>
     <sys:String x:Key="Dialog.PermanentDelete.SubtaskMessage">确定要彻底删除这个任务吗？此操作不可恢复。</sys:String>
     <sys:String x:Key="Dialog.PermanentDelete.RootMessage">确定要彻底删除这个主任务吗？它对应的所有子任务也会一起彻底删除，此操作不可恢复。</sys:String>
+    <sys:String x:Key="Dialog.BatchPermanentDelete.Message">确定要彻底删除已选的 {0} 个任务吗？主任务对应的子任务也会一起彻底删除，此操作不可恢复。</sys:String>
     <sys:String x:Key="Dialog.CannotAddSubtask.Title">不能添加子任务</sys:String>
     <sys:String x:Key="Dialog.CannotAddSubtask.DepthMessage">暂时只支持二级子任务，不能继续添加下一级。</sys:String>
     <sys:String x:Key="Dialog.CannotAddSubtask.StatusMessage">只有未完成的主任务可以添加子任务。</sys:String>
