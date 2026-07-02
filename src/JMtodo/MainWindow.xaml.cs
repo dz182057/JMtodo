@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -1129,6 +1130,17 @@ public partial class MainWindow : Window
         }
     }
 
+    private void TaskAttachmentButton_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is not TodoItem todo || todo.Attachments.Count == 0)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        CopyAttachments(todo.Attachments);
+    }
+
     private void AttachmentMenuItem_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.Tag is TodoAttachment attachment)
@@ -1146,6 +1158,22 @@ public partial class MainWindow : Window
         catch (InvalidOperationException ex)
         {
             ConfirmDialogWindow.ShowInfo(this, T("Dialog.OpenFileFailed.Title"), ex.Message);
+        }
+    }
+
+    private void CopyAttachments(IEnumerable<TodoAttachment> attachments)
+    {
+        try
+        {
+            FileClipboardService.CopyFiles(attachments.Select(attachment => attachment.FullPath));
+        }
+        catch (InvalidOperationException ex)
+        {
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.CopyFileFailed.Title"), ex.Message);
+        }
+        catch (ExternalException)
+        {
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.CopyFileFailed.Title"), T("Dialog.CopyFileFailed.Clipboard"));
         }
     }
 

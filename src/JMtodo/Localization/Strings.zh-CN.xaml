@@ -245,6 +245,9 @@
     <sys:String x:Key="Dialog.OpenFileFailed.Title">无法打开文件</sys:String>
     <sys:String x:Key="Dialog.OpenFileFailed.Missing">文件不存在，可能已被移动或删除。</sys:String>
     <sys:String x:Key="Dialog.OpenFileFailed.System">系统未能打开该文件，请确认文件类型有关联的默认程序。</sys:String>
+    <sys:String x:Key="Dialog.CopyFileFailed.Title">无法复制文件</sys:String>
+    <sys:String x:Key="Dialog.CopyFileFailed.Missing">文件不存在，可能已被移动或删除。</sys:String>
+    <sys:String x:Key="Dialog.CopyFileFailed.Clipboard">无法写入剪贴板，请稍后重试。</sys:String>
     <sys:String x:Key="Dialog.AddFileFailed.Title">无法添加文件</sys:String>
     <sys:String x:Key="Dialog.AddFileFailed.Read">文件读取失败，请检查文件是否仍存在或是否有权限访问。</sys:String>
     <sys:String x:Key="Dialog.AddFileFailed.Access">没有权限读取选择的文件。</sys:String>

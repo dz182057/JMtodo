@@ -266,7 +266,9 @@
                                                         Background="#FFFFFF"
                                                         BorderBrush="#E5EAF3"
                                                         BorderThickness="1"
-                                                        CornerRadius="8">
+                                                        CornerRadius="8"
+                                                        Tag="{Binding}"
+                                                        PreviewMouseRightButtonDown="CopyEditorAttachmentItem_PreviewMouseRightButtonDown">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*" />

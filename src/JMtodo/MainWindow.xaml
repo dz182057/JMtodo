@@ -1434,6 +1434,7 @@
                                             HorizontalAlignment="Center"
                                             Tag="{Binding}"
                                             Click="TaskAttachmentButton_Click"
+                                            PreviewMouseRightButtonDown="TaskAttachmentButton_PreviewMouseRightButtonDown"
                                             ToolTip="{Binding AttachmentSummaryText}">
                                         <Button.Style>
                                             <Style TargetType="{x:Type Button}" BasedOn="{StaticResource Button.Secondary}">

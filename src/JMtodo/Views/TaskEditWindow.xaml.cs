@@ -298,6 +298,17 @@ public partial class TaskEditWindow : Window
         }
     }
 
+    private void CopyEditorAttachmentItem_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is not TodoEditorAttachmentItem attachment)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        CopyFilePath(attachment.OpenPath);
+    }
+
     private void CancelButton_Click(object sender, RoutedEventArgs e)
     {
         CloseIfAllowed();
@@ -356,6 +367,22 @@ public partial class TaskEditWindow : Window
         catch (Exception)
         {
             ConfirmDialogWindow.ShowInfo(this, T("Dialog.OpenFileFailed.Title"), T("Dialog.OpenFileFailed.System"));
+        }
+    }
+
+    private void CopyFilePath(string filePath)
+    {
+        try
+        {
+            FileClipboardService.CopyFile(filePath);
+        }
+        catch (InvalidOperationException ex)
+        {
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.CopyFileFailed.Title"), ex.Message);
+        }
+        catch (ExternalException)
+        {
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.CopyFileFailed.Title"), T("Dialog.CopyFileFailed.Clipboard"));
         }
     }
 

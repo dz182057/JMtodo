@@ -245,6 +245,9 @@
     <sys:String x:Key="Dialog.OpenFileFailed.Title">Cannot open file</sys:String>
     <sys:String x:Key="Dialog.OpenFileFailed.Missing">The file does not exist. It may have been moved or deleted.</sys:String>
     <sys:String x:Key="Dialog.OpenFileFailed.System">Windows could not open this file. Check that the file type has a default app.</sys:String>
+    <sys:String x:Key="Dialog.CopyFileFailed.Title">Cannot copy file</sys:String>
+    <sys:String x:Key="Dialog.CopyFileFailed.Missing">The file does not exist. It may have been moved or deleted.</sys:String>
+    <sys:String x:Key="Dialog.CopyFileFailed.Clipboard">Could not write to the clipboard. Try again in a moment.</sys:String>
     <sys:String x:Key="Dialog.AddFileFailed.Title">Cannot add file</sys:String>
     <sys:String x:Key="Dialog.AddFileFailed.Read">Could not read the file. Check that it still exists and that you have permission.</sys:String>
     <sys:String x:Key="Dialog.AddFileFailed.Access">You do not have permission to read the selected file.</sys:String>
