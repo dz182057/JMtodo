@@ -7,4 +7,5 @@ public sealed class TodoGroup
     public string IconKey { get; set; } = "folder";
     public string? Description { get; set; }
     public DateTime CreatedAt { get; set; }
+    public int SortOrder { get; set; }
 }

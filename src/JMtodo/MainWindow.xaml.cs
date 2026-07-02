@@ -24,6 +24,9 @@ public partial class MainWindow : Window
     private bool _allowClose;
     private System.Windows.Point? _taskGridDragStart;
     private TodoItem? _taskGridDraggedTodo;
+    private System.Windows.Point? _groupSummaryDragStart;
+    private TodoGroupSummary? _draggedGroupSummary;
+    private bool _suppressGroupSummaryClick;
     private ScrollViewer? _taskGridScrollViewer;
     private ScrollViewer? _pinnedActionGridScrollViewer;
     private bool _isSyncingGridScroll;
@@ -470,10 +473,77 @@ public partial class MainWindow : Window
 
     private void GroupSummary_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
+        if (_suppressGroupSummaryClick)
+        {
+            _suppressGroupSummaryClick = false;
+            e.Handled = true;
+            return;
+        }
+
         if ((sender as FrameworkElement)?.DataContext is TodoGroupSummary summary)
         {
             _viewModel.ToggleGroupFilter(summary);
         }
+    }
+
+    private void GroupSummary_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        _groupSummaryDragStart = null;
+        _draggedGroupSummary = null;
+        if ((sender as FrameworkElement)?.DataContext is TodoGroupSummary { IsNoGroup: false } summary)
+        {
+            _groupSummaryDragStart = e.GetPosition((IInputElement)sender);
+            _draggedGroupSummary = summary;
+        }
+    }
+
+    private void GroupSummary_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (_groupSummaryDragStart is null ||
+            _draggedGroupSummary is null ||
+            e.LeftButton != MouseButtonState.Pressed ||
+            sender is not FrameworkElement source)
+        {
+            return;
+        }
+
+        var position = e.GetPosition(source);
+        if (Math.Abs(position.X - _groupSummaryDragStart.Value.X) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(position.Y - _groupSummaryDragStart.Value.Y) < SystemParameters.MinimumVerticalDragDistance)
+        {
+            return;
+        }
+
+        var dragged = _draggedGroupSummary;
+        _groupSummaryDragStart = null;
+        _draggedGroupSummary = null;
+        _suppressGroupSummaryClick = true;
+        System.Windows.DragDrop.DoDragDrop(
+            source,
+            new System.Windows.DataObject(typeof(TodoGroupSummary), dragged),
+            System.Windows.DragDropEffects.Move);
+    }
+
+    private void GroupSummary_DragOver(object sender, System.Windows.DragEventArgs e)
+    {
+        var dragged = e.Data.GetData(typeof(TodoGroupSummary)) as TodoGroupSummary;
+        var target = (sender as FrameworkElement)?.DataContext as TodoGroupSummary;
+        e.Effects = CanReorderGroup(dragged, target) ? System.Windows.DragDropEffects.Move : System.Windows.DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void GroupSummary_Drop(object sender, System.Windows.DragEventArgs e)
+    {
+        var dragged = e.Data.GetData(typeof(TodoGroupSummary)) as TodoGroupSummary;
+        var target = (sender as FrameworkElement)?.DataContext as TodoGroupSummary;
+        if (!CanReorderGroup(dragged, target) || sender is not FrameworkElement targetElement)
+        {
+            return;
+        }
+
+        var insertBefore = e.GetPosition(targetElement).X < targetElement.ActualWidth / 2;
+        _todoService.TryReorderGroup(dragged!.GroupId!, target!.GroupId!, insertBefore);
+        e.Handled = true;
     }
 
     private void SoftDeleteTodo(TodoItem todo)
@@ -1155,6 +1225,15 @@ public partial class MainWindow : Window
         }
 
         return !dragged.IsSubtask || dragged.ParentId == target.ParentId;
+    }
+
+    private static bool CanReorderGroup(TodoGroupSummary? dragged, TodoGroupSummary? target)
+    {
+        return dragged is { IsNoGroup: false } &&
+               target is { IsNoGroup: false } &&
+               !string.IsNullOrWhiteSpace(dragged.GroupId) &&
+               !string.IsNullOrWhiteSpace(target.GroupId) &&
+               dragged.GroupId != target.GroupId;
     }
 
     private void ApplySortIndicators(string sortMemberPath, ListSortDirection direction)

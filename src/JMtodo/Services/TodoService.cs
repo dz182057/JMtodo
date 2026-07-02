@@ -68,7 +68,8 @@ public sealed class TodoService
             Name = trimmedName,
             IconKey = NormalizeIconKey(iconKey),
             Description = trimmedDescription,
-            CreatedAt = DateTime.Now
+            CreatedAt = DateTime.Now,
+            SortOrder = _repository.GetNextGroupSortOrder()
         };
 
         _repository.InsertGroup(group);
@@ -110,6 +111,42 @@ public sealed class TodoService
 
         _repository.DeleteGroup(id);
         NotifyChanged();
+    }
+
+    public bool TryReorderGroup(string draggedId, string targetId, bool insertBefore)
+    {
+        if (draggedId == targetId)
+        {
+            return false;
+        }
+
+        var groups = _repository.GetGroups().ToList();
+        var dragged = groups.FirstOrDefault(group => group.Id == draggedId);
+        var target = groups.FirstOrDefault(group => group.Id == targetId);
+        if (dragged is null || target is null)
+        {
+            return false;
+        }
+
+        groups.RemoveAll(group => group.Id == dragged.Id);
+        var targetIndex = groups.FindIndex(group => group.Id == target.Id);
+        if (targetIndex < 0)
+        {
+            return false;
+        }
+
+        if (!insertBefore)
+        {
+            targetIndex++;
+        }
+
+        groups.Insert(targetIndex, dragged);
+        var sortUpdates = groups
+            .Select((group, index) => (group.Id, SortOrder: (index + 1) * 10))
+            .ToList();
+        _repository.UpdateGroupSortOrders(sortUpdates);
+        NotifyChanged();
+        return true;
     }
 
     public TodoItem Create(

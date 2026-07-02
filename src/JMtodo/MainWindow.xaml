@@ -907,13 +907,19 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Height="32"
+                                <Border x:Name="GroupSummaryItem"
+                                        Height="32"
                                         MinWidth="132"
                                         Margin="0,0,8,0"
                                         Padding="10,0,10,0"
                                         Cursor="Hand"
+                                        AllowDrop="True"
                                         BorderThickness="1"
                                         CornerRadius="8"
+                                        PreviewMouseLeftButtonDown="GroupSummary_PreviewMouseLeftButtonDown"
+                                        MouseMove="GroupSummary_MouseMove"
+                                        DragOver="GroupSummary_DragOver"
+                                        Drop="GroupSummary_Drop"
                                         MouseLeftButtonUp="GroupSummary_MouseLeftButtonUp">
                                     <Border.Style>
                                         <Style TargetType="{x:Type Border}">

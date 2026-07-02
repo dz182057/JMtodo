@@ -6,7 +6,7 @@ namespace TodoDesktopApp.Data;
 
 public sealed class TodoRepository
 {
-    private const int SchemaVersion = 5;
+    private const int SchemaVersion = 6;
     private readonly string _dataDirectory;
     private readonly string _attachmentRootDirectory;
     private readonly string _databasePath;
@@ -31,6 +31,12 @@ public sealed class TodoRepository
         using var connection = OpenConnection();
         CreateTables(connection);
         EnsureGroupColumns(connection);
+        var addedGroupSortOrder = EnsureGroupSortOrderColumn(connection);
+        if (addedGroupSortOrder)
+        {
+            NormalizeGroupSortOrders(connection);
+        }
+
         var addedSortOrder = EnsureTodoSortOrderColumn(connection);
         if (addedSortOrder)
         {
@@ -46,9 +52,11 @@ public sealed class TodoRepository
         using var command = connection.CreateCommand();
         command.CommandText =
             """
-            SELECT id, name, icon_key, description, created_at
+            SELECT id, name, icon_key, description, created_at, sort_order
             FROM todo_groups
-            ORDER BY name COLLATE NOCASE;
+            ORDER BY CASE WHEN sort_order > 0 THEN 0 ELSE 1 END,
+                     sort_order,
+                     name COLLATE NOCASE;
             """;
 
         using var reader = command.ExecuteReader();
@@ -61,7 +69,8 @@ public sealed class TodoRepository
                 Name = reader.GetString(1),
                 IconKey = reader.IsDBNull(2) ? "folder" : reader.GetString(2),
                 Description = reader.IsDBNull(3) ? null : reader.GetString(3),
-                CreatedAt = DateTime.Parse(reader.GetString(4))
+                CreatedAt = DateTime.Parse(reader.GetString(4)),
+                SortOrder = reader.GetInt32(5)
             });
         }
 
@@ -74,14 +83,15 @@ public sealed class TodoRepository
         using var command = connection.CreateCommand();
         command.CommandText =
             """
-            INSERT INTO todo_groups (id, name, icon_key, description, created_at)
-            VALUES ($id, $name, $icon_key, $description, $created_at);
+            INSERT INTO todo_groups (id, name, icon_key, description, created_at, sort_order)
+            VALUES ($id, $name, $icon_key, $description, $created_at, $sort_order);
             """;
         command.Parameters.AddWithValue("$id", group.Id);
         command.Parameters.AddWithValue("$name", group.Name);
         command.Parameters.AddWithValue("$icon_key", NormalizeIconKey(group.IconKey));
         command.Parameters.AddWithValue("$description", (object?)group.Description ?? DBNull.Value);
         command.Parameters.AddWithValue("$created_at", FormatDateTime(group.CreatedAt));
+        command.Parameters.AddWithValue("$sort_order", group.SortOrder);
         command.ExecuteNonQuery();
     }
 
@@ -94,14 +104,42 @@ public sealed class TodoRepository
             UPDATE todo_groups
             SET name = $name,
                 icon_key = $icon_key,
-                description = $description
+                description = $description,
+                sort_order = $sort_order
             WHERE id = $id;
             """;
         command.Parameters.AddWithValue("$id", group.Id);
         command.Parameters.AddWithValue("$name", group.Name);
         command.Parameters.AddWithValue("$icon_key", NormalizeIconKey(group.IconKey));
         command.Parameters.AddWithValue("$description", (object?)group.Description ?? DBNull.Value);
+        command.Parameters.AddWithValue("$sort_order", group.SortOrder);
         command.ExecuteNonQuery();
+    }
+
+    public void UpdateGroupSortOrders(IReadOnlyList<(string Id, int SortOrder)> groups)
+    {
+        using var connection = OpenConnection();
+        using var transaction = connection.BeginTransaction();
+
+        foreach (var group in groups)
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = "UPDATE todo_groups SET sort_order = $sort_order WHERE id = $id;";
+            command.Parameters.AddWithValue("$id", group.Id);
+            command.Parameters.AddWithValue("$sort_order", group.SortOrder);
+            command.ExecuteNonQuery();
+        }
+
+        transaction.Commit();
+    }
+
+    public int GetNextGroupSortOrder()
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT COALESCE(MAX(sort_order), 0) + 10 FROM todo_groups;";
+        return Convert.ToInt32(command.ExecuteScalar());
     }
 
     public void DeleteGroup(string id)
@@ -138,7 +176,8 @@ public sealed class TodoRepository
                 name TEXT NOT NULL UNIQUE COLLATE NOCASE,
                 icon_key TEXT NOT NULL DEFAULT 'folder',
                 description TEXT NULL,
-                created_at TEXT NOT NULL
+                created_at TEXT NOT NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0
             );
 
             CREATE TABLE IF NOT EXISTS todos (
@@ -642,6 +681,52 @@ public sealed class TodoRepository
                 todo.Attachments.Add(attachment);
             }
         }
+    }
+
+    private static bool EnsureGroupSortOrderColumn(SqliteConnection connection)
+    {
+        if (ColumnExists(connection, "todo_groups", "sort_order"))
+        {
+            return false;
+        }
+
+        using var command = connection.CreateCommand();
+        command.CommandText = "ALTER TABLE todo_groups ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0;";
+        command.ExecuteNonQuery();
+        return true;
+    }
+
+    private static void NormalizeGroupSortOrders(SqliteConnection connection)
+    {
+        var rows = new List<(string Id, string Name)>();
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText =
+                """
+                SELECT id, name
+                FROM todo_groups
+                ORDER BY name COLLATE NOCASE;
+                """;
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                rows.Add((reader.GetString(0), reader.GetString(1)));
+            }
+        }
+
+        using var transaction = connection.BeginTransaction();
+        foreach (var row in rows.Select((group, index) => (group.Id, SortOrder: (index + 1) * 10)))
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = "UPDATE todo_groups SET sort_order = $sort_order WHERE id = $id;";
+            command.Parameters.AddWithValue("$id", row.Id);
+            command.Parameters.AddWithValue("$sort_order", row.SortOrder);
+            command.ExecuteNonQuery();
+        }
+
+        transaction.Commit();
     }
 
     private static TodoItem ReadTodo(SqliteDataReader reader)
