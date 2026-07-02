@@ -117,7 +117,7 @@
                     <TextBlock Text="{DynamicResource TaskEdit.Note}" Style="{StaticResource Text.Label}" />
                     <TextBox x:Name="NoteTextBox"
                              Height="92"
-                             MaxLength="500"
+                             MaxLength="2000"
                              AcceptsReturn="True"
                              TextWrapping="Wrap"
                              VerticalScrollBarVisibility="Disabled"

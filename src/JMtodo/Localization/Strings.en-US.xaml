@@ -188,7 +188,7 @@
     <sys:String x:Key="Editor.FileMissingFormat">Selected file does not exist: {0}</sys:String>
     <sys:String x:Key="Validation.TaskTitleRequired">Enter a task title</sys:String>
     <sys:String x:Key="Validation.TaskTitleMax">Title cannot exceed 80 characters</sys:String>
-    <sys:String x:Key="Validation.NoteMax">Notes cannot exceed 500 characters</sys:String>
+    <sys:String x:Key="Validation.NoteMax">Notes cannot exceed 2000 characters</sys:String>
     <sys:String x:Key="Validation.StartDateRequired">Select a start date</sys:String>
     <sys:String x:Key="Validation.DueBeforeStart">Due date cannot be earlier than start date</sys:String>
     <sys:String x:Key="Validation.ImportStartDateInvalid">Start date must use yyyy-MM-dd format.</sys:String>

@@ -334,7 +334,7 @@ public sealed class TaskExchangeService
         string? packageRoot)
     {
         var title = NormalizeRequiredText(task.Title, 80, LocalizationService.Text("Validation.TaskTitleRequired"));
-        var note = NormalizeOptionalText(task.Note, 500);
+        var note = NormalizeOptionalText(task.Note, 2000);
         var startDate = ParseDateOrToday(task.StartDate);
         var dueDate = ParseOptionalDate(task.DueDate);
         if (dueDate.HasValue && dueDate.Value < startDate)

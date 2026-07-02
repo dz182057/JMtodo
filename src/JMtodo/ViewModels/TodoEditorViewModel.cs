@@ -315,7 +315,7 @@ public sealed class TodoEditorViewModel : ViewModelBase
         _isTitleValid = titleError is null;
         TitleError = _showTitleError ? titleError : null;
 
-        if (Note?.Length > 500)
+        if (Note?.Length > 2000)
         {
             ErrorMessage = LocalizationService.Text("Validation.NoteMax");
         }
