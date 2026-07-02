@@ -241,6 +241,8 @@
     <sys:String x:Key="Dialog.AddFileFailed.Title">Cannot add file</sys:String>
     <sys:String x:Key="Dialog.AddFileFailed.Read">Could not read the file. Check that it still exists and that you have permission.</sys:String>
     <sys:String x:Key="Dialog.AddFileFailed.Access">You do not have permission to read the selected file.</sys:String>
+    <sys:String x:Key="Dialog.AddFileFailed.Clipboard">Could not read the clipboard contents. Try again in a moment.</sys:String>
+    <sys:String x:Key="Dialog.AddFileFailed.ClipboardImage">Could not save the image from the clipboard. Try again in a moment.</sys:String>
     <sys:String x:Key="Dialog.SelectTaskFiles.Title">Select task files</sys:String>
     <sys:String x:Key="Dialog.SelectTaskFiles.Filter">All files (*.*)|*.*</sys:String>
     <sys:String x:Key="Dialog.JsonFile.Filter">JSON files (*.json)|*.json|All files (*.*)|*.*</sys:String>

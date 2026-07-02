@@ -20,6 +20,7 @@
         TextOptions.TextRenderingMode="ClearType"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
+        PreviewKeyDown="Window_PreviewKeyDown"
         Loaded="Window_Loaded">
     <Window.Resources>
         <Style x:Key="RequiredTitleTextBox" TargetType="{x:Type TextBox}" BasedOn="{StaticResource TextBox.Modern}">

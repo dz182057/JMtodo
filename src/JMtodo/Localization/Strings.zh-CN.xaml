@@ -241,6 +241,8 @@
     <sys:String x:Key="Dialog.AddFileFailed.Title">无法添加文件</sys:String>
     <sys:String x:Key="Dialog.AddFileFailed.Read">文件读取失败，请检查文件是否仍存在或是否有权限访问。</sys:String>
     <sys:String x:Key="Dialog.AddFileFailed.Access">没有权限读取选择的文件。</sys:String>
+    <sys:String x:Key="Dialog.AddFileFailed.Clipboard">无法读取剪贴板内容，请稍后重试。</sys:String>
+    <sys:String x:Key="Dialog.AddFileFailed.ClipboardImage">无法保存剪贴板中的图片，请稍后重试。</sys:String>
     <sys:String x:Key="Dialog.SelectTaskFiles.Title">选择任务文件</sys:String>
     <sys:String x:Key="Dialog.SelectTaskFiles.Filter">所有文件 (*.*)|*.*</sys:String>
     <sys:String x:Key="Dialog.JsonFile.Filter">JSON 文件 (*.json)|*.json|所有文件 (*.*)|*.*</sys:String>
