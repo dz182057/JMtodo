@@ -113,6 +113,7 @@
     <sys:String x:Key="Tray.ShowFloating">Show panel</sys:String>
     <sys:String x:Key="Tray.HideFloating">Hide panel</sys:String>
     <sys:String x:Key="Tray.AddTask">Add task</sys:String>
+    <sys:String x:Key="Tray.CheckForUpdates">Check for updates</sys:String>
     <sys:String x:Key="Tray.Exit">Exit</sys:String>
 
     <sys:String x:Key="Date.SelectDate">Select date</sys:String>
@@ -207,6 +208,12 @@
     <sys:String x:Key="Dialog.DefaultCancel">Keep editing</sys:String>
     <sys:String x:Key="Dialog.OK">OK</sys:String>
     <sys:String x:Key="Dialog.Cancel">Cancel</sys:String>
+    <sys:String x:Key="Dialog.Update.NoUpdateTitle">You are up to date</sys:String>
+    <sys:String x:Key="Dialog.Update.NoUpdateMessageFormat">Version {0} is already the latest version.</sys:String>
+    <sys:String x:Key="Dialog.Update.AvailableTitle">New version available</sys:String>
+    <sys:String x:Key="Dialog.Update.AvailableMessageFormat">Latest version: {0}&#x0a;Current version: {1}&#x0a;&#x0a;What's new:&#x0a;{2}</sys:String>
+    <sys:String x:Key="Dialog.Update.Download">Download</sys:String>
+    <sys:String x:Key="Dialog.Update.FailedTitle">Update check failed</sys:String>
     <sys:String x:Key="Dialog.NoSelection.Title">No task selected</sys:String>
     <sys:String x:Key="Dialog.NoSelection.Message">Select a task first.</sys:String>
     <sys:String x:Key="Dialog.NoSelection.OneMessage">Select one task first.</sys:String>
@@ -286,6 +293,14 @@
     <sys:String x:Key="Service.GroupNameMax">Task group name cannot exceed 20 characters.</sys:String>
     <sys:String x:Key="Service.AttachmentsChanged">Attachment data changed. Refresh and try again.</sys:String>
     <sys:String x:Key="Service.GroupDescriptionMax">Task group description cannot exceed 100 characters.</sys:String>
+    <sys:String x:Key="Update.InvalidManifest">The update manifest is invalid.</sys:String>
+    <sys:String x:Key="Update.InvalidVersionFormat">Invalid update version: {0}</sys:String>
+    <sys:String x:Key="Update.TimeoutMessageFormat">The update server did not respond in time. Check that this network can access the update address, or try again later.&#x0a;&#x0a;Update address: {0}</sys:String>
+    <sys:String x:Key="Update.NetworkMessageFormat">JMtodo could not connect to the update server. Check your network connection and make sure the update address is reachable.&#x0a;&#x0a;Update address: {0}</sys:String>
+    <sys:String x:Key="Update.HttpStatusMessageFormat">The update server returned HTTP {0}. Check that update.json and the download file were published correctly.&#x0a;&#x0a;Update address: {1}</sys:String>
+    <sys:String x:Key="Update.NoReleaseNotes">No release notes yet.</sys:String>
+    <sys:String x:Key="Update.ReleaseNotesTruncated">...see the download page for more.</sys:String>
+    <sys:String x:Key="Update.UnknownFailure">An unknown error occurred while checking for updates. Try again later.</sys:String>
 
     <sys:String x:Key="GroupIcon.folder">Folder</sys:String>
     <sys:String x:Key="GroupIcon.briefcase">Work</sys:String>

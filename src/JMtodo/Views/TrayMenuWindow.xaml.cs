@@ -15,6 +15,7 @@ public partial class TrayMenuWindow : Window
     private readonly Action _openMain;
     private readonly Action _toggleFloating;
     private readonly Action _addTask;
+    private readonly Func<Task> _checkForUpdates;
     private readonly Action _exitApp;
     private readonly Action<string> _changeLanguage;
     private readonly DispatcherTimer _outsideClickTimer;
@@ -24,6 +25,7 @@ public partial class TrayMenuWindow : Window
         Action openMain,
         Action toggleFloating,
         Action addTask,
+        Func<Task> checkForUpdates,
         Action exitApp,
         Action<string> changeLanguage,
         bool isFloatingVisible)
@@ -33,6 +35,7 @@ public partial class TrayMenuWindow : Window
         _openMain = openMain;
         _toggleFloating = toggleFloating;
         _addTask = addTask;
+        _checkForUpdates = checkForUpdates;
         _exitApp = exitApp;
         _changeLanguage = changeLanguage;
 
@@ -166,6 +169,12 @@ public partial class TrayMenuWindow : Window
     {
         CloseMenu();
         _addTask();
+    }
+
+    private async void CheckForUpdates_Click(object sender, RoutedEventArgs e)
+    {
+        CloseMenu();
+        await _checkForUpdates();
     }
 
     private void Language_Click(object sender, RoutedEventArgs e)

@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:TodoDesktopApp.Controls"
         Width="190"
-        Height="262"
+        Height="295"
         SizeToContent="Manual"
         WindowStartupLocation="Manual"
         WindowStyle="None"
@@ -137,6 +137,25 @@
                               Style="{StaticResource TrayMenuIconPathStyle}" />
                         <TextBlock Grid.Column="2"
                                    Text="English"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+                </Button>
+
+                <Button Style="{StaticResource TrayMenuItemButtonStyle}"
+                        Click="CheckForUpdates_Click">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="22" />
+                            <ColumnDefinition Width="6" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Path Grid.Column="0"
+                              Data="M14.5,6.2 A5.5,5.5 0 1 0 15,9.5 M15,4 L15,8 L11,8"
+                              Stroke="{StaticResource TrayItemPrimaryBrush}"
+                              Style="{StaticResource TrayMenuIconPathStyle}" />
+                        <TextBlock Grid.Column="2"
+                                   Text="{DynamicResource Tray.CheckForUpdates}"
                                    VerticalAlignment="Center" />
                     </Grid>
                 </Button>

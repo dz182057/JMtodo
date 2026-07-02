@@ -11,6 +11,7 @@ public sealed class TrayService : IDisposable
     private readonly Action _openManager;
     private readonly Action _toggleFloating;
     private readonly Action _addTodo;
+    private readonly Func<Task> _checkForUpdates;
     private readonly Action _exit;
     private readonly Action<string> _changeLanguage;
     private readonly Func<bool> _isFloatingVisible;
@@ -21,6 +22,7 @@ public sealed class TrayService : IDisposable
         Action openManager,
         Action toggleFloating,
         Action addTodo,
+        Func<Task> checkForUpdates,
         Action exit,
         Action<string> changeLanguage,
         Func<bool> isFloatingVisible)
@@ -28,6 +30,7 @@ public sealed class TrayService : IDisposable
         _openManager = openManager;
         _toggleFloating = toggleFloating;
         _addTodo = addTodo;
+        _checkForUpdates = checkForUpdates;
         _exit = exit;
         _changeLanguage = changeLanguage;
         _isFloatingVisible = isFloatingVisible;
@@ -64,6 +67,7 @@ public sealed class TrayService : IDisposable
             openMain: _openManager,
             toggleFloating: _toggleFloating,
             addTask: _addTodo,
+            checkForUpdates: _checkForUpdates,
             exitApp: _exit,
             changeLanguage: _changeLanguage,
             isFloatingVisible: _isFloatingVisible());

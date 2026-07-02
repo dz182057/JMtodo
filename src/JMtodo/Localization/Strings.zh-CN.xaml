@@ -113,6 +113,7 @@
     <sys:String x:Key="Tray.ShowFloating">显示浮窗</sys:String>
     <sys:String x:Key="Tray.HideFloating">隐藏浮窗</sys:String>
     <sys:String x:Key="Tray.AddTask">新增任务</sys:String>
+    <sys:String x:Key="Tray.CheckForUpdates">检查更新</sys:String>
     <sys:String x:Key="Tray.Exit">退出应用</sys:String>
 
     <sys:String x:Key="Date.SelectDate">选择日期</sys:String>
@@ -207,6 +208,12 @@
     <sys:String x:Key="Dialog.DefaultCancel">继续编辑</sys:String>
     <sys:String x:Key="Dialog.OK">知道了</sys:String>
     <sys:String x:Key="Dialog.Cancel">取消</sys:String>
+    <sys:String x:Key="Dialog.Update.NoUpdateTitle">已是最新版本</sys:String>
+    <sys:String x:Key="Dialog.Update.NoUpdateMessageFormat">当前版本 {0} 已是最新版本。</sys:String>
+    <sys:String x:Key="Dialog.Update.AvailableTitle">发现新版本</sys:String>
+    <sys:String x:Key="Dialog.Update.AvailableMessageFormat">最新版本：{0}&#x0a;当前版本：{1}&#x0a;&#x0a;更新内容：&#x0a;{2}</sys:String>
+    <sys:String x:Key="Dialog.Update.Download">下载更新</sys:String>
+    <sys:String x:Key="Dialog.Update.FailedTitle">检查更新失败</sys:String>
     <sys:String x:Key="Dialog.NoSelection.Title">没有选中任务</sys:String>
     <sys:String x:Key="Dialog.NoSelection.Message">请先选择任务。</sys:String>
     <sys:String x:Key="Dialog.NoSelection.OneMessage">请先选择一个任务。</sys:String>
@@ -286,6 +293,14 @@
     <sys:String x:Key="Service.GroupNameMax">任务组名称不能超过 20 字。</sys:String>
     <sys:String x:Key="Service.AttachmentsChanged">附件数据已变化，请刷新后重试。</sys:String>
     <sys:String x:Key="Service.GroupDescriptionMax">任务组描述不能超过 100 字。</sys:String>
+    <sys:String x:Key="Update.InvalidManifest">更新清单格式无效。</sys:String>
+    <sys:String x:Key="Update.InvalidVersionFormat">更新版本号无效：{0}</sys:String>
+    <sys:String x:Key="Update.TimeoutMessageFormat">连接更新服务器超时。请确认当前网络可以访问更新地址，或稍后再试。&#x0a;&#x0a;更新地址：{0}</sys:String>
+    <sys:String x:Key="Update.NetworkMessageFormat">无法连接更新服务器。请确认网络连接正常，并且更新地址可以访问。&#x0a;&#x0a;更新地址：{0}</sys:String>
+    <sys:String x:Key="Update.HttpStatusMessageFormat">更新服务器返回 HTTP {0}。请确认服务器上的 update.json 和下载文件已正确发布。&#x0a;&#x0a;更新地址：{1}</sys:String>
+    <sys:String x:Key="Update.NoReleaseNotes">暂无更新内容。</sys:String>
+    <sys:String x:Key="Update.ReleaseNotesTruncated">...更多内容请查看下载页面。</sys:String>
+    <sys:String x:Key="Update.UnknownFailure">检查更新时发生未知错误，请稍后再试。</sys:String>
 
     <sys:String x:Key="GroupIcon.folder">文件夹</sys:String>
     <sys:String x:Key="GroupIcon.briefcase">工作</sys:String>

@@ -46,11 +46,12 @@ public partial class ConfirmDialogWindow : Window
         InitializeComponent();
     }
 
-    public static void ShowInfo(Window owner, string title, string message, string? confirmText = null)
+    public static void ShowInfo(Window? owner, string title, string message, string? confirmText = null)
     {
         var dialog = new ConfirmDialogWindow
         {
             Owner = owner,
+            WindowStartupLocation = owner is null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner,
             TitleText = title,
             MessageText = message,
             ConfirmText = confirmText ?? LocalizationService.Text("Dialog.OK"),
@@ -58,6 +59,33 @@ public partial class ConfirmDialogWindow : Window
         };
 
         dialog.ShowDialog();
+    }
+
+    public static bool ShowConfirm(
+        Window? owner,
+        string title,
+        string message,
+        string confirmText,
+        string? cancelText = null,
+        string? confirmButtonStyleKey = null)
+    {
+        var dialog = new ConfirmDialogWindow
+        {
+            Owner = owner,
+            WindowStartupLocation = owner is null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner,
+            TitleText = title,
+            MessageText = message,
+            ConfirmText = confirmText,
+            CancelText = cancelText ?? LocalizationService.Text("Dialog.Cancel")
+        };
+
+        if (!string.IsNullOrWhiteSpace(confirmButtonStyleKey) &&
+            dialog.TryFindResource(confirmButtonStyleKey) is Style confirmButtonStyle)
+        {
+            dialog.ConfirmButton.Style = confirmButtonStyle;
+        }
+
+        return dialog.ShowDialog() == true;
     }
 
     public string TitleText
