@@ -1132,13 +1132,67 @@ public partial class MainWindow : Window
 
     private void TaskAttachmentButton_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if ((sender as FrameworkElement)?.Tag is not TodoItem todo || todo.Attachments.Count == 0)
+        if (sender is not System.Windows.Controls.Button button || button.Tag is not TodoItem todo || todo.Attachments.Count == 0)
         {
             return;
         }
 
         e.Handled = true;
-        CopyAttachments(todo.Attachments);
+        if (todo.Attachments.Count == 1)
+        {
+            CopyAttachments([todo.Attachments[0]]);
+            return;
+        }
+
+        if (button.ContextMenu is not null)
+        {
+            button.ContextMenu.PlacementTarget = button;
+            button.ContextMenu.IsOpen = true;
+        }
+    }
+
+    private void TaskAttachmentContextMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ContextMenu menu ||
+            menu.PlacementTarget is not FrameworkElement { Tag: TodoItem todo })
+        {
+            return;
+        }
+
+        menu.Items.Clear();
+        if (todo.Attachments.Count > 1)
+        {
+            var copyAllItem = new MenuItem
+            {
+                Header = T("Attachment.CopyAll"),
+                Style = (Style)FindResource("TaskAttachmentCopyAllMenuItem"),
+                Tag = todo
+            };
+            copyAllItem.Click += CopyAllAttachmentsMenuItem_Click;
+            menu.Items.Add(copyAllItem);
+            menu.Items.Add(new Separator { Margin = new Thickness(8, 4, 8, 4) });
+        }
+
+        foreach (var attachment in todo.Attachments)
+        {
+            var attachmentItem = new MenuItem
+            {
+                DataContext = attachment,
+                Style = (Style)FindResource("TaskAttachmentMenuItem"),
+                Tag = attachment,
+                ToolTip = attachment.FullPath
+            };
+            menu.Items.Add(attachmentItem);
+        }
+    }
+
+    private void CopyAllAttachmentsMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is TodoItem todo)
+        {
+            CopyAttachments(todo.Attachments);
+            e.Handled = true;
+        }
     }
 
     private void AttachmentMenuItem_Click(object sender, RoutedEventArgs e)
@@ -1146,6 +1200,15 @@ public partial class MainWindow : Window
         if ((sender as FrameworkElement)?.Tag is TodoAttachment attachment)
         {
             OpenAttachment(attachment);
+        }
+    }
+
+    private void AttachmentMenuItem_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is TodoAttachment attachment)
+        {
+            CopyAttachments([attachment]);
+            e.Handled = true;
         }
     }
 

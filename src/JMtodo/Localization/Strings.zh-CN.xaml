@@ -154,6 +154,7 @@
     <sys:String x:Key="Attachment.CountFormat">{0} 个文件</sys:String>
     <sys:String x:Key="Attachment.None">无文件</sys:String>
     <sys:String x:Key="Attachment.MultipleLabel">多</sys:String>
+    <sys:String x:Key="Attachment.CopyAll">全部复制</sys:String>
 
     <sys:String x:Key="Import.PreviewTitle">导入预览</sys:String>
     <sys:String x:Key="Import.PreviewSummaryFormat">将导入 {0} 个主任务、{1} 个子任务、{2} 个关联文件</sys:String>
