@@ -283,7 +283,8 @@
                                                                 Style="{StaticResource Button.Ghost}"
                                                                 Tag="{Binding}"
                                                                 Click="OpenEditorAttachmentButton_Click"
-                                                                ToolTip="{Binding OpenPath}">
+                                                                PreviewMouseRightButtonDown="CopyEditorAttachmentItem_PreviewMouseRightButtonDown"
+                                                                ToolTip="{DynamicResource Attachment.LeftOpenRightCopy}">
                                                                 <Grid>
                                                                     <Grid.ColumnDefinitions>
                                                                     <ColumnDefinition Width="36" />

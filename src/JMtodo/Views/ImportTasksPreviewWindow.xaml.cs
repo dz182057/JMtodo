@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using TodoDesktopApp.Dialogs;
@@ -120,6 +121,17 @@ public partial class ImportTasksPreviewWindow : Window
         }
     }
 
+    private void PreviewAttachmentButton_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is not ImportAttachmentPreview attachment)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        CopyFilePath(attachment.Path);
+    }
+
     private void EditPreviewTaskButton_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.Tag is not ImportTaskPreview task)
@@ -134,6 +146,22 @@ public partial class ImportTasksPreviewWindow : Window
     private void CancelButton_Click(object sender, RoutedEventArgs e)
     {
         DialogResult = false;
+    }
+
+    private void CopyFilePath(string? filePath)
+    {
+        try
+        {
+            FileClipboardService.CopyFile(filePath ?? string.Empty);
+        }
+        catch (InvalidOperationException ex)
+        {
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.CopyFileFailed.Title"), ex.Message);
+        }
+        catch (ExternalException)
+        {
+            ConfirmDialogWindow.ShowInfo(this, T("Dialog.CopyFileFailed.Title"), T("Dialog.CopyFileFailed.Clipboard"));
+        }
     }
 
     private static string T(string key) => LocalizationService.Text(key);

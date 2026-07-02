@@ -191,9 +191,10 @@
                                         </Grid.ColumnDefinitions>
                                         <Button Style="{StaticResource PreviewAttachmentButtonStyle}"
                                                 Tag="{Binding}"
-                                                ToolTip="{Binding Path}"
+                                                ToolTip="{DynamicResource Attachment.LeftOpenRightCopy}"
                                                 IsEnabled="{Binding Exists}"
-                                                Click="PreviewAttachmentButton_Click">
+                                                Click="PreviewAttachmentButton_Click"
+                                                PreviewMouseRightButtonDown="PreviewAttachmentButton_PreviewMouseRightButtonDown">
                                             <TextBlock Text="{Binding FileName}"
                                                        TextTrimming="CharacterEllipsis" />
                                         </Button>

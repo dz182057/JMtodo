@@ -155,6 +155,8 @@
     <sys:String x:Key="Attachment.None">No files</sys:String>
     <sys:String x:Key="Attachment.MultipleLabel">ALL</sys:String>
     <sys:String x:Key="Attachment.CopyAll">Copy all</sys:String>
+    <sys:String x:Key="Attachment.RightClickCopy">Right-click copy</sys:String>
+    <sys:String x:Key="Attachment.LeftOpenRightCopy">Left-click to open, right-click to copy</sys:String>
 
     <sys:String x:Key="Import.PreviewTitle">Import preview</sys:String>
     <sys:String x:Key="Import.PreviewSummaryFormat">Will import {0} main tasks, {1} subtasks, and {2} linked files</sys:String>

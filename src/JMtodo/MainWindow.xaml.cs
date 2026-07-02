@@ -1212,6 +1212,14 @@ public partial class MainWindow : Window
         }
     }
 
+    private void AttachmentMenuItem_PreviewMouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.Tag is TodoAttachment)
+        {
+            e.Handled = true;
+        }
+    }
+
     private void OpenAttachment(TodoAttachment attachment)
     {
         try
