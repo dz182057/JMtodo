@@ -76,6 +76,7 @@
     <sys:String x:Key="TaskEdit.StartDate">Start date</sys:String>
     <sys:String x:Key="TaskEdit.DueDate">Due date</sys:String>
     <sys:String x:Key="TaskEdit.NoDue">No due date</sys:String>
+    <sys:String x:Key="TaskEdit.PinOnCreate">Pin to top</sys:String>
     <sys:String x:Key="TaskEdit.TaskGroup">Task group</sys:String>
     <sys:String x:Key="TaskEdit.GroupHelp">Manage task groups from the main window first.</sys:String>
     <sys:String x:Key="TaskEdit.Cancel">Cancel</sys:String>

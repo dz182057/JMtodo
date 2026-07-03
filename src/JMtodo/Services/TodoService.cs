@@ -155,9 +155,10 @@ public sealed class TodoService
         DateOnly startDate,
         DateOnly? dueDate,
         string? groupId = null,
-        IEnumerable<string>? attachmentFilePaths = null)
+        IEnumerable<string>? attachmentFilePaths = null,
+        bool pinToTop = false)
     {
-        return CreateTodo(title, note, startDate, dueDate, parentId: null, groupId, attachmentFilePaths);
+        return CreateTodo(title, note, startDate, dueDate, parentId: null, groupId, attachmentFilePaths, pinToTop);
     }
 
     public TodoItem CreateSubtask(
@@ -166,7 +167,8 @@ public sealed class TodoService
         string? note,
         DateOnly startDate,
         DateOnly? dueDate,
-        IEnumerable<string>? attachmentFilePaths = null)
+        IEnumerable<string>? attachmentFilePaths = null,
+        bool pinToTop = false)
     {
         var parent = _repository.GetById(parentId) ?? throw new InvalidOperationException(T("Service.ParentNotFound"));
         if (parent.IsSubtask)
@@ -184,7 +186,7 @@ public sealed class TodoService
             throw new InvalidOperationException(T("Service.OnlyActiveRootCanAddSubtask"));
         }
 
-        return CreateTodo(title, note, startDate, dueDate, parent.Id, parent.GroupId, attachmentFilePaths);
+        return CreateTodo(title, note, startDate, dueDate, parent.Id, parent.GroupId, attachmentFilePaths, pinToTop);
     }
 
     private TodoItem CreateTodo(
@@ -194,7 +196,8 @@ public sealed class TodoService
         DateOnly? dueDate,
         string? parentId,
         string? groupId,
-        IEnumerable<string>? attachmentFilePaths)
+        IEnumerable<string>? attachmentFilePaths,
+        bool pinToTop)
     {
         if (string.IsNullOrWhiteSpace(title))
         {
@@ -228,6 +231,11 @@ public sealed class TodoService
 
         _repository.Insert(item);
         AddAttachments(item.Id, newAttachmentPaths);
+        if (pinToTop)
+        {
+            MoveActiveTodoToTop(item);
+        }
+
         NotifyChanged();
         return item;
     }
@@ -447,6 +455,25 @@ public sealed class TodoService
         _repository.UpdateSortOrders(sortUpdates);
         NotifyChanged();
         return true;
+    }
+
+    private void MoveActiveTodoToTop(TodoItem item)
+    {
+        var todos = Search(new TodoSearchCriteria { Status = TodoStatus.Active, IncludeNoDue = true });
+        var siblings = item.IsSubtask
+            ? todos.Where(todo => todo.ParentId == item.ParentId && todo.IsSubtask)
+            : todos.Where(todo => !todo.IsSubtask);
+
+        var ordered = OrderBySortThenDefault(siblings)
+            .Where(todo => todo.Id != item.Id)
+            .ToList();
+        ordered.Insert(0, item);
+
+        var sortUpdates = ordered
+            .Select((todo, index) => (todo.Id, SortOrder: (index + 1) * 10))
+            .ToList();
+        _repository.UpdateSortOrders(sortUpdates);
+        item.SortOrder = sortUpdates.First(update => update.Id == item.Id).SortOrder;
     }
 
     private static string ValidateGroupName(string name)

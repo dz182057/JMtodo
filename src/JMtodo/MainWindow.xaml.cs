@@ -1060,7 +1060,8 @@ public partial class MainWindow : Window
             editor.GetStartDate(),
             editor.GetDueDate(),
             editor.SelectedGroupId,
-            editor.GetNewAttachmentPaths());
+            editor.GetNewAttachmentPaths(),
+            editor.IsPinnedOnCreate);
     }
 
     private void EditTodo(TodoItem todo)
@@ -1106,7 +1107,8 @@ public partial class MainWindow : Window
             editor.Note,
             editor.GetStartDate(),
             editor.GetDueDate(),
-            editor.GetNewAttachmentPaths());
+            editor.GetNewAttachmentPaths(),
+            editor.IsPinnedOnCreate);
     }
 
     private void TaskAttachmentButton_Click(object sender, RoutedEventArgs e)

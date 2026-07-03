@@ -16,6 +16,7 @@ public sealed class TodoEditorViewModel : ViewModelBase
     private string? _titleError;
     private string? _errorMessage;
     private TodoGroupOption? _selectedGroup;
+    private bool _isPinnedOnCreate;
     private bool _showTitleError;
     private bool _isTitleValid;
 
@@ -67,6 +68,8 @@ public sealed class TodoEditorViewModel : ViewModelBase
     public bool IsSubtask { get; }
 
     public bool IsGroupSelectorVisible => string.IsNullOrWhiteSpace(Id) && !IsSubtask;
+
+    public bool IsPinOnCreateVisible => string.IsNullOrWhiteSpace(Id);
 
     public bool HasAttachments => Attachments.Count > 0;
 
@@ -160,6 +163,12 @@ public sealed class TodoEditorViewModel : ViewModelBase
     }
 
     public string? SelectedGroupId => SelectedGroup?.Id;
+
+    public bool IsPinnedOnCreate
+    {
+        get => _isPinnedOnCreate;
+        set => SetProperty(ref _isPinnedOnCreate, value);
+    }
 
     public string? TitleError
     {

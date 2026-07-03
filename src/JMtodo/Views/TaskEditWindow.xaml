@@ -379,15 +379,34 @@
                                                                Placeholder="{DynamicResource Date.SelectDate}" />
                                 </StackPanel>
 
-                                <CheckBox Grid.Column="4"
-                                          Width="104"
-                                          Height="42"
-                                          Margin="0,28,0,0"
-                                          HorizontalAlignment="Left"
-                                          Content="{DynamicResource TaskEdit.NoDue}"
-                                          FontSize="15"
-                                          IsChecked="{Binding IsNoDue}"
-                                          Style="{StaticResource CheckBox.Modern}" />
+                                <StackPanel Grid.Column="4"
+                                            Margin="0,25,0,0">
+                                    <CheckBox Width="104"
+                                              Height="26"
+                                              HorizontalAlignment="Left"
+                                              Content="{DynamicResource TaskEdit.NoDue}"
+                                              FontSize="15"
+                                              IsChecked="{Binding IsNoDue}"
+                                              Style="{StaticResource CheckBox.Modern}" />
+                                    <CheckBox Width="104"
+                                              Height="26"
+                                              Margin="0,4,0,0"
+                                              HorizontalAlignment="Left"
+                                              Content="{DynamicResource TaskEdit.PinOnCreate}"
+                                              FontSize="15"
+                                              IsChecked="{Binding IsPinnedOnCreate}">
+                                        <CheckBox.Style>
+                                            <Style TargetType="{x:Type CheckBox}" BasedOn="{StaticResource CheckBox.Modern}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsPinOnCreateVisible}" Value="False">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </CheckBox.Style>
+                                    </CheckBox>
+                                </StackPanel>
                             </Grid>
                         </Border>
 

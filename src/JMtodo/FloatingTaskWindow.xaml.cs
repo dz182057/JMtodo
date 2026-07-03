@@ -274,7 +274,8 @@ public partial class FloatingTaskWindow : Window
             editor.Note,
             editor.GetStartDate(),
             editor.GetDueDate(),
-            editor.GetNewAttachmentPaths());
+            editor.GetNewAttachmentPaths(),
+            editor.IsPinnedOnCreate);
     }
 
     private void AddTaskButton_Click(object sender, RoutedEventArgs e)
@@ -292,7 +293,8 @@ public partial class FloatingTaskWindow : Window
             editor.GetStartDate(),
             editor.GetDueDate(),
             editor.SelectedGroupId,
-            editor.GetNewAttachmentPaths());
+            editor.GetNewAttachmentPaths(),
+            editor.IsPinnedOnCreate);
     }
 
     private void EditTaskButton_Click(object sender, RoutedEventArgs e)

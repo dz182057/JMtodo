@@ -76,6 +76,7 @@
     <sys:String x:Key="TaskEdit.StartDate">开始日期</sys:String>
     <sys:String x:Key="TaskEdit.DueDate">计划完成日期</sys:String>
     <sys:String x:Key="TaskEdit.NoDue">不限期</sys:String>
+    <sys:String x:Key="TaskEdit.PinOnCreate">直接置顶</sys:String>
     <sys:String x:Key="TaskEdit.TaskGroup">任务组</sys:String>
     <sys:String x:Key="TaskEdit.GroupHelp">任务组请先在主窗口的「任务组」中维护。</sys:String>
     <sys:String x:Key="TaskEdit.Cancel">取消</sys:String>

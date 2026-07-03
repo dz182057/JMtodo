@@ -97,9 +97,10 @@ public sealed class FloatingViewModel : ViewModelBase
         DateOnly startDate,
         DateOnly? dueDate,
         string? groupId,
-        IEnumerable<string>? attachmentFilePaths)
+        IEnumerable<string>? attachmentFilePaths,
+        bool pinToTop = false)
     {
-        _todoService.Create(title, note, startDate, dueDate, groupId, attachmentFilePaths);
+        _todoService.Create(title, note, startDate, dueDate, groupId, attachmentFilePaths, pinToTop);
     }
 
     public void CreateSubtask(
@@ -108,9 +109,10 @@ public sealed class FloatingViewModel : ViewModelBase
         string? note,
         DateOnly startDate,
         DateOnly? dueDate,
-        IEnumerable<string>? attachmentFilePaths)
+        IEnumerable<string>? attachmentFilePaths,
+        bool pinToTop = false)
     {
-        _todoService.CreateSubtask(parent.TaskId, title, note, startDate, dueDate, attachmentFilePaths);
+        _todoService.CreateSubtask(parent.TaskId, title, note, startDate, dueDate, attachmentFilePaths, pinToTop);
     }
 
     public void Update(
