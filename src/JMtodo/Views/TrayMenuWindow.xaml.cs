@@ -13,7 +13,8 @@ public partial class TrayMenuWindow : Window
     private const int LeftButton = 0x01;
     private const int RightButton = 0x02;
     private readonly Action _openMain;
-    private readonly Action _toggleFloating;
+    private readonly Action _showFloating;
+    private readonly Action _hideFloating;
     private readonly Action _addTask;
     private readonly Func<Task> _checkForUpdates;
     private readonly Action _exitApp;
@@ -23,17 +24,18 @@ public partial class TrayMenuWindow : Window
 
     public TrayMenuWindow(
         Action openMain,
-        Action toggleFloating,
+        Action showFloating,
+        Action hideFloating,
         Action addTask,
         Func<Task> checkForUpdates,
         Action exitApp,
-        Action<string> changeLanguage,
-        bool isFloatingVisible)
+        Action<string> changeLanguage)
     {
         InitializeComponent();
 
         _openMain = openMain;
-        _toggleFloating = toggleFloating;
+        _showFloating = showFloating;
+        _hideFloating = hideFloating;
         _addTask = addTask;
         _checkForUpdates = checkForUpdates;
         _exitApp = exitApp;
@@ -45,9 +47,6 @@ public partial class TrayMenuWindow : Window
         };
         _outsideClickTimer.Tick += OutsideClickTimer_Tick;
 
-        ToggleFloatingText.Text = isFloatingVisible
-            ? LocalizationService.Text("Tray.HideFloating")
-            : LocalizationService.Text("Tray.ShowFloating");
         RefreshLanguageChecks();
     }
 
@@ -159,10 +158,16 @@ public partial class TrayMenuWindow : Window
         _openMain();
     }
 
-    private void ToggleFloating_Click(object sender, RoutedEventArgs e)
+    private void ShowFloating_Click(object sender, RoutedEventArgs e)
     {
         CloseMenu();
-        _toggleFloating();
+        _showFloating();
+    }
+
+    private void HideFloating_Click(object sender, RoutedEventArgs e)
+    {
+        CloseMenu();
+        _hideFloating();
     }
 
     private void AddTask_Click(object sender, RoutedEventArgs e)

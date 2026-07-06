@@ -9,31 +9,31 @@ public sealed class TrayService : IDisposable
 {
     private readonly Forms.NotifyIcon _notifyIcon;
     private readonly Action _openManager;
-    private readonly Action _toggleFloating;
+    private readonly Action _showFloating;
+    private readonly Action _hideFloating;
     private readonly Action _addTodo;
     private readonly Func<Task> _checkForUpdates;
     private readonly Action _exit;
     private readonly Action<string> _changeLanguage;
-    private readonly Func<bool> _isFloatingVisible;
     private TrayMenuWindow? _trayMenuWindow;
     private bool _disposed;
 
     public TrayService(
         Action openManager,
-        Action toggleFloating,
+        Action showFloating,
+        Action hideFloating,
         Action addTodo,
         Func<Task> checkForUpdates,
         Action exit,
-        Action<string> changeLanguage,
-        Func<bool> isFloatingVisible)
+        Action<string> changeLanguage)
     {
         _openManager = openManager;
-        _toggleFloating = toggleFloating;
+        _showFloating = showFloating;
+        _hideFloating = hideFloating;
         _addTodo = addTodo;
         _checkForUpdates = checkForUpdates;
         _exit = exit;
         _changeLanguage = changeLanguage;
-        _isFloatingVisible = isFloatingVisible;
 
         _notifyIcon = new Forms.NotifyIcon
         {
@@ -65,12 +65,12 @@ public sealed class TrayService : IDisposable
 
         var trayMenuWindow = new TrayMenuWindow(
             openMain: _openManager,
-            toggleFloating: _toggleFloating,
+            showFloating: _showFloating,
+            hideFloating: _hideFloating,
             addTask: _addTodo,
             checkForUpdates: _checkForUpdates,
             exitApp: _exit,
-            changeLanguage: _changeLanguage,
-            isFloatingVisible: _isFloatingVisible());
+            changeLanguage: _changeLanguage);
 
         _trayMenuWindow = trayMenuWindow;
         trayMenuWindow.Closed += (_, _) =>

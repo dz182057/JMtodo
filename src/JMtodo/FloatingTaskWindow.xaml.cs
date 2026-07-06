@@ -98,27 +98,42 @@ public partial class FloatingTaskWindow : Window
             BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180)));
         }
 
+        if (EnsureVisibleInWorkArea())
+        {
+            SaveSettings();
+        }
+
         if (activate)
         {
             _windowLevelService.BringToFrontTemporarily(this);
         }
     }
 
-    public void ToggleFromUserRequest()
+    public void ShowFromUserRequest()
     {
-        if (IsVisible)
-        {
-            Hide();
-            return;
-        }
-
         if (_viewModel.Todos.Count == 0)
         {
             ConfirmDialogWindow.ShowInfo(this, T("Dialog.NoCurrentTask.Title"), T("Dialog.NoCurrentTask.Message"));
             return;
         }
 
-        RefreshVisibilityFromTasks(activate: true);
+        ShowExpandedFromUserRequest();
+    }
+
+    public void HideFromUserRequest()
+    {
+        Hide();
+    }
+
+    public void ToggleFromUserRequest()
+    {
+        if (IsVisible)
+        {
+            HideFromUserRequest();
+            return;
+        }
+
+        ShowFromUserRequest();
     }
 
     public void ShowExpandedFromUserRequest()
@@ -136,9 +151,19 @@ public partial class FloatingTaskWindow : Window
             BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180)));
         }
 
+        if (WindowState == WindowState.Minimized)
+        {
+            WindowState = WindowState.Normal;
+        }
+
         if (_isEdgeDocked)
         {
             RestoreEdgeDockToExpanded();
+        }
+
+        if (EnsureVisibleInWorkArea())
+        {
+            SaveSettings();
         }
 
         _windowLevelService.BringToFrontTemporarily(this);
@@ -665,6 +690,38 @@ public partial class FloatingTaskWindow : Window
         _expandedWidth = _settings.FloatingWindowWidth;
         _expandedHeight = _settings.FloatingWindowHeight;
         _settingsService.Save(_settings);
+    }
+
+    private bool EnsureVisibleInWorkArea()
+    {
+        if (_isEdgeDocked || _isEdgePreviewOpen)
+        {
+            return false;
+        }
+
+        var workArea = GetWorkingArea(GetWindowCenter());
+        var nextLeft = Clamp(Left, workArea.Left, workArea.Right - Width);
+        var nextTop = Clamp(Top, workArea.Top, workArea.Bottom - Height);
+        var changed = Math.Abs(nextLeft - Left) > 0.1 || Math.Abs(nextTop - Top) > 0.1;
+        if (!changed)
+        {
+            return false;
+        }
+
+        _suppressSettingsSave = true;
+        try
+        {
+            Left = nextLeft;
+            Top = nextTop;
+            _expandedLeft = Left;
+            _expandedTop = Top;
+        }
+        finally
+        {
+            _suppressSettingsSave = false;
+        }
+
+        return true;
     }
 
     private void TryDockToNearestEdge()

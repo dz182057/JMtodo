@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:TodoDesktopApp.Controls"
         Width="190"
-        Height="295"
+        Height="335"
         SizeToContent="Manual"
         WindowStartupLocation="Manual"
         WindowStyle="None"
@@ -51,7 +51,7 @@
                 </Button>
 
                 <Button Style="{StaticResource TrayMenuItemButtonStyle}"
-                        Click="ToggleFloating_Click">
+                        Click="ShowFloating_Click">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="22" />
@@ -63,9 +63,27 @@
                               Data="M5,4.5 L15,4.5 L15,12.5 L5,12.5 Z M3,7.5 L5,7.5 M3,7.5 L3,15 L13,15 L13,12.5"
                               Stroke="{StaticResource TrayItemPrimaryBrush}"
                               Style="{StaticResource TrayMenuIconPathStyle}" />
-                        <TextBlock x:Name="ToggleFloatingText"
-                                   Grid.Column="2"
+                        <TextBlock Grid.Column="2"
                                    Text="{DynamicResource Tray.ShowFloating}"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+                </Button>
+
+                <Button Style="{StaticResource TrayMenuItemButtonStyle}"
+                        Click="HideFloating_Click">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="22" />
+                            <ColumnDefinition Width="6" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Path Grid.Column="0"
+                              Data="M4,5 L14,5 L14,13 L4,13 Z M6,9 L12,9"
+                              Stroke="{StaticResource TrayItemPrimaryBrush}"
+                              Style="{StaticResource TrayMenuIconPathStyle}" />
+                        <TextBlock Grid.Column="2"
+                                   Text="{DynamicResource Tray.HideFloating}"
                                    VerticalAlignment="Center" />
                     </Grid>
                 </Button>

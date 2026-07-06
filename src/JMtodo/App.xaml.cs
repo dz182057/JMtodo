@@ -47,7 +47,8 @@ public partial class App : System.Windows.Application
         _mainWindow = new MainWindow(todoService, _floatingWindow, windowLevelService);
         _trayService = new TrayService(
             openManager: () => Dispatcher.Invoke(() => _mainWindow.OpenFromUserRequest()),
-            toggleFloating: () => Dispatcher.Invoke(() => _floatingWindow.ToggleFromUserRequest()),
+            showFloating: () => Dispatcher.Invoke(() => _floatingWindow.ShowFromUserRequest()),
+            hideFloating: () => Dispatcher.Invoke(() => _floatingWindow.HideFromUserRequest()),
             addTodo: () => Dispatcher.Invoke(() => _mainWindow.AddTodoFromUserRequest()),
             checkForUpdates: CheckForUpdatesFromTrayAsync,
             exit: () => Dispatcher.Invoke(ShutdownApplication),
@@ -58,8 +59,7 @@ public partial class App : System.Windows.Application
                 currentSettings.Language = normalizedLanguage;
                 settingsService.Save(currentSettings);
                 LocalizationService.ApplyLanguage(normalizedLanguage);
-            }),
-            isFloatingVisible: () => _floatingWindow.IsVisible);
+            }));
 
         _mainWindow.Show();
         _singleInstanceService.StartListening();
